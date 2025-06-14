@@ -151,16 +151,30 @@ class DarkTheme(BaseTheme):
             }
             QMenuBar {
                 background-color: #3c3c3c;
-                color: #e0e0e0;
+                color: #e0e0e0 !important;
                 border-bottom: 1px solid #555555;
+                font-size: 9pt !important;
+                font-weight: normal !important;
             }
             QMenuBar::item {
-                padding: 5px 10px;
-                color: #e0e0e0;
+                padding: 4px 8px !important;
+                color: #e0e0e0 !important;
+                background: transparent !important;
+                margin: 0px !important;
+                border: none !important;
+                font-size: 9pt !important;
+                font-weight: normal !important;
+                min-width: 30px !important;
+                min-height: 20px !important;
             }
-            QMenuBar::item:selected {
-                background-color: #505050;
-                color: #e0e0e0;
+            QMenuBar::item:selected,
+            QMenuBar::item:hover {
+                background-color: #505050 !important;
+                color: #e0e0e0 !important;
+            }
+            QMenuBar::item:pressed {
+                background-color: #666666 !important;
+                color: #ffffff !important;
             }
             QStatusBar {
                 background-color: #3c3c3c;

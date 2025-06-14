@@ -221,16 +221,30 @@ class CyberpunkTheme(BaseTheme):
             }
             QMenuBar {
                 background-color: #1a1a2e;
-                color: #ffffff;
+                color: #ffffff !important;
                 border-bottom: 1px solid #8a3ffc;
+                font-size: 9pt !important;
+                font-weight: normal !important;
             }
             QMenuBar::item {
-                padding: 5px 10px;
-                color: #ffffff;
+                padding: 4px 8px !important;
+                color: #ffffff !important;
+                background: transparent !important;
+                margin: 0px !important;
+                border: none !important;
+                font-size: 9pt !important;
+                font-weight: normal !important;
+                min-width: 30px !important;
+                min-height: 20px !important;
             }
-            QMenuBar::item:selected {
-                background-color: #007C8A;
-                color: #ffffff;
+            QMenuBar::item:selected,
+            QMenuBar::item:hover {
+                background-color: #007C8A !important;
+                color: #ffffff !important;
+            }
+            QMenuBar::item:pressed {
+                background-color: #8a3ffc !important;
+                color: #ffffff !important;
             }
             QStatusBar {
                 background-color: #1a1a2e;

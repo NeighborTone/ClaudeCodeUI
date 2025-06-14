@@ -16,7 +16,8 @@
       300,
       400,
       500
-    ]
+    ],
+    "language": "en"
   },
   "file_search": {
     "max_results": 10,
