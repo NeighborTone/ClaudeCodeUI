@@ -13,6 +13,8 @@ from PySide6.QtGui import QKeyEvent, QTextCursor, QFont
 
 from core.file_searcher import FileSearcher
 from core.workspace_manager import WorkspaceManager
+from core.token_counter import TokenCounter
+from core.path_converter import PathConverter
 from ui.style_themes import get_completion_widget_style, get_main_font
 
 
@@ -108,6 +110,7 @@ class PromptInputWidget(QWidget):
         self.workspace_manager = workspace_manager
         self.file_searcher = FileSearcher(workspace_manager)
         self.thinking_level = "think"
+        self.path_mode = PathConverter.get_default_mode()
         
         self.file_completion_widget = None
         self.completion_timer = QTimer()
@@ -120,9 +123,17 @@ class PromptInputWidget(QWidget):
         """UIの初期化"""
         layout = QVBoxLayout(self)
         
-        # プロンプト入力エリア
+        # プロンプト入力エリアとトークン数表示
+        header_layout = QHBoxLayout()
         prompt_label = QLabel("プロンプト (Enterで改行, Shift+Enterで生成&コピー):")
-        layout.addWidget(prompt_label)
+        header_layout.addWidget(prompt_label)
+        
+        # トークン数表示ラベル
+        self.token_count_label = QLabel("0トークン")
+        self.token_count_label.setAlignment(Qt.AlignRight)
+        header_layout.addWidget(self.token_count_label)
+        
+        layout.addLayout(header_layout)
         
         self.text_edit = QTextEdit()
         self.text_edit.setAcceptRichText(False)
@@ -188,6 +199,9 @@ class PromptInputWidget(QWidget):
         """Text changed event handler"""
         self.completion_timer.stop()
         
+        # Update token count
+        self.update_token_count()
+        
         # Detect @ at cursor position
         cursor = self.text_edit.textCursor()
         text = self.text_edit.toPlainText()
@@ -242,8 +256,8 @@ class PromptInputWidget(QWidget):
             # Fallback to absolute path if no workspace found
             workspace_relative_path = file_path
         
-        # Convert Windows paths to forward slashes for Claude Code compatibility
-        workspace_relative_path = workspace_relative_path.replace('\\', '/')
+        # Convert path based on selected mode
+        workspace_relative_path = PathConverter.convert_path(workspace_relative_path, self.path_mode)
         
         # Replace @filename with @relative/path in the text
         cursor = self.text_edit.textCursor()
@@ -269,6 +283,8 @@ class PromptInputWidget(QWidget):
     def set_thinking_level(self, level: str):
         """思考レベルを設定"""
         self.thinking_level = level
+        # Update token count when thinking level changes
+        self.update_token_count()
     
     def generate_prompt(self):
         """Generate prompt and copy to clipboard"""
@@ -295,6 +311,7 @@ class PromptInputWidget(QWidget):
         """すべてクリア"""
         self.text_edit.clear()
         self.file_completion_widget.hide()
+        self.update_token_count()
     
     def get_prompt_text(self) -> str:
         """プロンプトテキストを取得"""
@@ -303,3 +320,19 @@ class PromptInputWidget(QWidget):
     def set_prompt_text(self, text: str):
         """プロンプトテキストを設定"""
         self.text_edit.setPlainText(text)
+    
+    def update_token_count(self):
+        """Update token count display"""
+        text = self.text_edit.toPlainText()
+        
+        # Include thinking level in token count if it's not default
+        if self.thinking_level and self.thinking_level != "think":
+            text = f"{self.thinking_level}\n{text}"
+        
+        token_count = TokenCounter.count_tokens(text)
+        formatted_count = TokenCounter.format_token_count(token_count)
+        self.token_count_label.setText(formatted_count)
+    
+    def set_path_mode(self, mode: str):
+        """パスモードを設定"""
+        self.path_mode = mode

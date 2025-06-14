@@ -4,15 +4,100 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
-### Running the Application
+### Running the Application (WSL Environment)
 ```bash
+# Recommended: Use WSL Python
+python3 main.py
+
+# Alternative: Use system Python
 python main.py
+```
+
+### Running the Application (Windows Environment)
+```cmd
+# Use Windows Python
+python main.py
+
+# Or with py launcher
+py main.py
 ```
 
 ### Installing Dependencies
 ```bash
+# WSL environment
+pip3 install -r requirements.txt
+
+# Windows environment
 pip install -r requirements.txt
 ```
+
+### WSL Environment Setup
+For WSL environments, it's recommended to use the WSL Python installation rather than Windows Python:
+
+1. **Install Python in WSL**:
+   ```bash
+   sudo apt update
+   sudo apt install python3 python3-pip
+   ```
+
+2. **Install dependencies in WSL**:
+   ```bash
+   pip3 install -r requirements.txt
+   ```
+
+3. **Run the application**:
+   ```bash
+   python3 main.py
+   ```
+
+### Path Handling
+The application automatically handles path conversion between Windows and WSL formats:
+- **Windows mode**: Uses forward slashes (/) for Claude Code compatibility
+- **WSL mode**: Converts paths to /mnt/c format for WSL compatibility
+- Path mode is automatically detected based on environment
+
+### WSL Python Execution Issues & Solutions
+
+If Claude Code cannot execute Python files from WSL environment, try these solutions:
+
+#### Solution 1: Use WSL Python (Recommended)
+```bash
+# Install Python in WSL
+sudo apt update
+sudo apt install python3 python3-pip
+
+# Install dependencies
+pip3 install -r requirements.txt
+
+# Run application
+python3 main.py
+```
+
+#### Solution 2: Create a run script
+The application can automatically create run scripts for WSL compatibility. Use the Python Helper utility:
+```python
+from core.python_helper import PythonHelper
+script_path = PythonHelper.create_run_script('/path/to/main.py')
+```
+
+#### Solution 3: Use WSL command from Windows
+If you need to run from Windows side, use wsl command:
+```cmd
+wsl python3 /mnt/c/Users/owner/Desktop/PythonTools/ClaudeCodeUI/main.py
+```
+
+#### Solution 4: Check Python executable
+Use the built-in Python environment checker:
+- Go to menu: `HelP → Python実行環境`
+- Check available Python executables
+- Choose the appropriate one for your environment
+
+### Common WSL Issues
+
+1. **Permission Issues**: Ensure proper file permissions in WSL
+2. **Path Conversion**: Use forward slashes (/) for all paths
+3. **Environment Variables**: Some environment variables may not be available
+4. **Dependencies**: Install dependencies in the same environment where Python runs
 
 ### Required Dependencies
 - PySide6 >= 6.5.0 (primary Qt framework)

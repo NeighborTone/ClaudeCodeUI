@@ -27,6 +27,7 @@ class SettingsManager:
             },
             "ui": {
                 "thinking_level": "think",
+                "path_mode": None,  # None means auto-detect
                 "font_size": 10,
                 "font_family": "Consolas",
                 "theme": "cyberpunk"
@@ -142,3 +143,11 @@ class SettingsManager:
     def set_theme(self, theme: str) -> None:
         """テーマを設定"""
         self.set('ui.theme', theme)
+    
+    def get_path_mode(self) -> Optional[str]:
+        """パスモードを取得（None の場合は自動検出）"""
+        return self.get('ui.path_mode', None)
+    
+    def set_path_mode(self, mode: Optional[str]) -> None:
+        """パスモードを設定"""
+        self.set('ui.path_mode', mode)

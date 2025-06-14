@@ -12,9 +12,11 @@ from PySide6.QtGui import QAction, QCloseEvent
 
 from core.workspace_manager import WorkspaceManager
 from core.settings import SettingsManager
+from core.python_helper import PythonHelper
 from widgets.file_tree import FileTreeWidget
 from widgets.prompt_input import PromptInputWidget
 from widgets.thinking_selector import ThinkingSelectorWidget
+from widgets.path_mode_selector import PathModeSelectorWidget
 from ui.style_themes import apply_theme, theme_manager, get_main_font
 
 
@@ -68,8 +70,9 @@ class MainWindow(QMainWindow):
         self.settings_manager = SettingsManager()
         self.workspace_manager = WorkspaceManager()
         
-        # 設定から思考レベルとテーマを復元
+        # 設定から思考レベル、パスモード、テーマを復元
         thinking_level = self.settings_manager.get_thinking_level()
+        path_mode = self.settings_manager.get_path_mode()
         theme_name = self.settings_manager.get_theme()
         
         self.setup_ui()
@@ -83,6 +86,11 @@ class MainWindow(QMainWindow):
         # 思考レベルを設定
         self.thinking_selector.set_thinking_level(thinking_level)
         self.prompt_input.set_thinking_level(thinking_level)
+        
+        # パスモードを設定
+        if path_mode:
+            self.path_mode_selector.set_path_mode(path_mode)
+            self.prompt_input.set_path_mode(path_mode)
         
         # 自動保存タイマー
         self.auto_save_timer = QTimer()
@@ -115,9 +123,18 @@ class MainWindow(QMainWindow):
         right_widget = QWidget()
         right_layout = QVBoxLayout(right_widget)
         
+        # 思考レベル選択とパスモード選択を横並びに配置
+        selector_layout = QHBoxLayout()
+        
         # 思考レベル選択
         self.thinking_selector = ThinkingSelectorWidget()
-        right_layout.addWidget(self.thinking_selector)
+        selector_layout.addWidget(self.thinking_selector)
+        
+        # パスモード選択
+        self.path_mode_selector = PathModeSelectorWidget()
+        selector_layout.addWidget(self.path_mode_selector)
+        
+        right_layout.addLayout(selector_layout)
         
         # プロンプト入力
         self.prompt_input = PromptInputWidget(self.workspace_manager)
@@ -136,6 +153,9 @@ class MainWindow(QMainWindow):
         """イベント接続"""
         # 思考レベル変更
         self.thinking_selector.thinking_level_changed.connect(self.on_thinking_level_changed)
+        
+        # パスモード変更
+        self.path_mode_selector.path_mode_changed.connect(self.on_path_mode_changed)
         
         # プロンプト生成
         self.prompt_input.generate_and_copy.connect(self.on_prompt_generated)
@@ -208,6 +228,13 @@ class MainWindow(QMainWindow):
         usage_action.triggered.connect(self.show_usage)
         help_menu.addAction(usage_action)
         
+        # Python実行環境
+        python_env_action = QAction("Python実行環境(&P)", self)
+        python_env_action.triggered.connect(self.show_python_environment)
+        help_menu.addAction(python_env_action)
+        
+        help_menu.addSeparator()
+        
         # バージョン情報
         about_action = QAction("バージョン情報(&A)", self)
         about_action.triggered.connect(self.show_about)
@@ -244,6 +271,12 @@ class MainWindow(QMainWindow):
         self.settings_manager.set_thinking_level(level)
         self.thinking_level_label.setText(f"思考レベル: {level}")
         self.statusBar().showMessage(f"思考レベルを '{level}' に変更しました", 2000)
+    
+    def on_path_mode_changed(self, mode: str):
+        """パスモードが変更されたとき"""
+        self.prompt_input.set_path_mode(mode)
+        self.settings_manager.set_path_mode(mode)
+        self.statusBar().showMessage(f"パスモードを '{mode}' に変更しました", 2000)
     
     def on_prompt_generated(self, prompt: str, thinking_level: str):
         """プロンプトが生成されたとき"""
@@ -287,6 +320,11 @@ Claude Code PromptUI 使い方
 ■ 思考レベル
 - 右上のドロップダウンで思考レベルを選択
 - 設定は自動保存されます
+
+■ パスモード
+- Windows: 標準的なパス形式で表示
+- WSL: /mnt/c形式でパスを変換
+- 環境に応じて自動選択されます
 
 【思考レベルの詳細】
 ・think - 通常の思考：標準的な応答速度と品質
@@ -336,6 +374,15 @@ Claude Codeのプロンプト入力を改善するためのツールです。
         """
         
         QMessageBox.about(self, "バージョン情報", about_text.strip())
+    
+    def show_python_environment(self):
+        """Python実行環境の情報を表示"""
+        env_info = PythonHelper.get_execution_instructions()
+        
+        dialog = UsageDialog(self)
+        dialog.setWindowTitle("Python実行環境")
+        dialog.set_usage_text(env_info)
+        dialog.exec()
     
     def change_theme(self, theme_name: str):
         """テーマを変更"""
