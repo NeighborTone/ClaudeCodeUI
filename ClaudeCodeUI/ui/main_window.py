@@ -5,7 +5,8 @@ Main Window - Main application window
 import os
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                               QSplitter, QStatusBar, QMenuBar, QMenu, QMessageBox,
-                              QApplication, QLabel)
+                              QApplication, QLabel, QDialog, QScrollArea, QTextEdit,
+                              QPushButton, QDialogButtonBox)
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QCloseEvent
 
@@ -14,7 +15,47 @@ from core.settings import SettingsManager
 from widgets.file_tree import FileTreeWidget
 from widgets.prompt_input import PromptInputWidget
 from widgets.thinking_selector import ThinkingSelectorWidget
-from ui.style_themes import apply_theme, theme_manager
+from ui.style_themes import apply_theme, theme_manager, get_main_font
+
+
+class UsageDialog(QDialog):
+    """使い方を表示するスクロール可能なダイアログ"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("使い方")
+        self.setModal(True)
+        self.resize(700, 500)
+        
+        # メインレイアウト
+        layout = QVBoxLayout(self)
+        
+        # スクロールエリア
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        layout.addWidget(scroll_area)
+        
+        # スクロール内容のウィジェット
+        content_widget = QWidget()
+        scroll_area.setWidget(content_widget)
+        
+        # コンテンツレイアウト
+        content_layout = QVBoxLayout(content_widget)
+        
+        # テキストエディット（読み取り専用）
+        self.text_edit = QTextEdit()
+        self.text_edit.setReadOnly(True)
+        self.text_edit.setFont(get_main_font())
+        content_layout.addWidget(self.text_edit)
+        
+        # ボタンボックス
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok)
+        button_box.accepted.connect(self.accept)
+        layout.addWidget(button_box)
+    
+    def set_usage_text(self, text: str):
+        """使い方テキストを設定"""
+        self.text_edit.setPlainText(text.strip())
 
 
 class MainWindow(QMainWindow):
@@ -279,7 +320,9 @@ Claude Code PromptUI 使い方
 - Ctrl+Q: 終了
         """
         
-        QMessageBox.information(self, "使い方", usage_text.strip())
+        dialog = UsageDialog(self)
+        dialog.set_usage_text(usage_text)
+        dialog.exec()
     
     def show_about(self):
         """バージョン情報を表示"""
