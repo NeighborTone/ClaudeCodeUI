@@ -106,16 +106,6 @@ Use the built-in Python environment checker:
 
 ### New Features (Latest Update)
 
-#### Drag & Drop Functionality
-- **Internal File Drag**: Drag files from the file tree directly to the prompt input area for `@file.ext` insertion
-- **External File Drop**: Drop external files onto the prompt input area to automatically insert them as `@file.ext` references
-- **Folder Drop**: Drop folders onto the file tree area to automatically add them to the workspace
-- **Multiple Files**: Supports dropping multiple files simultaneously
-- **Visual Feedback**: Shows green dashed border during drag operations
-- **Seamless Integration**: Both internal and external drag & drop use the same insertion mechanism
-- **Smart Completion**: Auto-completion is temporarily disabled during drag & drop operations to prevent interference
-- **Input Focus**: Proper focus management ensures keyboard input remains functional after drag & drop
-
 #### File Preview System
 - **Syntax Highlighting**: Supports Python, JavaScript/TypeScript, C/C++ with proper color coding
 - **Large File Handling**: Files over 1MB are partially loaded to prevent performance issues
@@ -167,7 +157,7 @@ This is a PySide6-based desktop application that enhances Claude Code's prompt i
 
 **Widget Layer (`widgets/`)**:
 - `PromptInputWidget`: Rich text editor with real-time file completion and thinking level integration
-- `FileTreeWidget`: Hierarchical workspace browser with drag-drop support
+- `FileTreeWidget`: Hierarchical workspace browser
 - `ThinkingSelectorWidget`: 14-level thinking system for Claude Code prompts
 
 ### Key Design Patterns

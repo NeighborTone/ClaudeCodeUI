@@ -7,51 +7,14 @@ from typing import Optional, List
 from PySide6.QtWidgets import (QTreeWidget, QTreeWidgetItem, QVBoxLayout, 
                               QWidget, QPushButton, QHBoxLayout, QFileDialog,
                               QMenu, QMessageBox)
-from PySide6.QtCore import Signal, Qt, QUrl, QMimeData
-from PySide6.QtGui import QAction, QIcon, QDragEnterEvent, QDropEvent, QDrag
+from PySide6.QtCore import Signal, Qt, QUrl
+from PySide6.QtGui import QAction, QIcon, QDragEnterEvent, QDropEvent
 
 from core.workspace_manager import WorkspaceManager
 
 
-class DraggableTreeWidget(QTreeWidget):
-    """ドラッグ可能なツリーウィジェット"""
-    
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setDragEnabled(True)
-        self.setDragDropMode(QTreeWidget.DragOnly)
-    
-    def startDrag(self, supportedActions):
-        """ドラッグ開始時の処理"""
-        item = self.currentItem()
-        if not item:
-            return
-        
-        # アイテムのデータを取得
-        data = item.data(0, Qt.UserRole)
-        if not data or data.get('type') != 'file':
-            return  # ファイル以外はドラッグしない
-        
-        file_path = data.get('path')
-        if not file_path:
-            return
-        
-        # MimeDataを作成
-        mimeData = QMimeData()
-        # カスタムMIMEタイプでファイルパスを設定
-        mimeData.setData("application/x-internal-file", file_path.encode('utf-8'))
-        mimeData.setText(file_path)  # フォールバック用
-        
-        # ドラッグを開始
-        drag = QDrag(self)
-        drag.setMimeData(mimeData)
-        
-        # ドラッグアクションを実行
-        drag.exec(Qt.CopyAction)
-
-
 class FileTreeWidget(QWidget):
-    """File tree widget with drag & drop support"""
+    """File tree widget"""
     
     file_selected = Signal(str)  # File selected signal
     file_double_clicked = Signal(str)  # File double-clicked signal
@@ -84,8 +47,8 @@ class FileTreeWidget(QWidget):
         
         layout.addLayout(toolbar_layout)
         
-        # ツリーウィジェット（ドラッグ可能）
-        self.tree = DraggableTreeWidget()
+        # ツリーウィジェット
+        self.tree = QTreeWidget()
         self.tree.setHeaderLabel("プロジェクト")
         self.tree.itemClicked.connect(self.on_item_clicked)
         self.tree.itemDoubleClicked.connect(self.on_item_double_clicked)
@@ -227,13 +190,13 @@ class FileTreeWidget(QWidget):
         """ツリーを更新"""
         self.load_workspaces()
     
-    def on_item_clicked(self, item: QTreeWidgetItem, column: int):
+    def on_item_clicked(self, item: QTreeWidgetItem, column: int = 0):
         """アイテムがクリックされたとき"""
         data = item.data(0, Qt.UserRole)
         if data and data['type'] == 'file':
             self.file_selected.emit(data['path'])
     
-    def on_item_double_clicked(self, item: QTreeWidgetItem, column: int):
+    def on_item_double_clicked(self, item: QTreeWidgetItem, column: int = 0):
         """アイテムがダブルクリックされたとき"""
         data = item.data(0, Qt.UserRole)
         if data and data['type'] == 'file':
