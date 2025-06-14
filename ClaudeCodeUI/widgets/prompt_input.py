@@ -8,8 +8,8 @@ from typing import Dict, List, Optional, Callable
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QTextEdit, QPushButton, 
                               QHBoxLayout, QListWidget, QListWidgetItem, 
                               QLabel, QFrame, QSplitter, QApplication)
-from PySide6.QtCore import Signal, Qt, QTimer
-from PySide6.QtGui import QKeyEvent, QTextCursor, QFont
+from PySide6.QtCore import Signal, Qt, QTimer, QMimeData, QUrl
+from PySide6.QtGui import QKeyEvent, QTextCursor, QFont, QDragEnterEvent, QDropEvent
 
 from core.file_searcher import FileSearcher
 from core.workspace_manager import WorkspaceManager
@@ -99,6 +99,74 @@ class FileCompletionWidget(QWidget):
             self.list_widget.setCurrentRow(current_row + 1)
 
 
+class DragDropTextEdit(QTextEdit):
+    """ドラッグ&ドロップ対応のテキストエディット"""
+    
+    files_dropped = Signal(list)  # List of file paths
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAcceptDrops(True)
+        self._drag_active = False
+    
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        """ドラッグイベント開始"""
+        if event.mimeData().hasUrls():
+            urls = event.mimeData().urls()
+            # ファイルのみ受け入れ
+            if any(url.isLocalFile() and os.path.isfile(url.toLocalFile()) for url in urls):
+                self._drag_active = True
+                self.setStyleSheet(self.styleSheet() + """
+                    QTextEdit {
+                        border: 2px dashed #4CAF50;
+                        background-color: rgba(76, 175, 80, 0.1);
+                    }
+                """)
+                event.acceptProposedAction()
+            else:
+                event.ignore()
+        else:
+            event.ignore()
+    
+    def dragLeaveEvent(self, event):
+        """ドラッグ終了"""
+        if self._drag_active:
+            self._drag_active = False
+            # スタイルをリセット
+            style = self.styleSheet()
+            style = re.sub(r'border:\s*2px\s*dashed\s*#4CAF50;', '', style)
+            style = re.sub(r'background-color:\s*rgba\(76,\s*175,\s*80,\s*0\.1\);', '', style)
+            self.setStyleSheet(style)
+        super().dragLeaveEvent(event)
+    
+    def dropEvent(self, event: QDropEvent):
+        """ドロップイベント"""
+        if self._drag_active:
+            self._drag_active = False
+            # スタイルをリセット
+            style = self.styleSheet()
+            style = re.sub(r'border:\s*2px\s*dashed\s*#4CAF50;', '', style)
+            style = re.sub(r'background-color:\s*rgba\(76,\s*175,\s*80,\s*0\.1\);', '', style)
+            self.setStyleSheet(style)
+        
+        if event.mimeData().hasUrls():
+            urls = event.mimeData().urls()
+            file_paths = []
+            for url in urls:
+                if url.isLocalFile():
+                    file_path = url.toLocalFile()
+                    if os.path.isfile(file_path):
+                        file_paths.append(file_path)
+            
+            if file_paths:
+                self.files_dropped.emit(file_paths)
+                event.acceptProposedAction()
+            else:
+                event.ignore()
+        else:
+            event.ignore()
+
+
 class PromptInputWidget(QWidget):
     """プロンプト入力ウィジェット"""
     
@@ -135,15 +203,17 @@ class PromptInputWidget(QWidget):
         
         layout.addLayout(header_layout)
         
-        self.text_edit = QTextEdit()
+        self.text_edit = DragDropTextEdit()
         self.text_edit.setAcceptRichText(False)
+        self.text_edit.files_dropped.connect(self.on_files_dropped)
         
         # プレースホルダーテキスト
         self.text_edit.setPlaceholderText(
             "プロンプトを入力してください...\n"
             "- Enterで改行\n"
             "- Shift+Enterで生成&コピー\n"
-            "- @filename でファイルを指定"
+            "- @filename でファイルを指定\n"
+            "- ファイルをドラッグ&ドロップして追加"
         )
         
         layout.addWidget(self.text_edit)
@@ -336,3 +406,42 @@ class PromptInputWidget(QWidget):
     def set_path_mode(self, mode: str):
         """パスモードを設定"""
         self.path_mode = mode
+    
+    def on_files_dropped(self, file_paths: List[str]):
+        """ファイルがドロップされたときの処理"""
+        if not file_paths:
+            return
+        
+        # 現在のテキストを取得
+        current_text = self.text_edit.toPlainText()
+        
+        # 各ファイルを@file形式で追加
+        file_references = []
+        for file_path in file_paths:
+            # ワークスペースからの相対パスを取得
+            workspace_relative_path = None
+            for workspace in self.workspace_manager.get_workspaces():
+                workspace_path = workspace['path']
+                if file_path.startswith(workspace_path):
+                    workspace_relative_path = os.path.relpath(file_path, workspace_path)
+                    break
+            
+            if workspace_relative_path is None:
+                # ワークスペースが見つからない場合はファイル名のみ
+                workspace_relative_path = os.path.basename(file_path)
+            
+            # パスモードに応じて変換
+            workspace_relative_path = PathConverter.convert_path(workspace_relative_path, self.path_mode)
+            
+            file_references.append(f"@{workspace_relative_path}")
+        
+        # テキストに追加
+        if current_text:
+            new_text = current_text + "\n\n" + "\n".join(file_references)
+        else:
+            new_text = "\n".join(file_references)
+        
+        self.text_edit.setPlainText(new_text)
+        
+        # カーソルを末尾に移動
+        self.text_edit.moveCursor(QTextCursor.End)

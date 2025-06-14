@@ -30,7 +30,9 @@ class SettingsManager:
                 "path_mode": None,  # None means auto-detect
                 "font_size": 10,
                 "font_family": "Consolas",
-                "theme": "cyberpunk"
+                "theme": "cyberpunk",
+                "preview_visible": True,
+                "splitter_sizes": [300, 400, 500]  # [file_tree, preview, prompt_input]
             },
             "file_search": {
                 "max_results": 10,
@@ -151,3 +153,19 @@ class SettingsManager:
     def set_path_mode(self, mode: Optional[str]) -> None:
         """パスモードを設定"""
         self.set('ui.path_mode', mode)
+    
+    def get_preview_visible(self) -> bool:
+        """プレビュー表示状態を取得"""
+        return self.get('ui.preview_visible', True)
+    
+    def set_preview_visible(self, visible: bool) -> None:
+        """プレビュー表示状態を設定"""
+        self.set('ui.preview_visible', visible)
+    
+    def get_splitter_sizes(self) -> list:
+        """スプリッターサイズを取得"""
+        return self.get('ui.splitter_sizes', [300, 400, 500])
+    
+    def set_splitter_sizes(self, sizes: list) -> None:
+        """スプリッターサイズを設定"""
+        self.set('ui.splitter_sizes', sizes)

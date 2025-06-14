@@ -17,6 +17,7 @@ from widgets.file_tree import FileTreeWidget
 from widgets.prompt_input import PromptInputWidget
 from widgets.thinking_selector import ThinkingSelectorWidget
 from widgets.path_mode_selector import PathModeSelectorWidget
+from widgets.file_preview import FilePreviewWidget
 from ui.style_themes import apply_theme, theme_manager, get_main_font
 
 
@@ -70,10 +71,12 @@ class MainWindow(QMainWindow):
         self.settings_manager = SettingsManager()
         self.workspace_manager = WorkspaceManager()
         
-        # 設定から思考レベル、パスモード、テーマを復元
+        # 設定から思考レベル、パスモード、テーマ、プレビュー表示、スプリッターサイズを復元
         thinking_level = self.settings_manager.get_thinking_level()
         path_mode = self.settings_manager.get_path_mode()
         theme_name = self.settings_manager.get_theme()
+        preview_visible = self.settings_manager.get_preview_visible()
+        splitter_sizes = self.settings_manager.get_splitter_sizes()
         
         self.setup_ui()
         self.setup_menu()
@@ -91,6 +94,16 @@ class MainWindow(QMainWindow):
         if path_mode:
             self.path_mode_selector.set_path_mode(path_mode)
             self.prompt_input.set_path_mode(path_mode)
+        
+        # プレビュー表示状態を復元
+        self.file_preview.setVisible(preview_visible)
+        self.preview_action.setChecked(preview_visible)
+        
+        # スプリッターサイズを復元
+        self.main_splitter.setSizes(splitter_sizes)
+        
+        # スプリッターサイズ変更時のシグナル接続
+        self.main_splitter.splitterMoved.connect(self.on_splitter_moved)
         
         # 自動保存タイマー
         self.auto_save_timer = QTimer()
@@ -110,14 +123,19 @@ class MainWindow(QMainWindow):
         main_layout = QHBoxLayout(central_widget)
         
         # スプリッター
-        main_splitter = QSplitter(Qt.Horizontal)
-        main_layout.addWidget(main_splitter)
+        self.main_splitter = QSplitter(Qt.Horizontal)
+        main_layout.addWidget(self.main_splitter)
         
         # 左側：ファイルツリー（WorkspaceManagerを共有）
         self.file_tree = FileTreeWidget(self.workspace_manager)
         self.file_tree.setMinimumWidth(250)
         self.file_tree.setMaximumWidth(400)
-        main_splitter.addWidget(self.file_tree)
+        self.main_splitter.addWidget(self.file_tree)
+        
+        # 中央：プレビューエリア
+        self.file_preview = FilePreviewWidget()
+        self.file_preview.setMinimumWidth(300)
+        self.main_splitter.addWidget(self.file_preview)
         
         # 右側：プロンプト入力エリア
         right_widget = QWidget()
@@ -140,11 +158,12 @@ class MainWindow(QMainWindow):
         self.prompt_input = PromptInputWidget(self.workspace_manager)
         right_layout.addWidget(self.prompt_input)
         
-        main_splitter.addWidget(right_widget)
+        self.main_splitter.addWidget(right_widget)
         
         # スプリッターの初期比率を設定
-        main_splitter.setStretchFactor(0, 0)  # ファイルツリーは固定
-        main_splitter.setStretchFactor(1, 1)  # プロンプト入力エリアは伸縮
+        self.main_splitter.setStretchFactor(0, 0)  # ファイルツリーは固定
+        self.main_splitter.setStretchFactor(1, 1)  # プレビューエリアは伸縮
+        self.main_splitter.setStretchFactor(2, 1)  # プロンプト入力エリアは伸縮
         
         # イベント接続
         self.setup_connections()
@@ -208,6 +227,15 @@ class MainWindow(QMainWindow):
         
         # 表示メニュー
         view_menu = menubar.addMenu("表示(&V)")
+        
+        # プレビュー表示切り替え
+        self.preview_action = QAction("プレビュー表示(&P)", self)
+        self.preview_action.setCheckable(True)
+        self.preview_action.setChecked(True)
+        self.preview_action.triggered.connect(self.toggle_preview)
+        view_menu.addAction(self.preview_action)
+        
+        view_menu.addSeparator()
         
         # テーマメニュー
         theme_menu = view_menu.addMenu("テーマ(&T)")
@@ -287,6 +315,8 @@ class MainWindow(QMainWindow):
     def on_file_selected(self, file_path: str):
         """ファイルが選択されたとき"""
         self.statusBar().showMessage(f"選択: {os.path.basename(file_path)}", 2000)
+        # プレビューを更新
+        self.file_preview.preview_file(file_path)
     
     def on_file_double_clicked(self, file_path: str):
         """ファイルがダブルクリックされたとき"""
@@ -311,11 +341,25 @@ Claude Code PromptUI 使い方
 - Shift+Enterで生成&コピー
 - @filename でファイルを指定
 - 左側のファイルツリーからファイルを選択
+- 中央でファイル内容をプレビュー
+
+■ ドラッグ&ドロップ機能
+- ファイルをプロンプト入力エリアにドロップ：@file形式で自動追加
+- フォルダをファイルツリーエリアにドロップ：ワークスペースに自動追加
+- 複数ファイルの同時ドロップに対応
 
 ■ ファイル指定
 - @を入力すると補完候補が表示されます
 - 矢印キーで選択、Enterで確定
 - Escapeで補完をキャンセル
+
+■ ファイルプレビュー
+- ファイル選択時に自動プレビュー表示
+- シンタックスハイライト対応
+- 大きなファイルは部分読み込み
+- バイナリファイルは16進表示
+- 画像ファイルの情報表示
+- 表示メニューから表示/非表示切り替え可能
 
 ■ 思考レベル
 - 右上のドロップダウンで思考レベルを選択
@@ -398,6 +442,24 @@ Claude Codeのプロンプト入力を改善するためのツールです。
             theme_display_names = theme_manager.get_theme_display_names()
             display_name = theme_display_names.get(theme_name, theme_name)
             self.statusBar().showMessage(f"テーマを '{display_name}' に変更しました", 3000)
+    
+    def toggle_preview(self):
+        """プレビュー表示を切り替え"""
+        is_visible = self.preview_action.isChecked()
+        self.file_preview.setVisible(is_visible)
+        
+        # 設定を保存
+        self.settings_manager.set_preview_visible(is_visible)
+        
+        if is_visible:
+            self.statusBar().showMessage("プレビューを表示しました", 2000)
+        else:
+            self.statusBar().showMessage("プレビューを非表示にしました", 2000)
+    
+    def on_splitter_moved(self, pos: int, index: int):
+        """スプリッターが移動されたとき"""
+        sizes = self.main_splitter.sizes()
+        self.settings_manager.set_splitter_sizes(sizes)
     
     def closeEvent(self, event: QCloseEvent):
         """ウィンドウが閉じられるとき"""

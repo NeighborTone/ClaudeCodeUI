@@ -104,6 +104,49 @@ Use the built-in Python environment checker:
 - PyQt6 >= 6.5.0 (compatibility)
 - watchdog >= 3.0.0 (file system monitoring)
 
+### New Features (Latest Update)
+
+#### Drag & Drop Functionality
+- **File Drop**: Drop files onto the prompt input area to automatically insert them as `@file.ext` references
+- **Folder Drop**: Drop folders onto the file tree area to automatically add them to the workspace
+- **Multiple Files**: Supports dropping multiple files simultaneously
+- **Visual Feedback**: Shows green dashed border during drag operations
+
+#### File Preview System
+- **Syntax Highlighting**: Supports Python, JavaScript/TypeScript, C/C++ with proper color coding
+- **Large File Handling**: Files over 1MB are partially loaded to prevent performance issues
+- **Binary File Detection**: Automatically detects and displays binary files in hex format
+- **Image File Support**: Shows image file information and dimensions
+- **Search Functionality**: Real-time search within file content with highlighting
+- **Toggle Visibility**: Preview pane can be hidden/shown via View menu
+
+#### UI Improvements
+- **Three-Pane Layout**: File Tree | Preview | Prompt Input for better workflow
+- **Enhanced Usability**: Updated placeholders and help text for new features
+- **Responsive Design**: Proper splitter ratios and minimum width constraints
+
+#### Code Architecture Improvements
+
+##### Theme System Refactoring
+- **Modular Theme Structure**: Themes are now separated into individual files in `ui/themes/` package
+- **Base Theme Class**: `BaseTheme` abstract class provides consistent interface for all themes
+- **Easy Theme Addition**: New themes can be added by creating a new file and registering it in `theme_manager.py`
+- **Available Themes**: Light, Dark, Cyberpunk, Nordic (example of extensibility)
+- **Backward Compatibility**: Old `ui/style_themes.py` still works for legacy code
+
+##### File Preview Optimizations
+- **5000 Line Limit**: Text files display up to 5000 lines for better performance
+- **Smart Interruption**: Files over 10MB or binary files show "プレビューを中断しました" message
+- **Better Error Handling**: Graceful fallback for unsupported file types
+- **Performance**: Reduced memory usage for large files
+
+##### Settings Persistence Enhancement
+- **Theme Settings**: Selected theme is automatically saved and restored on restart
+- **Preview Visibility**: Preview pane visibility state is saved in settings.json
+- **Splitter Sizes**: Main splitter sizes are saved and restored for consistent layout
+- **Comprehensive State**: Window geometry, thinking level, path mode, and all UI preferences persist
+- **Auto-save**: Settings are automatically saved every 30 seconds and on application close
+
 ## Architecture Overview
 
 This is a PySide6-based desktop application that enhances Claude Code's prompt input functionality. The architecture follows a **layered MVC pattern** with signal-driven component communication.

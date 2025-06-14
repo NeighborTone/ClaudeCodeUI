@@ -198,3 +198,6 @@ config/*~
 # User-specific configuration files (auto-generated)
 ClaudeCodeUI/config/settings.json
 ClaudeCodeUI/config/workspace.json
+
+# Claude Code settings (auto-generated)
+.claude/
