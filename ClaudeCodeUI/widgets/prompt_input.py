@@ -31,7 +31,7 @@ class FileCompletionWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
         
-        self.label = QLabel("ファイルを選択:")
+        self.label = QLabel("ファイル・フォルダを選択:")
         layout.addWidget(self.label)
         
         self.list_widget = QListWidget()
@@ -58,7 +58,16 @@ class FileCompletionWidget(QWidget):
         
         for match in matches:
             item = QListWidgetItem()
-            item.setText(f"{match['name']} ({match['workspace']})")
+            # ファイルとフォルダを区別する表示
+            item_type = match.get('type', 'file')
+            if item_type == 'folder':
+                icon = "📁"
+                type_indicator = " (フォルダ)"
+            else:
+                icon = "📄"
+                type_indicator = " (ファイル)"
+            
+            item.setText(f"{icon} {match['name']}{type_indicator} ({match['workspace']})")
             item.setData(Qt.UserRole, match)
             self.list_widget.addItem(item)
         
@@ -237,7 +246,7 @@ class PromptInputWidget(QWidget):
             "プロンプトを入力してください...\n"
             "- Enterで改行\n"
             "- Shift+Enterで生成&コピー\n"
-            "- @filename でファイルを指定\n"
+            "- @filename でファイル・フォルダを指定\n"
             "- ファイルツリーからドラッグ&ドロップ\n"
             "- 外部ファイルもドラッグ&ドロップ対応"
         )
@@ -343,8 +352,8 @@ class PromptInputWidget(QWidget):
             self.file_completion_widget.show_completions(filename, matches, global_pos)
     
     def on_file_selected(self, filename: str, file_path: str):
-        """File selected event handler"""
-        # Find the workspace root for this file to create relative path
+        """File or folder selected event handler"""
+        # Find the workspace root for this file/folder to create relative path
         workspace_relative_path = None
         for workspace in self.workspace_manager.get_workspaces():
             workspace_path = workspace['path']
@@ -367,10 +376,10 @@ class PromptInputWidget(QWidget):
         if hasattr(self, 'current_at_match'):
             start, end = self.current_at_match.span()
             
-            # Create the replacement text with file path (Claude Code format)
+            # Create the replacement text with file/folder path (Claude Code format)
             replacement_text = f"@{workspace_relative_path}"
             
-            # Replace the @filename with the file path
+            # Replace the @filename with the file/folder path
             new_text = text[:start] + replacement_text + text[end:]
             self.text_edit.setPlainText(new_text)
             

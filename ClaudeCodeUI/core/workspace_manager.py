@@ -173,3 +173,82 @@ class WorkspaceManager:
         
         print(f"Found {len(results)} matching files")
         return results
+    
+    def get_all_folders(self) -> List[Dict[str, str]]:
+        """Get all folders from all workspaces"""
+        folders = []
+        
+        print(f"WorkspaceManager.get_all_folders called with {len(self.workspaces)} workspaces")
+        
+        for workspace in self.workspaces:
+            workspace_path = workspace['path']
+            print(f"Processing workspace folders: {workspace['name']} at {workspace_path}")
+            
+            if not os.path.exists(workspace_path):
+                print(f"Workspace path does not exist: {workspace_path}")
+                continue
+                
+            workspace_folder_count = 0
+            for root, dirs, file_list in os.walk(workspace_path):
+                # Exclude hidden directories and build/cache directories
+                dirs[:] = [d for d in dirs if not d.startswith('.') and d not in [
+                    'node_modules', '__pycache__', 'Binaries', 'Intermediate', 
+                    'Saved', 'DerivedDataCache', '.vs', 'obj', 'bin'
+                ]]
+                
+                for dir_name in dirs:
+                    dir_path = os.path.join(root, dir_name)
+                    relative_path = os.path.relpath(dir_path, workspace_path)
+                    
+                    folders.append({
+                        'name': dir_name,
+                        'path': dir_path,
+                        'relative_path': relative_path,
+                        'workspace': workspace['name'],
+                        'type': 'folder'
+                    })
+                    workspace_folder_count += 1
+            
+            print(f"Found {workspace_folder_count} folders in workspace {workspace['name']}")
+        
+        print(f"Total folders found: {len(folders)}")
+        return folders
+    
+    def search_folders(self, query: str) -> List[Dict[str, str]]:
+        """Search folders by name"""
+        print(f"WorkspaceManager.search_folders called with query: '{query}'")
+        
+        all_folders = self.get_all_folders()
+        print(f"Got {len(all_folders)} folders to search in")
+        
+        query_lower = query.lower()
+        
+        results = []
+        for folder_info in all_folders:
+            folder_name_lower = folder_info['name'].lower()
+            relative_path_lower = folder_info['relative_path'].lower()
+            
+            if query_lower in folder_name_lower or query_lower in relative_path_lower:
+                results.append(folder_info)
+                print(f"  Folder match found: {folder_info['name']} (workspace: {folder_info['workspace']})")
+        
+        print(f"Found {len(results)} matching folders")
+        return results
+    
+    def search_files_and_folders(self, query: str, extensions: Optional[List[str]] = None) -> List[Dict[str, str]]:
+        """Search both files and folders by name"""
+        print(f"WorkspaceManager.search_files_and_folders called with query: '{query}'")
+        
+        # Get both files and folders
+        files = self.search_files(query, extensions)
+        folders = self.search_folders(query)
+        
+        # Add type information to files
+        for file_info in files:
+            file_info['type'] = 'file'
+        
+        # Combine results
+        all_results = files + folders
+        
+        print(f"Combined search found {len(files)} files and {len(folders)} folders")
+        return all_results

@@ -33,48 +33,54 @@ class FileSearcher:
     
     def search_files_by_name(self, query: str) -> List[Dict[str, str]]:
         """
-        Search files by name
+        Search files and folders by name
         """
         if not query:
             return []
         
-        # Search for files matching the query
-        results = self.workspace_manager.search_files(query)
+        # Search for both files and folders matching the query
+        results = self.workspace_manager.search_files_and_folders(query)
         
         # Score the results
         scored_results = []
-        for file_info in results:
-            score = self._calculate_relevance_score(query, file_info)
-            scored_results.append((score, file_info))
+        for item_info in results:
+            score = self._calculate_relevance_score(query, item_info)
+            scored_results.append((score, item_info))
         
-        # Sort by score
+        # Sort by score (folders get slight priority boost)
         scored_results.sort(key=lambda x: x[0], reverse=True)
         
         # 上位結果を返す
         return [result[1] for result in scored_results[:self.max_results]]
     
-    def _calculate_relevance_score(self, query: str, file_info: Dict[str, str]) -> float:
-        """ファイルの関連性スコアを計算"""
+    def _calculate_relevance_score(self, query: str, item_info: Dict[str, str]) -> float:
+        """ファイル・フォルダの関連性スコアを計算"""
         score = 0.0
         query_lower = query.lower()
-        filename = file_info['name'].lower()
-        relative_path = file_info['relative_path'].lower()
+        item_name = item_info['name'].lower()
+        relative_path = item_info['relative_path'].lower()
+        item_type = item_info.get('type', 'file')
         
-        # 完全一致（拡張子なし）
-        name_without_ext = os.path.splitext(filename)[0]
-        if query_lower == name_without_ext:
+        # フォルダの場合は少しボーナス点を与える
+        if item_type == 'folder':
+            score += 5
+        
+        # 完全一致
+        if query_lower == item_name:
             score += 100
         
-        # 完全一致（拡張子込み）
-        if query_lower == filename:
-            score += 90
+        # ファイルの場合は拡張子なしでの一致もチェック
+        if item_type == 'file':
+            name_without_ext = os.path.splitext(item_name)[0]
+            if query_lower == name_without_ext:
+                score += 95
         
-        # ファイル名の開始位置での一致
-        if filename.startswith(query_lower):
+        # 名前の開始位置での一致
+        if item_name.startswith(query_lower):
             score += 80
         
-        # ファイル名に含まれる
-        if query_lower in filename:
+        # 名前に含まれる
+        if query_lower in item_name:
             score += 60
         
         # パスに含まれる
@@ -82,10 +88,10 @@ class FileSearcher:
             score += 40
         
         # 部分一致（単語境界）
-        if re.search(r'\b' + re.escape(query_lower), filename):
+        if re.search(r'\b' + re.escape(query_lower), item_name):
             score += 30
         
-        # ファイルの深さによる調整（浅い方が高スコア）
+        # 深さによる調整（浅い方が高スコア）
         depth = relative_path.count('/')
         score -= depth * 5
         
