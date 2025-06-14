@@ -7,10 +7,47 @@ from typing import Optional, List
 from PySide6.QtWidgets import (QTreeWidget, QTreeWidgetItem, QVBoxLayout, 
                               QWidget, QPushButton, QHBoxLayout, QFileDialog,
                               QMenu, QMessageBox)
-from PySide6.QtCore import Signal, Qt, QUrl
-from PySide6.QtGui import QAction, QIcon, QDragEnterEvent, QDropEvent
+from PySide6.QtCore import Signal, Qt, QUrl, QMimeData
+from PySide6.QtGui import QAction, QIcon, QDragEnterEvent, QDropEvent, QDrag
 
 from core.workspace_manager import WorkspaceManager
+
+
+class DraggableTreeWidget(QTreeWidget):
+    """ドラッグ可能なツリーウィジェット"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setDragEnabled(True)
+        self.setDragDropMode(QTreeWidget.DragOnly)
+    
+    def startDrag(self, supportedActions):
+        """ドラッグ開始時の処理"""
+        item = self.currentItem()
+        if not item:
+            return
+        
+        # アイテムのデータを取得
+        data = item.data(0, Qt.UserRole)
+        if not data or data.get('type') != 'file':
+            return  # ファイル以外はドラッグしない
+        
+        file_path = data.get('path')
+        if not file_path:
+            return
+        
+        # MimeDataを作成
+        mimeData = QMimeData()
+        # カスタムMIMEタイプでファイルパスを設定
+        mimeData.setData("application/x-internal-file", file_path.encode('utf-8'))
+        mimeData.setText(file_path)  # フォールバック用
+        
+        # ドラッグを開始
+        drag = QDrag(self)
+        drag.setMimeData(mimeData)
+        
+        # ドラッグアクションを実行
+        drag.exec(Qt.CopyAction)
 
 
 class FileTreeWidget(QWidget):
@@ -47,8 +84,8 @@ class FileTreeWidget(QWidget):
         
         layout.addLayout(toolbar_layout)
         
-        # ツリーウィジェット
-        self.tree = QTreeWidget()
+        # ツリーウィジェット（ドラッグ可能）
+        self.tree = DraggableTreeWidget()
         self.tree.setHeaderLabel("プロジェクト")
         self.tree.itemClicked.connect(self.on_item_clicked)
         self.tree.itemDoubleClicked.connect(self.on_item_double_clicked)

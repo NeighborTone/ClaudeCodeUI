@@ -111,7 +111,18 @@ class DragDropTextEdit(QTextEdit):
     
     def dragEnterEvent(self, event: QDragEnterEvent):
         """ドラッグイベント開始"""
-        if event.mimeData().hasUrls():
+        # 内部ドラッグ&ドロップ（ファイルツリーから）をチェック
+        if event.mimeData().hasFormat("application/x-internal-file"):
+            self._drag_active = True
+            self.setStyleSheet(self.styleSheet() + """
+                QTextEdit {
+                    border: 2px dashed #4CAF50;
+                    background-color: rgba(76, 175, 80, 0.1);
+                }
+            """)
+            event.acceptProposedAction()
+        # 外部ドラッグ&ドロップ（エクスプローラーから）をチェック
+        elif event.mimeData().hasUrls():
             urls = event.mimeData().urls()
             # ファイルのみ受け入れ
             if any(url.isLocalFile() and os.path.isfile(url.toLocalFile()) for url in urls):
@@ -149,7 +160,18 @@ class DragDropTextEdit(QTextEdit):
             style = re.sub(r'background-color:\s*rgba\(76,\s*175,\s*80,\s*0\.1\);', '', style)
             self.setStyleSheet(style)
         
-        if event.mimeData().hasUrls():
+        # 内部ドラッグ&ドロップ（ファイルツリーから）を処理
+        if event.mimeData().hasFormat("application/x-internal-file"):
+            file_path_bytes = event.mimeData().data("application/x-internal-file")
+            file_path = file_path_bytes.data().decode('utf-8')
+            
+            if file_path and os.path.isfile(file_path):
+                self.files_dropped.emit([file_path])
+                event.acceptProposedAction()
+            else:
+                event.ignore()
+        # 外部ドラッグ&ドロップ（エクスプローラーから）を処理
+        elif event.mimeData().hasUrls():
             urls = event.mimeData().urls()
             file_paths = []
             for url in urls:
@@ -185,6 +207,9 @@ class PromptInputWidget(QWidget):
         self.completion_timer.setSingleShot(True)
         self.completion_timer.timeout.connect(self.show_file_completions)
         
+        # ドラッグ&ドロップ時の補完無効化フラグ
+        self._disable_completion = False
+        
         self.setup_ui()
     
     def setup_ui(self):
@@ -213,7 +238,8 @@ class PromptInputWidget(QWidget):
             "- Enterで改行\n"
             "- Shift+Enterで生成&コピー\n"
             "- @filename でファイルを指定\n"
-            "- ファイルをドラッグ&ドロップして追加"
+            "- ファイルツリーからドラッグ&ドロップ\n"
+            "- 外部ファイルもドラッグ&ドロップ対応"
         )
         
         layout.addWidget(self.text_edit)
@@ -271,6 +297,11 @@ class PromptInputWidget(QWidget):
         
         # Update token count
         self.update_token_count()
+        
+        # ドラッグ&ドロップ時は補完を無効化
+        if self._disable_completion:
+            self.file_completion_widget.hide()
+            return
         
         # Detect @ at cursor position
         cursor = self.text_edit.textCursor()
@@ -412,6 +443,13 @@ class PromptInputWidget(QWidget):
         if not file_paths:
             return
         
+        # 補完を一時的に無効化
+        self._disable_completion = True
+        
+        # 補完関連を停止・非表示
+        self.completion_timer.stop()
+        self.file_completion_widget.hide()
+        
         # 現在のテキストを取得
         current_text = self.text_edit.toPlainText()
         
@@ -445,3 +483,13 @@ class PromptInputWidget(QWidget):
         
         # カーソルを末尾に移動
         self.text_edit.moveCursor(QTextCursor.End)
+        
+        # フォーカスを設定してキーボード入力を有効化
+        self.text_edit.setFocus()
+        
+        # 補完を再有効化（少し遅延させる）
+        def re_enable_completion():
+            self._disable_completion = False
+        
+        # 500ms後に補完を再有効化
+        QTimer.singleShot(500, re_enable_completion)
