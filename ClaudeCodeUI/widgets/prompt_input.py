@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-New Prompt Input Widget - 根本から作り直したプロンプト入力ウィジェット
+Prompt Input Widget - プロンプト入力ウィジェット
 """
 import os
 import re
@@ -108,7 +108,7 @@ class SimpleCompletionWidget(QWidget):
 
 
 class PromptInputWidget(QWidget):
-    """新しいプロンプト入力ウィジェット"""
+    """プロンプト入力ウィジェット"""
     
     generate_and_copy = Signal(str, str)
     
@@ -234,8 +234,8 @@ class PromptInputWidget(QWidget):
             cursor = self.text_edit.textCursor()
             cursor_rect = self.text_edit.cursorRect(cursor)
             bottom_left = cursor_rect.bottomLeft()
-            # 入力中の文字にかぶらないよう少し下にオフセット
-            bottom_left.setY(bottom_left.y() + 8)  # 8ピクセル下げる
+            # 補完ウィジェットの位置調整
+            bottom_left.setY(bottom_left.y() + 8)
             global_pos = self.text_edit.mapToGlobal(bottom_left)
             
             self.completion_widget.show_items(matches, global_pos)
