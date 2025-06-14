@@ -147,6 +147,13 @@ class FileTreeWidget(QWidget):
                 '.uproject', '.uplugin', '.uasset', '.umap', '.ucpp',
                 '.build', '.target', '.ini', '.cfg', '.config',
                 
+                # Unity files
+                '.unity', '.prefab', '.asset', '.mat', '.anim', '.controller',
+                '.overrideController', '.mask', '.physicMaterial', '.physicsMaterial2D',
+                '.guiskin', '.fontsettings', '.cubemap', '.flare', '.preset',
+                '.playable', '.signal', '.mixer', '.cs.meta', '.unity.meta',
+                '.prefab.meta', '.asset.meta', '.mat.meta', '.anim.meta',
+                
                 # Config and data files
                 '.json', '.yaml', '.yml', '.xml', '.toml',
                 '.csv', '.txt', '.md', '.rst',
@@ -156,7 +163,19 @@ class FileTreeWidget(QWidget):
                 '.pro', '.pri', '.qmake',
                 
                 # Shaders
-                '.hlsl', '.glsl', '.shader', '.cginc', '.compute'
+                '.hlsl', '.glsl', '.shader', '.cginc', '.compute',
+                
+                # Image files
+                '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif',
+                '.webp', '.svg', '.ico', '.psd', '.ai', '.eps',
+                
+                # Audio files
+                '.wav', '.mp3', '.flac', '.aac', '.ogg', '.wma',
+                '.m4a', '.opus', '.aiff', '.au',
+                
+                # Video files
+                '.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv',
+                '.webm', '.m4v', '.3gp', '.ogv'
             }
             
             for file_name, file_path in files:
