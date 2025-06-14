@@ -11,6 +11,7 @@ from PySide6.QtCore import Signal, Qt, QUrl
 from PySide6.QtGui import QAction, QIcon, QDragEnterEvent, QDropEvent
 
 from core.workspace_manager import WorkspaceManager
+from core.ui_strings import tr
 
 
 class FileTreeWidget(QWidget):
@@ -37,11 +38,11 @@ class FileTreeWidget(QWidget):
         # ツールバー
         toolbar_layout = QHBoxLayout()
         
-        self.add_workspace_btn = QPushButton("フォルダ追加")
+        self.add_workspace_btn = QPushButton(tr("button_add_folder"))
         self.add_workspace_btn.clicked.connect(self.add_workspace)
         toolbar_layout.addWidget(self.add_workspace_btn)
         
-        self.refresh_btn = QPushButton("更新")
+        self.refresh_btn = QPushButton(tr("button_refresh"))
         self.refresh_btn.clicked.connect(self.refresh_tree)
         toolbar_layout.addWidget(self.refresh_btn)
         
@@ -49,7 +50,7 @@ class FileTreeWidget(QWidget):
         
         # ツリーウィジェット
         self.tree = QTreeWidget()
-        self.tree.setHeaderLabel("プロジェクト")
+        self.tree.setHeaderLabel(tr("tree_header"))
         self.tree.itemClicked.connect(self.on_item_clicked)
         self.tree.itemDoubleClicked.connect(self.on_item_double_clicked)
         self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -57,10 +58,16 @@ class FileTreeWidget(QWidget):
         
         layout.addWidget(self.tree)
     
+    def update_language(self):
+        """言語変更時にUIを更新"""
+        self.add_workspace_btn.setText(tr("button_add_folder"))
+        self.refresh_btn.setText(tr("button_refresh"))
+        self.tree.setHeaderLabel(tr("tree_header"))
+    
     def add_workspace(self):
         """ワークスペースを追加"""
         folder_path = QFileDialog.getExistingDirectory(
-            self, "プロジェクトフォルダを選択", os.path.expanduser("~")
+            self, tr("dialog_select_folder"), os.path.expanduser("~")
         )
         
         if folder_path:
@@ -70,7 +77,7 @@ class FileTreeWidget(QWidget):
                 from PySide6.QtCore import QCoreApplication
                 QCoreApplication.processEvents()
             else:
-                QMessageBox.warning(self, "警告", "このフォルダは既に追加されています。")
+                QMessageBox.warning(self, tr("dialog_warning"), tr("msg_folder_already_exists"))
     
     def load_workspaces(self):
         """ワークスペースを読み込んでツリーに表示"""
@@ -234,12 +241,12 @@ class FileTreeWidget(QWidget):
         menu = QMenu()
         
         if data['type'] == 'workspace':
-            remove_action = QAction("ワークスペースを削除", self)
+            remove_action = QAction(tr("context_remove_workspace"), self)
             remove_action.triggered.connect(lambda: self.remove_workspace(data['path']))
             menu.addAction(remove_action)
         
         elif data['type'] == 'file':
-            copy_path_action = QAction("パスをコピー", self)
+            copy_path_action = QAction(tr("context_copy_path"), self)
             copy_path_action.triggered.connect(lambda: self.copy_path_to_clipboard(data['path']))
             menu.addAction(copy_path_action)
         
@@ -248,8 +255,8 @@ class FileTreeWidget(QWidget):
     def remove_workspace(self, path: str):
         """ワークスペースを削除"""
         reply = QMessageBox.question(
-            self, "確認", 
-            f"ワークスペースを削除しますか？\n{path}",
+            self, tr("dialog_confirm"), 
+            tr("msg_confirm_remove_workspace", path=path),
             QMessageBox.Yes | QMessageBox.No
         )
         
@@ -300,13 +307,13 @@ class FileTreeWidget(QWidget):
             from PySide6.QtCore import QCoreApplication
             QCoreApplication.processEvents()  # Process UI updates immediately
             QMessageBox.information(
-                self, "Success", 
-                f"{added_count} folder(s) added to workspace"
+                self, tr("dialog_success"), 
+                tr("msg_folders_added", count=added_count)
             )
         else:
             QMessageBox.warning(
-                self, "Warning", 
-                "No valid folders were dropped or folders already exist"
+                self, tr("dialog_warning"), 
+                tr("msg_no_valid_folders")
             )
         
         event.acceptProposedAction()

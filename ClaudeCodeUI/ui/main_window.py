@@ -14,6 +14,8 @@ from core.workspace_manager import WorkspaceManager
 from core.settings import SettingsManager
 from core.python_helper import PythonHelper
 from core.path_converter import PathConverter
+from core.language_manager import get_language_manager, set_language_manager
+from core.ui_strings import tr
 from widgets.file_tree import FileTreeWidget
 from widgets.prompt_input import PromptInputWidget
 from widgets.thinking_selector import ThinkingSelectorWidget
@@ -27,7 +29,7 @@ class UsageDialog(QDialog):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("使い方")
+        self.setWindowTitle(tr("usage_title"))
         self.setModal(True)
         self.resize(700, 500)
         
@@ -71,6 +73,13 @@ class MainWindow(QMainWindow):
         # 設定とマネージャー
         self.settings_manager = SettingsManager()
         self.workspace_manager = WorkspaceManager()
+        
+        # 言語マネージャーを初期化
+        self.language_manager = get_language_manager(self.settings_manager)
+        set_language_manager(self.language_manager)
+        
+        # 言語変更時のコールバックを登録
+        self.language_manager.register_language_change_callback("main_window", self._on_language_changed)
         
         # 設定から思考レベル、パスモード、テーマ、プレビュー表示、スプリッターサイズを復元
         thinking_level = self.settings_manager.get_thinking_level()
@@ -189,16 +198,16 @@ class MainWindow(QMainWindow):
         menubar = self.menuBar()
         
         # ファイルメニュー
-        file_menu = menubar.addMenu("ファイル(&F)")
+        file_menu = menubar.addMenu(tr("menu_file"))
         
         # ワークスペース追加
-        add_workspace_action = QAction("ワークスペース追加(&A)", self)
+        add_workspace_action = QAction(tr("menu_add_workspace"), self)
         add_workspace_action.setShortcut("Ctrl+O")
         add_workspace_action.triggered.connect(self.file_tree.add_workspace)
         file_menu.addAction(add_workspace_action)
         
         # 更新
-        refresh_action = QAction("更新(&R)", self)
+        refresh_action = QAction(tr("button_refresh"), self)
         refresh_action.setShortcut("F5")
         refresh_action.triggered.connect(self.file_tree.refresh_tree)
         file_menu.addAction(refresh_action)
@@ -206,31 +215,31 @@ class MainWindow(QMainWindow):
         file_menu.addSeparator()
         
         # 終了
-        exit_action = QAction("終了(&X)", self)
+        exit_action = QAction(tr("menu_exit"), self)
         exit_action.setShortcut("Ctrl+Q")
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
         
         # 編集メニュー
-        edit_menu = menubar.addMenu("編集(&E)")
+        edit_menu = menubar.addMenu(tr("menu_edit"))
         
         # クリア
-        clear_action = QAction("クリア(&C)", self)
+        clear_action = QAction(tr("button_clear"), self)
         clear_action.setShortcut("Ctrl+Shift+C")
         clear_action.triggered.connect(self.prompt_input.clear_all)
         edit_menu.addAction(clear_action)
         
         # 生成&コピー
-        generate_action = QAction("生成&コピー(&G)", self)
+        generate_action = QAction(tr("button_generate"), self)
         generate_action.setShortcut("Shift+Return")
         generate_action.triggered.connect(self.prompt_input.generate_prompt)
         edit_menu.addAction(generate_action)
         
         # 表示メニュー
-        view_menu = menubar.addMenu("表示(&V)")
+        view_menu = menubar.addMenu(tr("menu_view"))
         
         # プレビュー表示切り替え
-        self.preview_action = QAction("プレビュー表示(&P)", self)
+        self.preview_action = QAction(tr("menu_toggle_preview"), self)
         self.preview_action.setCheckable(True)
         self.preview_action.setChecked(True)
         self.preview_action.triggered.connect(self.toggle_preview)
@@ -239,7 +248,7 @@ class MainWindow(QMainWindow):
         view_menu.addSeparator()
         
         # テーマメニュー
-        theme_menu = view_menu.addMenu("テーマ(&T)")
+        theme_menu = view_menu.addMenu(tr("menu_theme"))
         theme_names = theme_manager.get_theme_names()
         theme_display_names = theme_manager.get_theme_display_names()
         
@@ -249,32 +258,54 @@ class MainWindow(QMainWindow):
             theme_action.triggered.connect(lambda checked, t=theme_name: self.change_theme(t))
             theme_menu.addAction(theme_action)
         
+        # 設定メニュー
+        settings_menu = menubar.addMenu(tr("menu_settings"))
+        
+        # 言語メニュー
+        language_menu = settings_menu.addMenu(tr("menu_language"))
+        
+        # 日本語
+        japanese_action = QAction(tr("menu_language_japanese"), self)
+        japanese_action.triggered.connect(lambda: self.language_manager.set_language("ja"))
+        language_menu.addAction(japanese_action)
+        
+        # 英語
+        english_action = QAction(tr("menu_language_english"), self)
+        english_action.triggered.connect(lambda: self.language_manager.set_language("en"))
+        language_menu.addAction(english_action)
+        
         # ヘルプメニュー
-        help_menu = menubar.addMenu("ヘルプ(&H)")
+        help_menu = menubar.addMenu(tr("menu_help"))
         
         # 使い方
-        usage_action = QAction("使い方(&U)", self)
+        usage_action = QAction(tr("menu_usage"), self)
         usage_action.triggered.connect(self.show_usage)
         help_menu.addAction(usage_action)
         
         # Python実行環境
-        python_env_action = QAction("Python実行環境(&P)", self)
+        python_env_action = QAction(tr("menu_python_env"), self)
         python_env_action.triggered.connect(self.show_python_environment)
         help_menu.addAction(python_env_action)
         
         help_menu.addSeparator()
         
         # バージョン情報
-        about_action = QAction("バージョン情報(&A)", self)
+        about_action = QAction(tr("menu_about"), self)
         about_action.triggered.connect(self.show_about)
         help_menu.addAction(about_action)
     
     def setup_status_bar(self):
         """ステータスバーの設定"""
-        self.statusBar().showMessage("準備完了")
+        self.statusBar().showMessage(tr("status_ready"))
+        
+        # 既存のpermanentウィジェットをクリア
+        self.statusBar().clearMessage()
+        for widget in self.statusBar().findChildren(QLabel):
+            self.statusBar().removeWidget(widget)
+            widget.deleteLater()
         
         # 思考レベル表示
-        self.thinking_level_label = QLabel("思考レベル: think")
+        self.thinking_level_label = QLabel(f"{tr('label_thinking_level')} think")
         self.statusBar().addPermanentWidget(self.thinking_level_label)
     
     def load_window_geometry(self):
@@ -298,24 +329,24 @@ class MainWindow(QMainWindow):
         """思考レベルが変更されたとき"""
         self.prompt_input.set_thinking_level(level)
         self.settings_manager.set_thinking_level(level)
-        self.thinking_level_label.setText(f"思考レベル: {level}")
-        self.statusBar().showMessage(f"思考レベルを '{level}' に変更しました", 2000)
+        self.thinking_level_label.setText(f"{tr('label_thinking_level')} {level}")
+        self.statusBar().showMessage(tr("status_thinking_level_changed", level=level), 2000)
     
     def on_path_mode_changed(self, mode: str):
         """パスモードが変更されたとき"""
         self.prompt_input.set_path_mode(mode)
         self.settings_manager.set_path_mode(mode)
-        self.statusBar().showMessage(f"パスモードを '{mode}' に変更しました", 2000)
+        self.statusBar().showMessage(tr("status_path_mode_changed", mode=mode), 2000)
     
     def on_prompt_generated(self, prompt: str, thinking_level: str):
         """プロンプトが生成されたとき"""
         lines = len(prompt.split('\n'))
         chars = len(prompt)
-        self.statusBar().showMessage(f"プロンプトをクリップボードにコピーしました ({lines}行, {chars}文字)", 3000)
+        self.statusBar().showMessage(tr("status_prompt_copied", lines=lines, chars=chars), 3000)
     
     def on_file_selected(self, file_path: str):
         """ファイルが選択されたとき"""
-        self.statusBar().showMessage(f"選択: {os.path.basename(file_path)}", 2000)
+        self.statusBar().showMessage(tr("status_file_selected", filename=os.path.basename(file_path)), 2000)
         # プレビューを更新
         self.file_preview.preview_file(file_path)
     
@@ -344,73 +375,32 @@ class MainWindow(QMainWindow):
         
         # オートコンプリートを一時的に無効化してテキストを設定
         self.prompt_input.set_text_without_completion(new_text)
-        self.statusBar().showMessage(f"ファイルをプロンプトに追加: {workspace_relative_path}", 2000)
+        self.statusBar().showMessage(tr("status_file_added", filename=workspace_relative_path), 2000)
+    
+    def _on_language_changed(self, language):
+        """言語変更時のコールバック"""
+        # メニューを再構築
+        self.menuBar().clear()
+        self.setup_menu()
+        
+        # メニュー再構築後にテーマスタイルを再適用
+        apply_theme(self)
+        
+        # ステータスバーを更新
+        self.setup_status_bar()
+        
+        # 子ウィジェットの言語を更新
+        self.file_tree.update_language()
+        self.prompt_input.update_language()
+        self.thinking_selector.update_language()
+        self.path_mode_selector.update_language()
+        
+        # 状態メッセージを更新
+        self.statusBar().showMessage(tr("status_language_changed", language=language), 3000)
     
     def show_usage(self):
         """使い方を表示"""
-        usage_text = """
-Claude Code PromptUI 使い方
-
-■ 基本操作
-- Enterで改行
-- Shift+Enterで生成&コピー
-- @filename でファイルを指定
-- 左側のファイルツリーからファイルを選択
-- 中央でファイル内容をプレビュー
-
-■ ファイル指定
-- @を入力すると補完候補が表示されます
-- 矢印キーで選択、Enterで確定
-- Escapeで補完をキャンセル
-
-■ ファイルプレビュー
-- ファイル選択時に自動プレビュー表示
-- シンタックスハイライト対応
-- 大きなファイルは部分読み込み
-- バイナリファイルは16進表示
-- 画像ファイルの情報表示
-- 表示メニューから表示/非表示切り替え可能
-
-■ 思考レベル
-- 右上のドロップダウンで思考レベルを選択
-- 設定は自動保存されます
-
-■ パスモード
-- Windows: 標準的なパス形式で表示
-- WSL: /mnt/c形式でパスを変換
-- 環境に応じて自動選択されます
-
-【思考レベルの詳細】
-・think - 通常の思考：標準的な応答速度と品質
-・think more - もう少し考える：通常より少し詳細な分析
-・think harder - より深く考える：問題をより深く掘り下げる
-・think hard - しっかり考える：慎重に問題を検討
-・think deeply - 深く考える：複雑な問題に対して深い分析
-・think intensely - 集中的に考える：高い集中力で問題に取り組む
-・think longer - 長時間考える：時間をかけてじっくり検討
-・think a lot - たくさん考える：多角的な視点から検討
-・think about it - じっくり考え込む：熟考して最適解を探る
-・think very hard - とても深く考える：非常に詳細な分析
-・think really hard - 非常に深く考える：極めて慎重な検討
-・think super hard - 超深く考える：最高レベルの分析深度
-・megathink - メガ思考：大規模で包括的な思考
-・ultrathink - 極限思考：最大限の思考能力を発揮
-
-※ 高い思考レベルほど、より詳細で精度の高い応答が期待できますが、
-   処理時間も長くなる可能性があります。
-
-■ ワークスペース
-- 左上の「フォルダ追加」でプロジェクトフォルダを追加
-- 右クリックでワークスペースを削除
-- 設定は自動保存されます
-
-■ ショートカット
-- Ctrl+O: ワークスペース追加
-- F5: 更新
-- Ctrl+Shift+C: クリア
-- Shift+Enter: 生成&コピー
-- Ctrl+Q: 終了
-        """
+        usage_text = tr("usage_content")
         
         dialog = UsageDialog(self)
         dialog.set_usage_text(usage_text)
@@ -418,23 +408,16 @@ Claude Code PromptUI 使い方
     
     def show_about(self):
         """バージョン情報を表示"""
-        about_text = """
-Claude Code PromptUI
-Version 1.0.0
-
-Claude Codeのプロンプト入力を改善するためのツールです。
-
-開発者: StudioEmbroidery
-        """
+        about_text = tr("about_content")
         
-        QMessageBox.about(self, "バージョン情報", about_text.strip())
+        QMessageBox.about(self, tr("about_title"), about_text)
     
     def show_python_environment(self):
         """Python実行環境の情報を表示"""
         env_info = PythonHelper.get_execution_instructions()
         
         dialog = UsageDialog(self)
-        dialog.setWindowTitle("Python実行環境")
+        dialog.setWindowTitle(tr("python_env_title"))
         dialog.set_usage_text(env_info)
         dialog.exec()
     
@@ -451,7 +434,7 @@ Claude Codeのプロンプト入力を改善するためのツールです。
             # ステータスバーにメッセージ表示
             theme_display_names = theme_manager.get_theme_display_names()
             display_name = theme_display_names.get(theme_name, theme_name)
-            self.statusBar().showMessage(f"テーマを '{display_name}' に変更しました", 3000)
+            self.statusBar().showMessage(tr("status_theme_changed", theme=display_name), 3000)
     
     def toggle_preview(self):
         """プレビュー表示を切り替え"""
@@ -462,9 +445,9 @@ Claude Codeのプロンプト入力を改善するためのツールです。
         self.settings_manager.set_preview_visible(is_visible)
         
         if is_visible:
-            self.statusBar().showMessage("プレビューを表示しました", 2000)
+            self.statusBar().showMessage(tr("status_preview_shown"), 2000)
         else:
-            self.statusBar().showMessage("プレビューを非表示にしました", 2000)
+            self.statusBar().showMessage(tr("status_preview_hidden"), 2000)
     
     def on_splitter_moved(self, pos: int, index: int):
         """スプリッターが移動されたとき"""

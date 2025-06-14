@@ -4,13 +4,14 @@ Light Theme - ライトテーマ定義
 """
 from PySide6.QtGui import QFont
 from .base_theme import BaseTheme
+from core.ui_strings import tr
 
 
 class LightTheme(BaseTheme):
     """ライトテーマクラス"""
     
     def get_display_name(self):
-        return "ライトモード"
+        return tr("theme_light_name")
     
     def _build_theme(self):
         return {
@@ -155,9 +156,11 @@ class LightTheme(BaseTheme):
             }
             QMenuBar::item {
                 padding: 5px 10px;
+                color: #2b2b2b;
             }
             QMenuBar::item:selected {
                 background-color: #e0e0e0;
+                color: #2b2b2b;
             }
             QStatusBar {
                 background-color: #f0f0f0;

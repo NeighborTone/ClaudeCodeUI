@@ -15,6 +15,7 @@ from core.file_searcher import FileSearcher
 from core.workspace_manager import WorkspaceManager
 from core.token_counter import TokenCounter
 from core.path_converter import PathConverter
+from core.ui_strings import tr
 from ui.style_themes import get_completion_widget_style, get_main_font
 
 
@@ -50,7 +51,7 @@ class SimpleCompletionWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
         
-        self.label = QLabel("ファイル・フォルダを選択: (Escで閉じる)")
+        self.label = QLabel(tr("completion_header"))
         layout.addWidget(self.label)
         
         self.list_widget = QListWidget()
@@ -73,7 +74,7 @@ class SimpleCompletionWidget(QWidget):
             list_item = QListWidgetItem()
             item_type = item.get('type', 'file')
             icon = "📁" if item_type == 'folder' else "📄"
-            type_text = " (フォルダ)" if item_type == 'folder' else " (ファイル)"
+            type_text = f" {tr('completion_folder')}" if item_type == 'folder' else f" {tr('completion_file')}"
             list_item.setText(f"{icon} {item['name']}{type_text} ({item['workspace']})")
             list_item.setData(Qt.UserRole, item)
             self.list_widget.addItem(list_item)
@@ -133,10 +134,10 @@ class PromptInputWidget(QWidget):
         
         # ヘッダー
         header_layout = QHBoxLayout()
-        prompt_label = QLabel("プロンプト (Enterで改行, Shift+Enterで生成&コピー):")
-        header_layout.addWidget(prompt_label)
+        self.prompt_label = QLabel(tr("prompt_header"))
+        header_layout.addWidget(self.prompt_label)
         
-        self.token_count_label = QLabel("0トークン")
+        self.token_count_label = QLabel(f"0 {tr('prompt_tokens')}")
         self.token_count_label.setAlignment(Qt.AlignRight)
         header_layout.addWidget(self.token_count_label)
         
@@ -145,22 +146,17 @@ class PromptInputWidget(QWidget):
         # テキストエディット
         self.text_edit = SimpleTextEdit()
         self.text_edit.setAcceptRichText(False)
-        self.text_edit.setPlaceholderText(
-            "プロンプトを入力してください...\n"
-            "- Enterで改行\n"
-            "- Shift+Enterで生成&コピー\n"
-            "- @filename でファイル・フォルダを指定"
-        )
+        self.text_edit.setPlaceholderText(tr("prompt_placeholder"))
         layout.addWidget(self.text_edit)
         
         # ボタン
         button_layout = QHBoxLayout()
         
-        self.generate_btn = QPushButton("生成&コピー (Shift+Enter)")
+        self.generate_btn = QPushButton(tr("button_generate"))
         self.generate_btn.clicked.connect(self.generate_prompt)
         button_layout.addWidget(self.generate_btn)
         
-        self.clear_btn = QPushButton("クリア")
+        self.clear_btn = QPushButton(tr("button_clear"))
         self.clear_btn.clicked.connect(self.clear_all)
         button_layout.addWidget(self.clear_btn)
         
@@ -323,7 +319,12 @@ class PromptInputWidget(QWidget):
         
         token_count = TokenCounter.count_tokens(text)
         formatted_count = TokenCounter.format_token_count(token_count)
-        self.token_count_label.setText(formatted_count)
+        # Update token count with localized text
+        if tr('prompt_tokens') in formatted_count:
+            self.token_count_label.setText(formatted_count)
+        else:
+            # Format with localized token text
+            self.token_count_label.setText(f"{token_count} {tr('prompt_tokens')}")
     
     def get_prompt_text(self) -> str:
         """プロンプトテキスト取得"""
@@ -351,3 +352,21 @@ class PromptInputWidget(QWidget):
         
         # フォーカスを設定
         self.text_edit.setFocus()
+    
+    def update_language(self):
+        """言語変更時にUIを更新"""
+        # 完了ウィジェットのラベル更新
+        self.completion_widget.label.setText(tr("completion_header"))
+        
+        # プロンプトヘッダー更新
+        self.prompt_label.setText(tr("prompt_header"))
+        
+        # プレースホルダーテキスト更新
+        self.text_edit.setPlaceholderText(tr("prompt_placeholder"))
+        
+        # ボタンテキスト更新
+        self.generate_btn.setText(tr("button_generate"))
+        self.clear_btn.setText(tr("button_clear"))
+        
+        # トークン数表示を更新
+        self.update_token_count()

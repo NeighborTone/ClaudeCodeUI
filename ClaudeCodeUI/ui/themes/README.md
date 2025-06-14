@@ -6,7 +6,7 @@
 
 ```
 ui/themes/
-├── __init__.py              # パッケージ初期化
+├── __init__.py             # パッケージ初期化
 ├── README.md               # このファイル
 ├── base_theme.py           # テーマ基底クラス
 ├── theme_manager.py        # テーママネージャー

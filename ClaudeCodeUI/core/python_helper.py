@@ -6,6 +6,7 @@ import os
 import subprocess
 import shutil
 from typing import Optional, List, Dict
+from core.ui_strings import tr
 
 
 class PythonHelper:
@@ -176,40 +177,40 @@ cd "{script_dir}"
         instructions = []
         
         if is_wsl:
-            instructions.append("## WSL環境での実行方法")
+            instructions.append(tr("python_env_wsl_header"))
             instructions.append("")
             
             if python_exe:
-                instructions.append(f"### 推奨実行方法:")
+                instructions.append(tr("python_env_recommended"))
                 instructions.append(f"```bash")
                 instructions.append(f"{python_exe} main.py")
                 instructions.append(f"```")
                 instructions.append("")
             
-            instructions.append("### 利用可能なPython実行環境:")
+            instructions.append(tr("python_env_available"))
             for exe in executables:
                 instructions.append(f"- {exe['path']} ({exe['version']}) - {exe['type']}")
             
             instructions.append("")
-            instructions.append("### WSL環境でのPython実行の注意点:")
-            instructions.append("- WSL内のPythonを使用することを推奨します")
-            instructions.append("- Windows側のPythonを使用する場合は、パス変換に注意が必要です")
-            instructions.append("- 依存関係はWSL環境内にインストールしてください:")
+            instructions.append(tr("python_env_wsl_notes_header"))
+            instructions.append(tr("python_env_wsl_note1"))
+            instructions.append(tr("python_env_wsl_note2"))
+            instructions.append(tr("python_env_wsl_note3"))
             instructions.append("  ```bash")
             instructions.append("  pip install -r requirements.txt")
             instructions.append("  ```")
         else:
-            instructions.append("## Windows環境での実行方法")
+            instructions.append(tr("python_env_windows_header"))
             instructions.append("")
             
             if python_exe:
-                instructions.append(f"### 推奨実行方法:")
+                instructions.append(tr("python_env_recommended"))
                 instructions.append(f"```cmd")
                 instructions.append(f"{python_exe} main.py")
                 instructions.append(f"```")
             
             instructions.append("")
-            instructions.append("### 利用可能なPython実行環境:")
+            instructions.append(tr("python_env_available"))
             for exe in executables:
                 instructions.append(f"- {exe['path']} ({exe['version']})")
         

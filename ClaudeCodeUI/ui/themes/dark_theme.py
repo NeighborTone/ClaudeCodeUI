@@ -4,13 +4,14 @@ Dark Theme - ダークテーマ定義
 """
 from PySide6.QtGui import QFont
 from .base_theme import BaseTheme
+from core.ui_strings import tr
 
 
 class DarkTheme(BaseTheme):
     """ダークテーマクラス"""
     
     def get_display_name(self):
-        return "ダークモード"
+        return tr("theme_dark_name")
     
     def _build_theme(self):
         return {
@@ -155,9 +156,11 @@ class DarkTheme(BaseTheme):
             }
             QMenuBar::item {
                 padding: 5px 10px;
+                color: #e0e0e0;
             }
             QMenuBar::item:selected {
                 background-color: #505050;
+                color: #e0e0e0;
             }
             QStatusBar {
                 background-color: #3c3c3c;

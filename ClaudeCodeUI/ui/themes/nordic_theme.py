@@ -5,13 +5,14 @@ Nordic Theme - ノルディックテーマ定義
 """
 from PySide6.QtGui import QFont
 from .base_theme import BaseTheme
+from core.ui_strings import tr
 
 
 class NordicTheme(BaseTheme):
     """ノルディックテーマクラス"""
     
     def get_display_name(self):
-        return "ノルディック"
+        return tr("theme_nordic_name")
     
     def _build_theme(self):
         return {
@@ -156,9 +157,11 @@ class NordicTheme(BaseTheme):
             }
             QMenuBar::item {
                 padding: 5px 10px;
+                color: #d8dee9;
             }
             QMenuBar::item:selected {
                 background-color: #434c5e;
+                color: #d8dee9;
             }
             QStatusBar {
                 background-color: #3b4252;

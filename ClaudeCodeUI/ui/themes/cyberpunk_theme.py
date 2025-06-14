@@ -4,13 +4,14 @@ Cyberpunk Theme - サイバーパンクテーマ定義
 """
 from PySide6.QtGui import QFont
 from .base_theme import BaseTheme
+from core.ui_strings import tr
 
 
 class CyberpunkTheme(BaseTheme):
     """サイバーパンクテーマクラス"""
     
     def get_display_name(self):
-        return "サイバーパンク"
+        return tr("theme_cyberpunk_name")
     
     def _build_theme(self):
         return {
@@ -225,9 +226,11 @@ class CyberpunkTheme(BaseTheme):
             }
             QMenuBar::item {
                 padding: 5px 10px;
+                color: #ffffff;
             }
             QMenuBar::item:selected {
                 background-color: #007C8A;
+                color: #ffffff;
             }
             QStatusBar {
                 background-color: #1a1a2e;
