@@ -332,3 +332,22 @@ class PromptInputWidget(QWidget):
     def set_prompt_text(self, text: str):
         """プロンプトテキスト設定"""
         self.text_edit.setPlainText(text)
+    
+    def set_text_without_completion(self, text: str):
+        """オートコンプリートを無効にしてテキスト設定"""
+        # 補完タイマーを停止
+        self.completion_timer.stop()
+        
+        # 補完ウィジェットを隠す
+        self.hide_completion()
+        
+        # テキストを設定
+        self.text_edit.setPlainText(text)
+        
+        # カーソルを末尾に移動
+        cursor = self.text_edit.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        self.text_edit.setTextCursor(cursor)
+        
+        # フォーカスを設定
+        self.text_edit.setFocus()

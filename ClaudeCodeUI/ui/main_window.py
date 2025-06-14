@@ -13,6 +13,7 @@ from PySide6.QtGui import QAction, QCloseEvent
 from core.workspace_manager import WorkspaceManager
 from core.settings import SettingsManager
 from core.python_helper import PythonHelper
+from core.path_converter import PathConverter
 from widgets.file_tree import FileTreeWidget
 from widgets.prompt_input import PromptInputWidget
 from widgets.thinking_selector import ThinkingSelectorWidget
@@ -320,16 +321,30 @@ class MainWindow(QMainWindow):
     
     def on_file_double_clicked(self, file_path: str):
         """ファイルがダブルクリックされたとき"""
-        filename = os.path.basename(file_path)
+        # ワークスペース相対パスを取得
+        workspace_relative_path = None
+        for workspace in self.workspace_manager.get_workspaces():
+            workspace_path = workspace['path']
+            if file_path.startswith(workspace_path):
+                workspace_relative_path = os.path.relpath(file_path, workspace_path)
+                break
+        
+        if workspace_relative_path is None:
+            workspace_relative_path = os.path.basename(file_path)
+        
+        # パスを適切に変換
+        workspace_relative_path = PathConverter.convert_path(workspace_relative_path, self.prompt_input.path_mode)
+        
         # ファイル内容をプロンプトに挿入
         current_text = self.prompt_input.get_prompt_text()
         if current_text:
-            new_text = f"{current_text}\n\n@{filename}"
+            new_text = f"{current_text}\n\n@{workspace_relative_path}"
         else:
-            new_text = f"@{filename}"
+            new_text = f"@{workspace_relative_path}"
         
-        self.prompt_input.set_prompt_text(new_text)
-        self.statusBar().showMessage(f"ファイルをプロンプトに追加: {filename}", 2000)
+        # オートコンプリートを一時的に無効化してテキストを設定
+        self.prompt_input.set_text_without_completion(new_text)
+        self.statusBar().showMessage(f"ファイルをプロンプトに追加: {workspace_relative_path}", 2000)
     
     def show_usage(self):
         """使い方を表示"""

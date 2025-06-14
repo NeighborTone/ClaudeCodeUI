@@ -1,0 +1,29 @@
+{
+  "window": {
+    "width": 1200,
+    "height": 800,
+    "x": 1920,
+    "y": 0
+  },
+  "ui": {
+    "thinking_level": "think",
+    "path_mode": null,
+    "font_size": 10,
+    "font_family": "Consolas",
+    "theme": "cyberpunk",
+    "preview_visible": true,
+    "splitter_sizes": [
+      300,
+      400,
+      500
+    ]
+  },
+  "file_search": {
+    "max_results": 10,
+    "max_preview_lines": 10
+  },
+  "workspaces": {
+    "auto_load": true,
+    "max_depth": 3
+  }
+}
