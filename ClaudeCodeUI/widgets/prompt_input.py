@@ -21,12 +21,10 @@ from ui.style_themes import get_completion_widget_style, get_main_font
 class SimpleTextEdit(QTextEdit):
     """シンプルなテキストエディット（カスタムキーハンドリング付き）"""
     
-    files_dropped = Signal(list)
     special_key_pressed = Signal(QKeyEvent)
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setAcceptDrops(True)
     
     def keyPressEvent(self, event: QKeyEvent):
         # 特殊キーは親に委譲
@@ -37,33 +35,6 @@ class SimpleTextEdit(QTextEdit):
         
         # 通常のキー処理
         super().keyPressEvent(event)
-    
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasUrls():
-            urls = event.mimeData().urls()
-            if any(url.isLocalFile() and (os.path.isfile(url.toLocalFile()) or os.path.isdir(url.toLocalFile())) for url in urls):
-                event.acceptProposedAction()
-        elif event.mimeData().hasFormat("application/x-internal-file"):
-            event.acceptProposedAction()
-    
-    def dropEvent(self, event):
-        file_paths = []
-        
-        if event.mimeData().hasFormat("application/x-internal-file"):
-            file_path_bytes = event.mimeData().data("application/x-internal-file")
-            file_path = file_path_bytes.data().decode('utf-8')
-            if file_path and (os.path.isfile(file_path) or os.path.isdir(file_path)):
-                file_paths.append(file_path)
-        elif event.mimeData().hasUrls():
-            for url in event.mimeData().urls():
-                if url.isLocalFile():
-                    file_path = url.toLocalFile()
-                    if os.path.isfile(file_path) or os.path.isdir(file_path):
-                        file_paths.append(file_path)
-        
-        if file_paths:
-            self.files_dropped.emit(file_paths)
-            event.acceptProposedAction()
 
 
 class SimpleCompletionWidget(QWidget):
@@ -178,9 +149,7 @@ class PromptInputWidget(QWidget):
             "プロンプトを入力してください...\n"
             "- Enterで改行\n"
             "- Shift+Enterで生成&コピー\n"
-            "- @filename でファイル・フォルダを指定\n"
-            "- ファイルツリーからドラッグ&ドロップ\n"
-            "- 外部ファイル・フォルダもドラッグ&ドロップ対応"
+            "- @filename でファイル・フォルダを指定"
         )
         layout.addWidget(self.text_edit)
         
@@ -200,7 +169,6 @@ class PromptInputWidget(QWidget):
         # イベント接続
         self.text_edit.special_key_pressed.connect(self.handle_special_key)
         self.text_edit.textChanged.connect(self.on_text_changed)
-        self.text_edit.files_dropped.connect(self.on_files_dropped)
     
     def setup_completion(self):
         """補完システムセットアップ"""
@@ -316,39 +284,6 @@ class PromptInputWidget(QWidget):
         self.text_edit.setTextCursor(cursor)
         
         self.hide_completion()
-    
-    def on_files_dropped(self, file_paths: List[str]):
-        """ファイルドロップ時"""
-        file_references = []
-        
-        for file_path in file_paths:
-            workspace_relative_path = None
-            for workspace in self.workspace_manager.get_workspaces():
-                workspace_path = workspace['path']
-                if file_path.startswith(workspace_path):
-                    workspace_relative_path = os.path.relpath(file_path, workspace_path)
-                    break
-            
-            if workspace_relative_path is None:
-                workspace_relative_path = os.path.basename(file_path)
-            
-            workspace_relative_path = PathConverter.convert_path(workspace_relative_path, self.path_mode)
-            file_references.append(f"@{workspace_relative_path}")
-        
-        # テキスト末尾に追加
-        current_text = self.text_edit.toPlainText()
-        if current_text:
-            new_text = current_text + "\n\n" + "\n".join(file_references)
-        else:
-            new_text = "\n".join(file_references)
-        
-        self.text_edit.setPlainText(new_text)
-        
-        # カーソルを末尾に
-        cursor = self.text_edit.textCursor()
-        cursor.movePosition(QTextCursor.End)
-        self.text_edit.setTextCursor(cursor)
-        self.text_edit.setFocus()
     
     def generate_prompt(self):
         """プロンプト生成"""
