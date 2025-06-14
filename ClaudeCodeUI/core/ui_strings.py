@@ -467,18 +467,8 @@ Features:
         """思考レベルの表示名を取得"""
         language = get_language_manager().get_current_language()
         
-        # 思考レベルは基本的に英語のままだが、表示用に説明を追加
-        if language == "ja":
-            level_descriptions = {
-                "think": "think - 基本思考",
-                "think harder": "think harder - より深く考える",
-                "think step by step": "think step by step - 段階的思考",
-                "ultrathink": "ultrathink - 超深思考",
-                "megathink": "megathink - 最大深度思考"
-            }
-            return level_descriptions.get(level, level)
-        else:
-            return level
+        # すべての言語で純粋なレベル名のみを表示（説明なし）
+        return level
     
     @classmethod
     def get_path_mode_display(cls, mode: str) -> str:
