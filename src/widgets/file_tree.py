@@ -10,8 +10,8 @@ from PySide6.QtWidgets import (QTreeWidget, QTreeWidgetItem, QVBoxLayout,
 from PySide6.QtCore import Signal, Qt, QUrl
 from PySide6.QtGui import QAction, QIcon, QDragEnterEvent, QDropEvent
 
-from core.workspace_manager import WorkspaceManager
-from core.ui_strings import tr
+from src.core.workspace_manager import WorkspaceManager
+from src.core.ui_strings import tr
 
 
 class FileTreeWidget(QWidget):

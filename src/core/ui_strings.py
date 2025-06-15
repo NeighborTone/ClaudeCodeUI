@@ -4,8 +4,8 @@ UI Strings (New) - 外部ファイルベースの多言語対応
 既存のUIStringsクラスとの互換性を保ちつつ、外部ファイルから翻訳データを読み込み
 """
 from typing import Dict, Any, Optional
-from core.language_manager import get_language_manager, LanguageCode
-from core.localization_manager import get_localization_manager
+from src.core.language_manager import get_language_manager, LanguageCode
+from src.core.localization_manager import get_localization_manager
 
 
 class UIStrings:

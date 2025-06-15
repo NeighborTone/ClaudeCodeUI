@@ -5,8 +5,8 @@ Path Mode Selector Widget - Path format selection functionality
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QComboBox, QLabel
 from PySide6.QtCore import Signal
 
-from core.path_converter import PathConverter
-from core.ui_strings import tr, UIStrings
+from src.core.path_converter import PathConverter
+from src.core.ui_strings import tr, UIStrings
 
 
 class PathModeSelectorWidget(QWidget):

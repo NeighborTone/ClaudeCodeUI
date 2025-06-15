@@ -5,7 +5,7 @@ File Searcher - @ file search functionality
 import os
 import re
 from typing import List, Dict, Tuple, Optional
-from core.workspace_manager import WorkspaceManager
+from src.core.workspace_manager import WorkspaceManager
 
 
 class FileSearcher:

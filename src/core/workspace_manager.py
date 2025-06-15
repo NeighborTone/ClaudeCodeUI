@@ -11,7 +11,7 @@ from pathlib import Path
 class WorkspaceManager:
     """ワークスペース（プロジェクトフォルダ）の管理を行うクラス"""
     
-    def __init__(self, config_file: str = "config/workspace.json"):
+    def __init__(self, config_file: str = "saved/workspace.json"):
         self.config_file = config_file
         self.workspaces: List[Dict[str, str]] = []
         self.load_workspaces()

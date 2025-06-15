@@ -11,7 +11,7 @@ from pathlib import Path
 class SettingsManager:
     """設定管理クラス"""
     
-    def __init__(self, config_file: str = "config/settings.json"):
+    def __init__(self, config_file: str = "saved/settings.json"):
         self.config_file = config_file
         self.settings: Dict[str, Any] = self.load_default_settings()
         self.load_settings()

@@ -7,8 +7,8 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QTextEdit, QLabel, QFrame)
 from PySide6.QtCore import Signal, Qt, QTimer
 from PySide6.QtGui import QFont
 
-from core.template_manager import get_template_manager
-from core.ui_strings import tr
+from src.core.template_manager import get_template_manager
+from src.core.ui_strings import tr
 
 
 class PromptPreviewWidget(QWidget):

@@ -4,7 +4,7 @@ Cyberpunk Theme - サイバーパンクテーマ定義
 """
 from PySide6.QtGui import QFont
 from .base_theme import BaseTheme
-from core.ui_strings import tr
+from src.core.ui_strings import tr
 
 
 class CyberpunkTheme(BaseTheme):

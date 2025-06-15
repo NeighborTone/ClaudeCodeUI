@@ -6,8 +6,8 @@ Template Selector Widget - テンプレート選択ウィジェット
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                               QComboBox, QMessageBox)
 from PySide6.QtCore import Signal, QTimer
-from core.template_manager import get_template_manager
-from core.ui_strings import tr
+from src.core.template_manager import get_template_manager
+from src.core.ui_strings import tr
 
 
 class TemplateSelector(QWidget):

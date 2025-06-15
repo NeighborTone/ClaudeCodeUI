@@ -8,7 +8,7 @@ import csv
 import os
 from typing import Dict, Any, Optional, List, Union
 from pathlib import Path
-from core.language_manager import get_language_manager, LanguageCode
+from src.core.language_manager import get_language_manager, LanguageCode
 
 # YAML support is optional
 try:
@@ -30,8 +30,8 @@ class LocalizationManager:
         """
         if locales_dir is None:
             # アプリケーションディレクトリ内のconfig/localesフォルダ
-            app_dir = Path(__file__).parent.parent
-            self.locales_dir = app_dir / "config" / "locales"
+            app_dir = Path(__file__).parent.parent.parent  # Go up to project root
+            self.locales_dir = app_dir / "data" / "locales"
         else:
             self.locales_dir = Path(locales_dir)
         

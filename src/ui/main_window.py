@@ -10,20 +10,20 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QCloseEvent
 
-from core.workspace_manager import WorkspaceManager
-from core.settings import SettingsManager
-from core.python_helper import PythonHelper
-from core.path_converter import PathConverter
-from core.language_manager import get_language_manager, set_language_manager
-from core.ui_strings import tr
-from widgets.file_tree import FileTreeWidget
-from widgets.prompt_input import PromptInputWidget
-from widgets.thinking_selector import ThinkingSelectorWidget
-from widgets.path_mode_selector import PathModeSelectorWidget
-from widgets.prompt_preview import PromptPreviewWidget
-from widgets.template_selector import TemplateSelector
-from core.template_manager import get_template_manager
-from ui.style_themes import apply_theme, theme_manager, get_main_font
+from src.core.workspace_manager import WorkspaceManager
+from src.core.settings import SettingsManager
+from src.core.python_helper import PythonHelper
+from src.core.path_converter import PathConverter
+from src.core.language_manager import get_language_manager, set_language_manager
+from src.core.ui_strings import tr
+from src.widgets.file_tree import FileTreeWidget
+from src.widgets.prompt_input import PromptInputWidget
+from src.widgets.thinking_selector import ThinkingSelectorWidget
+from src.widgets.path_mode_selector import PathModeSelectorWidget
+from src.widgets.prompt_preview import PromptPreviewWidget
+from src.widgets.template_selector import TemplateSelector
+from src.core.template_manager import get_template_manager
+from src.ui.style_themes import apply_theme, theme_manager, get_main_font
 
 
 class UsageDialog(QDialog):

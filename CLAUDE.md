@@ -8,8 +8,8 @@ This file provides comprehensive guidance for Claude Code when working with this
 
 #### WSL Environment (Recommended)
 ```bash
-# Navigate to the application directory
-cd ClaudeCodeUI
+# Navigate to the project root directory
+# (Already in ClaudeCodeUI root)
 
 # Use WSL Python (recommended)
 python3 main.py
@@ -20,8 +20,8 @@ python main.py
 
 #### Windows Environment
 ```cmd
-# Navigate to the application directory
-cd ClaudeCodeUI
+# Navigate to the project root directory
+# (Already in ClaudeCodeUI root)
 
 # Use Windows Python
 python main.py
@@ -35,10 +35,10 @@ py main.py
 #### Installing Dependencies
 ```bash
 # WSL environment (recommended)
-pip3 install -r ClaudeCodeUI/requirements.txt
+pip3 install -r requirements.txt
 
 # Windows environment
-pip install -r ClaudeCodeUI/requirements.txt
+pip install -r requirements.txt
 ```
 
 #### Core Dependencies
@@ -55,10 +55,10 @@ sudo apt update
 sudo apt install python3 python3-pip
 
 # 2. Install dependencies
-pip3 install -r ClaudeCodeUI/requirements.txt
+pip3 install -r requirements.txt
 
 # 3. Run application
-python3 ClaudeCodeUI/main.py
+python3 main.py
 ```
 
 #### Troubleshooting Python Execution in WSL
@@ -70,16 +70,16 @@ sudo apt update
 sudo apt install python3 python3-pip
 
 # Install dependencies in WSL
-pip3 install -r ClaudeCodeUI/requirements.txt
+pip3 install -r requirements.txt
 
 # Run from WSL
-python3 ClaudeCodeUI/main.py
+python3 main.py
 ```
 
 ##### Solution 2: WSL Command from Windows
 ```cmd
 # Execute via WSL from Windows command line
-wsl python3 /mnt/c/Users/owner/Desktop/PythonTools/ClaudeCodeUI/ClaudeCodeUI/main.py
+wsl python3 /mnt/c/Users/owner/Desktop/PythonTools/ClaudeCodeUI/main.py
 ```
 
 ##### Solution 3: Python Environment Checker
@@ -100,6 +100,39 @@ The application automatically handles cross-platform compatibility:
 
 This application follows a **layered MVC architecture** with signal-driven component communication and modular design principles.
 
+### Directory Structure
+
+#### Application Directory Organization
+The application follows a clear separation between application data and user-specific data:
+
+```
+ClaudeCodeUI/
+├── core/                   # Core business logic
+├── ui/                     # User interface components
+├── widgets/                # Specialized UI widgets
+├── data/                   # Application data (committed to version control)
+│   └── locales/           # Localization files
+│       └── strings.json   # UI strings for all supported languages
+├── saved/                  # User-specific data (NOT committed to version control)
+│   ├── settings.json      # User preferences and application state
+│   └── workspace.json     # User's workspace configuration
+└── templates/              # Prompt templates
+    ├── pre/               # Pre-prompt templates
+    └── post/              # Post-prompt templates
+```
+
+##### Important Directory Distinctions
+- **`data/` directory**: Contains application data that is part of the codebase
+  - Includes localization files and other application resources
+  - Should be committed to version control
+  - Read-only during normal application operation
+
+- **`saved/` directory**: Contains user-specific configuration and state
+  - Created automatically on first run
+  - Contains settings.json (user preferences) and workspace.json (workspace state)
+  - Should NOT be committed to version control (add to .gitignore)
+  - Modified during application usage to persist user choices
+
 ### Architecture Layers
 
 #### Core Layer (`core/`)
@@ -110,7 +143,7 @@ This application follows a **layered MVC architecture** with signal-driven compo
 - `FileSearcher` - Implements `@filename` completion with relevance scoring for Claude Code integration
 - `TemplateManager` - Pre/post prompt template management system with JSON-based storage
 - `TokenCounter` - Intelligent token estimation for Japanese/English mixed content
-- `LanguageManager` - Automatic language detection and manual switching (Japanese/English)
+- `LocalizationManager` - Language management with strings loaded from `data/locales/strings.json`
 - `EnvironmentDetector` - Windows/WSL environment detection and path conversion
 - `PathConverter` - Cross-platform path normalization for Claude Code compatibility
 - `PythonHelper` - Python execution environment assistance and script generation
@@ -219,7 +252,7 @@ class CustomTheme(BaseTheme):
 
 #### Runtime Theme Switching
 - No application restart required
-- Settings persistence in `config/settings.json`
+- Settings persistence in `saved/settings.json` (user-specific, not in version control)
 - Theme preference restoration on startup
 
 ### Template Management System
@@ -282,6 +315,7 @@ EnvironmentDetector.get_recommended_language() → LanguageManager.set_language(
 
 #### String Management
 - Centralized in `core/ui_strings.py`
+- String definitions stored in `data/locales/strings.json`
 - Dot-notation key access: `tr("label.thinking_level")`
 - Fallback to English for missing translations
 
@@ -379,7 +413,7 @@ pip3 install -r ClaudeCodeUI/requirements.txt
 #### Theme Loading Problems
 1. **Theme file corruption**: Check `ui/themes/` for valid Python files
 2. **Missing theme**: Falls back to default cyberpunk theme
-3. **Style conflicts**: Clear `config/settings.json` theme section
+3. **Style conflicts**: Clear `saved/settings.json` theme section
 
 #### Template Loading Issues
 1. **Invalid JSON**: Validate template JSON syntax

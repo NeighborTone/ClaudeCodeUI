@@ -21,7 +21,7 @@ class TemplateManager:
         """
         if templates_dir is None:
             # アプリケーションディレクトリ内のtemplatesフォルダ
-            app_dir = Path(__file__).parent.parent
+            app_dir = Path(__file__).parent.parent.parent  # Go up to project root
             self.templates_dir = app_dir / "templates"
         else:
             self.templates_dir = Path(templates_dir)

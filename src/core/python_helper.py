@@ -6,7 +6,7 @@ import os
 import subprocess
 import shutil
 from typing import Optional, List, Dict
-from core.ui_strings import tr
+from src.core.ui_strings import tr
 
 
 class PythonHelper:

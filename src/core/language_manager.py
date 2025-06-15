@@ -4,7 +4,7 @@ Language Manager - 言語設定管理
 アプリケーションの言語設定を管理し、自動検出や手動切り替えを提供
 """
 from typing import Literal, Dict, Callable, Optional
-from core.environment_detector import EnvironmentDetector
+from src.core.environment_detector import EnvironmentDetector
 
 LanguageCode = Literal["ja", "en"]
 
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     print("=== Language Manager Test ===")
     
     # 環境情報を表示
-    from core.environment_detector import EnvironmentDetector
+    from src.core.environment_detector import EnvironmentDetector
     print(f"Environment: {EnvironmentDetector.detect_environment()}")
     print(f"Has Japanese font: {EnvironmentDetector.has_japanese_font_support()}")
     print(f"Recommended language: {EnvironmentDetector.get_recommended_language()}")

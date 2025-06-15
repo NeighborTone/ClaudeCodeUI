@@ -192,12 +192,16 @@ $RECYCLE.BIN/
 *.log
 *.save
 *.backup
-config/*.bak
-config/*~
+saved/*.bak
+saved/*~
 
 # User-specific configuration files (auto-generated)
-ClaudeCodeUI/config/settings.json
-ClaudeCodeUI/config/workspace.json
+saved/
+saved/settings.json
+saved/workspace.json
 
 # Claude Code settings (auto-generated)
 .claude/
+
+# Temporary reorganization files
+reorganization_plan.md

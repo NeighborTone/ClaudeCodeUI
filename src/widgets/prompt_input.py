@@ -11,12 +11,12 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QTextEdit, QPushButton,
 from PySide6.QtCore import Signal, Qt, QTimer
 from PySide6.QtGui import QKeyEvent, QTextCursor, QFont
 
-from core.file_searcher import FileSearcher
-from core.workspace_manager import WorkspaceManager
-from core.token_counter import TokenCounter
-from core.path_converter import PathConverter
-from core.ui_strings import tr
-from ui.style_themes import get_completion_widget_style, get_main_font
+from src.core.file_searcher import FileSearcher
+from src.core.workspace_manager import WorkspaceManager
+from src.core.token_counter import TokenCounter
+from src.core.path_converter import PathConverter
+from src.core.ui_strings import tr
+from src.ui.style_themes import get_completion_widget_style, get_main_font
 
 
 class SimpleTextEdit(QTextEdit):
