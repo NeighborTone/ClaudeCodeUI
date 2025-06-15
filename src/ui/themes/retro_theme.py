@@ -39,7 +39,6 @@ class RetroTheme(BaseTheme):
                 background-color: #00ff00;
                 color: #000000;
                 border: 2px solid #ffff00;
-                text-shadow: none;
             }
             QPushButton:pressed {
                 background-color: #ffff00;

@@ -37,7 +37,6 @@ class ElectricTheme(BaseTheme):
                 background-color: #ff0080;
                 border: 2px solid #00ffff;
                 color: #000000;
-                text-shadow: 0px 0px 10px #00ffff;
             }
             QPushButton:pressed {
                 background-color: #00ffff;
@@ -55,7 +54,6 @@ class ElectricTheme(BaseTheme):
             QLineEdit:focus, QComboBox:focus {
                 background-color: #2a2a2a;
                 border: 2px solid #ff0080;
-                box-shadow: 0px 0px 15px #ff0080;
             }
             QComboBox QAbstractItemView {
                 background-color: #1a1a1a;
@@ -81,12 +79,10 @@ class ElectricTheme(BaseTheme):
                 width: 24px;
                 margin: -8px 0;
                 border-radius: 12px;
-                box-shadow: 0px 0px 10px #ffff00;
             }
             QSlider::handle:horizontal:hover {
                 background: #00ffff;
                 border: 2px solid #ffff00;
-                box-shadow: 0px 0px 15px #00ffff;
             }
             QTextEdit {
                 border: 2px solid #00ffff;
@@ -100,7 +96,6 @@ class ElectricTheme(BaseTheme):
             QTextEdit:focus {
                 border: 3px solid #ff0080;
                 background-color: #1a1a1a;
-                box-shadow: 0px 0px 20px #ff0080;
             }
             QTreeWidget {
                 background-color: #0a0a0a;
@@ -147,7 +142,6 @@ class ElectricTheme(BaseTheme):
             }
             QScrollBar::handle:vertical:hover {
                 background-color: #ffff00;
-                box-shadow: 0px 0px 10px #ffff00;
             }
             QScrollBar:horizontal {
                 background-color: #0a0a0a;
@@ -163,7 +157,6 @@ class ElectricTheme(BaseTheme):
             }
             QScrollBar::handle:horizontal:hover {
                 background-color: #ffff00;
-                box-shadow: 0px 0px 10px #ffff00;
             }
             QListWidget {
                 background-color: #0a0a0a;
@@ -236,7 +229,6 @@ class ElectricTheme(BaseTheme):
             }
             QSplitter::handle:hover {
                 background-color: #00ffff;
-                box-shadow: 0px 0px 10px #00ffff;
             }
             QToolTip {
                 background-color: #2a2a2a;
@@ -277,7 +269,6 @@ class ElectricTheme(BaseTheme):
                 background-color: #2a2a2a;
                 border: 3px solid #ff0080;
                 border-radius: 12px;
-                box-shadow: 0px 0px 20px #ff0080;
             }
             QLabel {
                 color: #00ffff;

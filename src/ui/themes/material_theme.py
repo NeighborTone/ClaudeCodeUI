@@ -37,11 +37,9 @@ class MaterialTheme(BaseTheme):
             }
             QPushButton:hover {
                 background-color: #1976d2;
-                box-shadow: 0px 4px 8px rgba(33, 150, 243, 0.3);
             }
             QPushButton:pressed {
                 background-color: #0d47a1;
-                box-shadow: 0px 2px 4px rgba(33, 150, 243, 0.5);
             }
             QPushButton:disabled {
                 background-color: #e0e0e0;
@@ -105,7 +103,6 @@ class MaterialTheme(BaseTheme):
             }
             QSlider::handle:horizontal:hover {
                 background: #1976d2;
-                box-shadow: 0px 0px 0px 8px rgba(33, 150, 243, 0.2);
             }
             QTextEdit {
                 border: 1px solid #e0e0e0;
@@ -305,7 +302,6 @@ class MaterialTheme(BaseTheme):
                 background-color: #ffffff;
                 border: 1px solid #e0e0e0;
                 border-radius: 8px;
-                box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.1);
             }
             QLabel {
                 color: #1976d2;
