@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                               QApplication, QLabel, QDialog, QScrollArea, QTextEdit,
                               QPushButton, QDialogButtonBox)
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QAction, QCloseEvent
+from PySide6.QtGui import QAction, QCloseEvent, QIcon
 
 from src.core.workspace_manager import WorkspaceManager
 from src.core.settings import SettingsManager
@@ -128,6 +128,12 @@ class MainWindow(QMainWindow):
     def setup_ui(self):
         """UIの初期化"""
         self.setWindowTitle("Claude Code PromptUI")
+        
+        # アプリケーションアイコンを設定
+        icon_path = "assets/icons/main/claude-ai-icon.png"
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
+        
         self.setMinimumSize(800, 600)
         
         # 中央ウィジェット

@@ -85,13 +85,15 @@ class BaseTheme(ABC):
             "エレクトリック": "electric",
             "マテリアル": "material",
             "レトロ": "retro",
+            "サイファイ": "scifi",
             "Cyberpunk": "cyber",
             "Dark Mode": "dark",
             "Light Mode": "light", 
             "Nordic": "nordic",
             "Electric": "electric",
             "Material": "material",
-            "Retro": "retro"
+            "Retro": "retro",
+            "Sci-Fi": "scifi"
         }
         
         return name_mapping.get(display_name, display_name.lower().replace(" ", "_"))

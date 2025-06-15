@@ -92,6 +92,10 @@
       "ja": "レトロ",
       "en": "Retro"
     },
+    "theme_scifi_name": {
+      "ja": "サイファイ",
+      "en": "Sci-Fi"
+    },
     "menu_language": {
       "ja": "言語(&L)",
       "en": "&Language"

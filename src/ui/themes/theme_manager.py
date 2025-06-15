@@ -9,6 +9,7 @@ from .nordic_theme import NordicTheme
 from .electric_theme import ElectricTheme
 from .material_theme import MaterialTheme
 from .retro_theme import RetroTheme
+from .scifi_theme import SciFiTheme
 
 
 class ThemeManager:
@@ -23,7 +24,8 @@ class ThemeManager:
             "nordic": NordicTheme,
             "electric": ElectricTheme,
             "material": MaterialTheme,
-            "retro": RetroTheme
+            "retro": RetroTheme,
+            "scifi": SciFiTheme
         }
         
         # テーマインスタンスのキャッシュ
