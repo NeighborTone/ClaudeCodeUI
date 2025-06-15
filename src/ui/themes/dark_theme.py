@@ -87,6 +87,7 @@ class DarkTheme(BaseTheme):
                 background-color: #007acc;
                 color: #ffffff;
             }
+""" + self.get_tree_branch_styles("#e0e0e0", "#e0e0e0") + """
             QHeaderView::section {
                 background-color: #3c3c3c;
                 color: #e0e0e0;

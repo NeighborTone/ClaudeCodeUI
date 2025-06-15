@@ -88,6 +88,7 @@ class NordicTheme(BaseTheme):
                 background-color: #5e81ac;
                 color: #eceff4;
             }
+""" + self.get_tree_branch_styles("#d8dee9", "#d8dee9") + """
             QHeaderView::section {
                 background-color: #3b4252;
                 color: #d8dee9;

@@ -135,14 +135,24 @@ def apply_cyberpunk_style(widget):
         background-color: #2980b9;
         color: #ffffff;
     }
+    QTreeWidget::branch:has-children:!has-siblings:closed,
+    QTreeWidget::branch:closed:has-children:has-siblings {
+        border-image: none;
+        image: url(assets/icons/treeview/arrow_right.png);
+    }
+    QTreeWidget::branch:open:has-children:!has-siblings,
+    QTreeWidget::branch:open:has-children:has-siblings {
+        border-image: none;
+        image: url(assets/icons/treeview/arrow_down.png);
+    }
     QTreeWidget::branch:has-siblings:!adjoins-item {
-        border-image: url(none) 0;
+        border-image: none;
     }
     QTreeWidget::branch:has-siblings:adjoins-item {
-        border-image: url(none) 0;
+        border-image: none;
     }
     QTreeWidget::branch:!has-children:!has-siblings:adjoins-item {
-        border-image: url(none) 0;
+        border-image: none;
     }
     QHeaderView::section {
         background-color: #2a2a3e;

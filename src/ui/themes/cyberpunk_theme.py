@@ -143,15 +143,7 @@ class CyberpunkTheme(BaseTheme):
                 background-color: #2980b9;
                 color: #ffffff;
             }
-            QTreeWidget::branch:has-siblings:!adjoins-item {
-                border-image: url(none) 0;
-            }
-            QTreeWidget::branch:has-siblings:adjoins-item {
-                border-image: url(none) 0;
-            }
-            QTreeWidget::branch:!has-children:!has-siblings:adjoins-item {
-                border-image: url(none) 0;
-            }
+""" + self.get_tree_branch_styles("#00FFAA", "#8a3ffc") + """
             QHeaderView::section {
                 background-color: #2a2a3e;
                 color: #ffffff;

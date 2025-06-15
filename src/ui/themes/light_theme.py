@@ -87,6 +87,7 @@ class LightTheme(BaseTheme):
                 background-color: #0078d4;
                 color: #ffffff;
             }
+""" + self.get_tree_branch_styles("#2b2b2b", "#2b2b2b") + """
             QHeaderView::section {
                 background-color: #f0f0f0;
                 color: #2b2b2b;
