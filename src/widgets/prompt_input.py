@@ -73,8 +73,36 @@ class SimpleCompletionWidget(QWidget):
         for item in items:
             list_item = QListWidgetItem()
             item_type = item.get('type', 'file')
-            icon = "📁" if item_type == 'folder' else "📄"
-            type_text = f" {tr('completion_folder')}" if item_type == 'folder' else f" {tr('completion_file')}"
+            
+            if item_type == 'folder':
+                icon = "📁"
+                type_text = f" {tr('completion_folder')}"
+            else:
+                # ファイルタイプに基づいてアイコンを選択
+                file_ext = os.path.splitext(item['name'])[1].lower()
+                
+                # 画像ファイル
+                image_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif', '.webp', '.svg', '.ico'}
+                # ソースファイル
+                source_extensions = {'.py', '.cpp', '.c', '.h', '.hpp', '.js', '.ts', '.jsx', '.tsx', '.html', '.css'}
+                # 設定ファイル
+                config_extensions = {'.json', '.yaml', '.yml', '.xml', '.toml', '.ini', '.conf', '.cfg', '.config', '.csv'}
+                # メディアファイル
+                media_extensions = {'.wav', '.mp3', '.mp4', '.avi', '.mov'}
+                
+                if file_ext in image_extensions:
+                    icon = "🖼️"  # 画像アイコン
+                elif file_ext in source_extensions:
+                    icon = "📝"  # ソースコードアイコン
+                elif file_ext in config_extensions:
+                    icon = "⚙️"  # 設定ファイルアイコン
+                elif file_ext in media_extensions:
+                    icon = "🎵"  # メディアファイルアイコン
+                else:
+                    icon = "📄"  # デフォルトファイルアイコン
+                
+                type_text = f" {tr('completion_file')}"
+            
             list_item.setText(f"{icon} {item['name']}{type_text} ({item['workspace']})")
             list_item.setData(Qt.UserRole, item)
             self.list_widget.addItem(list_item)

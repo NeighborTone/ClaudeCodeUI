@@ -82,7 +82,7 @@ class WorkspaceManager:
         # Default extensions for programming files
         if extensions is None:
             extensions = {
-                # Programming languages
+                # Programming languages (highest priority)
                 '.py', '.cpp', '.c', '.h', '.hpp', '.cxx', '.hxx',
                 '.cs', '.java', '.js', '.ts', '.jsx', '.tsx',
                 '.go', '.rs', '.php', '.rb', '.swift', '.kt',
@@ -93,14 +93,26 @@ class WorkspaceManager:
                 
                 # Config and data files
                 '.json', '.yaml', '.yml', '.xml', '.toml',
-                '.csv', '.txt', '.md', '.rst',
+                '.ini', '.conf', '.csv', '.txt', '.md', '.rst',
                 
                 # Build files
                 '.cmake', '.make', '.gradle', '.sln', '.vcxproj',
                 '.pro', '.pri', '.qmake',
                 
                 # Shaders
-                '.hlsl', '.glsl', '.shader', '.cginc', '.compute'
+                '.hlsl', '.glsl', '.shader', '.cginc', '.compute',
+                
+                # Image files (lower priority for autocomplete)
+                '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif',
+                '.webp', '.svg', '.ico', '.psd', '.ai', '.eps',
+                
+                # Audio files (lower priority for autocomplete)
+                '.wav', '.mp3', '.flac', '.aac', '.ogg', '.wma',
+                '.m4a', '.opus', '.aiff', '.au',
+                
+                # Video files (lower priority for autocomplete)
+                '.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv',
+                '.webm', '.m4v', '.3gp', '.ogv'
             }
         
         for workspace in self.workspaces:

@@ -65,6 +65,48 @@ class FileSearcher:
         if item_type == 'folder':
             score += 5
         
+        # ファイルタイプによる基本スコア調整
+        if item_type == 'file':
+            file_ext = os.path.splitext(item_info['name'])[1].lower()
+            
+            # ソースファイル（最高優先度）
+            source_extensions = {
+                '.py', '.cpp', '.c', '.h', '.hpp', '.cxx', '.hxx',
+                '.cs', '.java', '.js', '.ts', '.jsx', '.tsx',
+                '.go', '.rs', '.php', '.rb', '.swift', '.kt',
+                '.html', '.css', '.scss', '.sass', '.vue'
+            }
+            
+            # 設定・データファイル（高優先度）
+            config_extensions = {
+                '.json', '.yaml', '.yml', '.xml', '.toml',
+                '.ini', '.conf', '.cfg', '.config', '.csv', '.txt', '.md', '.rst'
+            }
+            
+            # 画像ファイル（低優先度）
+            image_extensions = {
+                '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif',
+                '.webp', '.svg', '.ico', '.psd', '.ai', '.eps'
+            }
+            
+            # メディアファイル（最低優先度）
+            media_extensions = {
+                '.wav', '.mp3', '.flac', '.aac', '.ogg', '.wma',
+                '.m4a', '.opus', '.aiff', '.au', '.mp4', '.avi',
+                '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v',
+                '.3gp', '.ogv'
+            }
+            
+            # ファイルタイプに基づく基本スコア
+            if file_ext in source_extensions:
+                score += 20  # ソースファイルに最高優先度
+            elif file_ext in config_extensions:
+                score += 10  # 設定ファイルに高優先度
+            elif file_ext in image_extensions:
+                score -= 20  # 画像ファイルは低優先度
+            elif file_ext in media_extensions:
+                score -= 40  # メディアファイルは最低優先度
+        
         # 完全一致
         if query_lower == item_name:
             score += 100
