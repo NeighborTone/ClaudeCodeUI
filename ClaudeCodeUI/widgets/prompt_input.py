@@ -112,6 +112,7 @@ class PromptInputWidget(QWidget):
     """プロンプト入力ウィジェット"""
     
     generate_and_copy = Signal(str, str)
+    text_changed = Signal(str)  # テキスト変更シグナル（リアルタイム更新用）
     
     def __init__(self, workspace_manager: WorkspaceManager, parent=None):
         super().__init__(parent)
@@ -165,6 +166,7 @@ class PromptInputWidget(QWidget):
         # イベント接続
         self.text_edit.special_key_pressed.connect(self.handle_special_key)
         self.text_edit.textChanged.connect(self.on_text_changed)
+        self.text_edit.textChanged.connect(lambda: self.text_changed.emit(self.text_edit.toPlainText()))
     
     def setup_completion(self):
         """補完システムセットアップ"""
@@ -287,14 +289,8 @@ class PromptInputWidget(QWidget):
         if not text:
             return
         
-        final_prompt = text
-        if self.thinking_level and self.thinking_level != "think":
-            final_prompt = f"{self.thinking_level}\n{final_prompt}"
-        
-        clipboard = QApplication.clipboard()
-        clipboard.setText(final_prompt)
-        
-        self.generate_and_copy.emit(final_prompt, self.thinking_level)
+        # テンプレート統合は親ウィンドウで処理するため、生のテキストを渡す
+        self.generate_and_copy.emit(text, self.thinking_level)
     
     def clear_all(self):
         """クリア"""

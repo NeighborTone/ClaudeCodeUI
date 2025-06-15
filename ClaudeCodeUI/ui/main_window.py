@@ -20,7 +20,9 @@ from widgets.file_tree import FileTreeWidget
 from widgets.prompt_input import PromptInputWidget
 from widgets.thinking_selector import ThinkingSelectorWidget
 from widgets.path_mode_selector import PathModeSelectorWidget
-from widgets.file_preview import FilePreviewWidget
+from widgets.prompt_preview import PromptPreviewWidget
+from widgets.template_selector import TemplateSelector
+from core.template_manager import get_template_manager
 from ui.style_themes import apply_theme, theme_manager, get_main_font
 
 
@@ -106,7 +108,7 @@ class MainWindow(QMainWindow):
             self.prompt_input.set_path_mode(path_mode)
         
         # プレビュー表示状態を復元
-        self.file_preview.setVisible(preview_visible)
+        self.prompt_preview.setVisible(preview_visible)
         self.preview_action.setChecked(preview_visible)
         
         # スプリッターサイズを復元
@@ -114,6 +116,9 @@ class MainWindow(QMainWindow):
         
         # スプリッターサイズ変更時のシグナル接続
         self.main_splitter.splitterMoved.connect(self.on_splitter_moved)
+        
+        # 初期プロンプトプレビューを更新（少し遅延させる）
+        QTimer.singleShot(100, self.update_prompt_preview)
         
         # 自動保存タイマー
         self.auto_save_timer = QTimer()
@@ -142,10 +147,10 @@ class MainWindow(QMainWindow):
         self.file_tree.setMaximumWidth(400)
         self.main_splitter.addWidget(self.file_tree)
         
-        # 中央：プレビューエリア
-        self.file_preview = FilePreviewWidget()
-        self.file_preview.setMinimumWidth(300)
-        self.main_splitter.addWidget(self.file_preview)
+        # 中央：プロンプトプレビューエリア
+        self.prompt_preview = PromptPreviewWidget()
+        self.prompt_preview.setMinimumWidth(300)
+        self.main_splitter.addWidget(self.prompt_preview)
         
         # 右側：プロンプト入力エリア
         right_widget = QWidget()
@@ -163,6 +168,10 @@ class MainWindow(QMainWindow):
         selector_layout.addWidget(self.path_mode_selector)
         
         right_layout.addLayout(selector_layout)
+        
+        # テンプレート選択
+        self.template_selector = TemplateSelector()
+        right_layout.addWidget(self.template_selector)
         
         # プロンプト入力
         self.prompt_input = PromptInputWidget(self.workspace_manager)
@@ -186,8 +195,14 @@ class MainWindow(QMainWindow):
         # パスモード変更
         self.path_mode_selector.path_mode_changed.connect(self.on_path_mode_changed)
         
+        # テンプレート変更
+        self.template_selector.template_changed.connect(self.on_template_changed)
+        
         # プロンプト生成
         self.prompt_input.generate_and_copy.connect(self.on_prompt_generated)
+        
+        # プロンプトテキスト変更（リアルタイム更新用）
+        self.prompt_input.text_changed.connect(self.update_prompt_preview)
         
         # ファイル選択
         self.file_tree.file_selected.connect(self.on_file_selected)
@@ -234,6 +249,14 @@ class MainWindow(QMainWindow):
         generate_action.setShortcut("Shift+Return")
         generate_action.triggered.connect(self.prompt_input.generate_prompt)
         edit_menu.addAction(generate_action)
+        
+        # テンプレートメニュー
+        template_menu = menubar.addMenu(tr("menu_templates"))
+        
+        # サンプルテンプレート作成
+        create_sample_action = QAction(tr("menu_create_sample_templates"), self)
+        create_sample_action.triggered.connect(self.create_sample_templates)
+        template_menu.addAction(create_sample_action)
         
         # 表示メニュー
         view_menu = menubar.addMenu(tr("menu_view"))
@@ -331,6 +354,9 @@ class MainWindow(QMainWindow):
         self.settings_manager.set_thinking_level(level)
         self.thinking_level_label.setText(f"{tr('label_thinking_level')} {level}")
         self.statusBar().showMessage(tr("status_thinking_level_changed", level=level), 2000)
+        
+        # プロンプトプレビューを更新
+        self.update_prompt_preview()
     
     def on_path_mode_changed(self, mode: str):
         """パスモードが変更されたとき"""
@@ -338,17 +364,30 @@ class MainWindow(QMainWindow):
         self.settings_manager.set_path_mode(mode)
         self.statusBar().showMessage(tr("status_path_mode_changed", mode=mode), 2000)
     
-    def on_prompt_generated(self, prompt: str, thinking_level: str):
+    def on_prompt_generated(self, main_content: str, thinking_level: str):
         """プロンプトが生成されたとき"""
-        lines = len(prompt.split('\n'))
-        chars = len(prompt)
+        # テンプレートセレクターから選択された内容を取得
+        pre_template = self.template_selector.get_selected_pre_template()
+        post_template = self.template_selector.get_selected_post_template()
+        
+        # テンプレートマネージャーで最終プロンプトを構築
+        template_manager = get_template_manager()
+        final_prompt = template_manager.build_final_prompt(
+            thinking_level, pre_template, main_content, post_template
+        )
+        
+        # クリップボードにコピー
+        clipboard = QApplication.clipboard()
+        clipboard.setText(final_prompt)
+        
+        # ステータス表示
+        lines = len(final_prompt.split('\n'))
+        chars = len(final_prompt)
         self.statusBar().showMessage(tr("status_prompt_copied", lines=lines, chars=chars), 3000)
     
     def on_file_selected(self, file_path: str):
         """ファイルが選択されたとき"""
         self.statusBar().showMessage(tr("status_file_selected", filename=os.path.basename(file_path)), 2000)
-        # プレビューを更新
-        self.file_preview.preview_file(file_path)
     
     def on_file_double_clicked(self, file_path: str):
         """ファイルがダブルクリックされたとき"""
@@ -377,6 +416,44 @@ class MainWindow(QMainWindow):
         self.prompt_input.set_text_without_completion(new_text)
         self.statusBar().showMessage(tr("status_file_added", filename=workspace_relative_path), 2000)
     
+    def on_template_changed(self):
+        """テンプレート選択変更時"""
+        # プロンプトプレビューを更新
+        self.update_prompt_preview()
+    
+    def create_sample_templates(self):
+        """サンプルテンプレートを作成"""
+        template_manager = get_template_manager()
+        template_manager.create_sample_templates()
+        
+        # テンプレートセレクターを更新
+        self.template_selector.refresh_templates()
+        
+        # ステータスメッセージ
+        self.statusBar().showMessage(tr("msg_sample_templates_created"), 3000)
+        
+        # 確認ダイアログ
+        QMessageBox.information(self, tr("dialog_success"), tr("msg_sample_templates_created"))
+    
+    def update_prompt_preview(self, text: str = None):
+        """プロンプトプレビューを更新"""
+        # 現在の値を取得
+        thinking_level = self.thinking_selector.get_current_thinking_level()
+        pre_template = self.template_selector.get_selected_pre_template()
+        post_template = self.template_selector.get_selected_post_template()
+        
+        # テキストが指定されていない場合は現在の内容を取得
+        if text is None:
+            text = self.prompt_input.get_prompt_text()
+        
+        # プレビューを更新
+        self.prompt_preview.update_preview(
+            thinking_level=thinking_level,
+            pre_template=pre_template,
+            main_content=text,
+            post_template=post_template
+        )
+    
     def _on_language_changed(self, language):
         """言語変更時のコールバック"""
         # メニューを再構築
@@ -394,6 +471,8 @@ class MainWindow(QMainWindow):
         self.prompt_input.update_language()
         self.thinking_selector.update_language()
         self.path_mode_selector.update_language()
+        self.template_selector.update_language()
+        self.prompt_preview.update_language()
         
         # 状態メッセージを更新
         self.statusBar().showMessage(tr("status_language_changed", language=language), 3000)
@@ -439,7 +518,7 @@ class MainWindow(QMainWindow):
     def toggle_preview(self):
         """プレビュー表示を切り替え"""
         is_visible = self.preview_action.isChecked()
-        self.file_preview.setVisible(is_visible)
+        self.prompt_preview.setVisible(is_visible)
         
         # 設定を保存
         self.settings_manager.set_preview_visible(is_visible)

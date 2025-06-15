@@ -1,0 +1,4 @@
+{
+  "title": "Bug Analysis",
+  "content": "Please analyze the following code to identify potential bugs and issues:\n- Logic errors\n- Edge cases\n- Memory leaks\n- Race conditions"
+}

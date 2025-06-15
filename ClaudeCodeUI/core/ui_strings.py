@@ -431,6 +431,100 @@ Features:
 - Thinking level settings
 - Theme switching
 - Preview functionality"""
+        },
+        
+        # === テンプレート機能 ===
+        "menu_templates": {
+            "ja": "テンプレート(&T)",
+            "en": "&Templates"
+        },
+        "menu_template_settings": {
+            "ja": "テンプレート設定(&S)",
+            "en": "Template &Settings"
+        },
+        "menu_create_sample_templates": {
+            "ja": "サンプルテンプレート作成(&C)",
+            "en": "&Create Sample Templates"
+        },
+        "label_pre_template": {
+            "ja": "プリプロンプト:",
+            "en": "Pre-prompt:"
+        },
+        "label_post_template": {
+            "ja": "ポストプロンプト:",
+            "en": "Post-prompt:"
+        },
+        "template_none": {
+            "ja": "なし",
+            "en": "None"
+        },
+        "button_preview": {
+            "ja": "プレビュー",
+            "en": "Preview"
+        },
+        "template_preview_title": {
+            "ja": "プロンプトプレビュー",
+            "en": "Prompt Preview"
+        },
+        "template_settings_title": {
+            "ja": "テンプレート設定",
+            "en": "Template Settings"
+        },
+        "template_create_title": {
+            "ja": "新しいテンプレート",
+            "en": "New Template"
+        },
+        "template_type_pre": {
+            "ja": "プリプロンプト",
+            "en": "Pre-prompt"
+        },
+        "template_type_post": {
+            "ja": "ポストプロンプト",
+            "en": "Post-prompt"
+        },
+        "label_template_title": {
+            "ja": "タイトル:",
+            "en": "Title:"
+        },
+        "label_template_content": {
+            "ja": "内容:",
+            "en": "Content:"
+        },
+        "button_create_template": {
+            "ja": "作成",
+            "en": "Create"
+        },
+        "button_delete_template": {
+            "ja": "削除",
+            "en": "Delete"
+        },
+        "button_edit_template": {
+            "ja": "編集",
+            "en": "Edit"
+        },
+        "msg_template_created": {
+            "ja": "テンプレート '{title}' を作成しました",
+            "en": "Template '{title}' created"
+        },
+        "msg_template_deleted": {
+            "ja": "テンプレート '{title}' を削除しました",
+            "en": "Template '{title}' deleted"
+        },
+        "msg_sample_templates_created": {
+            "ja": "サンプルテンプレートを作成しました",
+            "en": "Sample templates created"
+        },
+        "msg_confirm_delete_template": {
+            "ja": "テンプレート '{title}' を削除しますか？",
+            "en": "Delete template '{title}'?"
+        },
+        "template_placeholder_title": {
+            "ja": "テンプレート名を入力...",
+            "en": "Enter template name..."
+        },
+        "template_placeholder_content": {
+            "ja": "テンプレート内容を入力...",
+            "en": "Enter template content..."
         }
     }
     
@@ -465,7 +559,6 @@ Features:
     @classmethod
     def get_thinking_level_display(cls, level: str) -> str:
         """思考レベルの表示名を取得"""
-        language = get_language_manager().get_current_language()
         
         # すべての言語で純粋なレベル名のみを表示（説明なし）
         return level
