@@ -6,6 +6,9 @@ from .light_theme import LightTheme
 from .dark_theme import DarkTheme
 from .cyberpunk_theme import CyberpunkTheme
 from .nordic_theme import NordicTheme
+from .electric_theme import ElectricTheme
+from .material_theme import MaterialTheme
+from .retro_theme import RetroTheme
 
 
 class ThemeManager:
@@ -17,7 +20,10 @@ class ThemeManager:
             "light": LightTheme,
             "dark": DarkTheme,
             "cyberpunk": CyberpunkTheme,
-            "nordic": NordicTheme
+            "nordic": NordicTheme,
+            "electric": ElectricTheme,
+            "material": MaterialTheme,
+            "retro": RetroTheme
         }
         
         # テーマインスタンスのキャッシュ

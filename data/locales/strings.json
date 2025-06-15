@@ -80,6 +80,18 @@
       "ja": "ノルディック",
       "en": "Nordic"
     },
+    "theme_electric_name": {
+      "ja": "エレクトリック",
+      "en": "Electric"
+    },
+    "theme_material_name": {
+      "ja": "マテリアル",
+      "en": "Material"
+    },
+    "theme_retro_name": {
+      "ja": "レトロ",
+      "en": "Retro"
+    },
     "menu_language": {
       "ja": "言語(&L)",
       "en": "&Language"

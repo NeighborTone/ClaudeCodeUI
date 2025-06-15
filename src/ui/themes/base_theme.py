@@ -82,10 +82,16 @@ class BaseTheme(ABC):
             "ダークモード": "dark", 
             "ライトモード": "light",
             "ノルディック": "nordic",
+            "エレクトリック": "electric",
+            "マテリアル": "material",
+            "レトロ": "retro",
             "Cyberpunk": "cyber",
             "Dark Mode": "dark",
             "Light Mode": "light", 
-            "Nordic": "nordic"
+            "Nordic": "nordic",
+            "Electric": "electric",
+            "Material": "material",
+            "Retro": "retro"
         }
         
         return name_mapping.get(display_name, display_name.lower().replace(" ", "_"))
