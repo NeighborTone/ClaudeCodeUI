@@ -14,6 +14,9 @@ from core.ui_strings import tr
 class PromptPreviewWidget(QWidget):
     """プロンプトプレビューウィジェット"""
     
+    # シグナル: プレビュー内容が変更された時に最終プロンプトを送信
+    prompt_content_changed = Signal(str)
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         self.template_manager = get_template_manager()
@@ -77,10 +80,11 @@ class PromptPreviewWidget(QWidget):
     
     def _update_preview(self):
         """実際のプレビュー更新処理"""
-        # プレースホルダーテキストが空の場合のデフォルト
+        # プレースホルダーテキストが空の場合のデフォルト設定を改善
         main_content = self.current_main_content
         if not main_content.strip():
-            main_content = tr("template_placeholder_content")
+            # プレースホルダーテキストの代わりに空文字を使用（実際のプロンプトでは不要）
+            main_content = ""
         
         # 最終プロンプトを構築
         final_prompt = self.template_manager.build_final_prompt(
@@ -97,6 +101,9 @@ class PromptPreviewWidget(QWidget):
         cursor = self.preview_text.textCursor()
         cursor.movePosition(cursor.MoveOperation.Start)
         self.preview_text.setTextCursor(cursor)
+        
+        # プレビュー内容変更シグナルを送信（トークンカウント更新用）
+        self.prompt_content_changed.emit(final_prompt)
     
     def update_language(self):
         """言語変更時のUI更新"""

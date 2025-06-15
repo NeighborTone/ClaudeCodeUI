@@ -204,6 +204,9 @@ class MainWindow(QMainWindow):
         # プロンプトテキスト変更（リアルタイム更新用）
         self.prompt_input.text_changed.connect(self.update_prompt_preview)
         
+        # プレビュー内容変更（トークンカウント更新用）
+        self.prompt_preview.prompt_content_changed.connect(self.on_preview_content_changed)
+        
         # ファイル選択
         self.file_tree.file_selected.connect(self.on_file_selected)
         self.file_tree.file_double_clicked.connect(self.on_file_double_clicked)
@@ -453,6 +456,11 @@ class MainWindow(QMainWindow):
             main_content=text,
             post_template=post_template
         )
+    
+    def on_preview_content_changed(self, full_prompt_text: str):
+        """プレビュー内容変更時（トークンカウント更新）"""
+        # プレビューの内容を基準にトークンカウントを更新
+        self.prompt_input.update_token_count(full_prompt_text)
     
     def _on_language_changed(self, language):
         """言語変更時のコールバック"""

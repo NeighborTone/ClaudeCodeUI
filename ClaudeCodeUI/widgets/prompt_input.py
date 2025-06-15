@@ -307,11 +307,22 @@ class PromptInputWidget(QWidget):
         """パスモード設定"""
         self.path_mode = mode
     
-    def update_token_count(self):
-        """トークン数更新"""
-        text = self.text_edit.toPlainText()
-        if self.thinking_level and self.thinking_level != "think":
-            text = f"{self.thinking_level}\n{text}"
+    def update_token_count(self, full_prompt_text: str = None):
+        """
+        トークン数更新
+        
+        Args:
+            full_prompt_text: フルプロンプトテキスト（プレビューから）
+                            Noneの場合は従来通りメインテキストのみでカウント
+        """
+        if full_prompt_text is not None:
+            # プレビューからのフルプロンプトでトークンカウント
+            text = full_prompt_text
+        else:
+            # 従来通りのメインテキスト + 思考レベルでカウント
+            text = self.text_edit.toPlainText()
+            if self.thinking_level and self.thinking_level != "think":
+                text = f"{self.thinking_level}\n{text}"
         
         token_count = TokenCounter.count_tokens(text)
         formatted_count = TokenCounter.format_token_count(token_count)
