@@ -415,6 +415,62 @@
     "template_placeholder_content": {
       "ja": "テンプレート内容を入力...",
       "en": "Enter template content..."
+    },
+    "button_search": {
+      "ja": "検索",
+      "en": "Search"
+    },
+    "button_clear_search": {
+      "ja": "クリア",
+      "en": "Clear"
+    },
+    "search_placeholder": {
+      "ja": "ファイル検索...",
+      "en": "Search files..."
+    },
+    "search_tooltip": {
+      "ja": "ファイル名とフォルダ名を検索",
+      "en": "Search file and folder names"
+    },
+    "clear_search_tooltip": {
+      "ja": "検索をクリア",
+      "en": "Clear search"
+    },
+    "filter_label": {
+      "ja": "フィルター:",
+      "en": "Filter:"
+    },
+    "filter_all": {
+      "ja": "すべて",
+      "en": "All Files"
+    },
+    "filter_source": {
+      "ja": "ソースコード",
+      "en": "Source Code"
+    },
+    "filter_images": {
+      "ja": "画像",
+      "en": "Images"
+    },
+    "filter_media": {
+      "ja": "音声・動画",
+      "en": "Audio/Video"
+    },
+    "filter_config": {
+      "ja": "設定",
+      "en": "Configuration"
+    },
+    "filter_docs": {
+      "ja": "ドキュメント",
+      "en": "Documents"
+    },
+    "filter_game": {
+      "ja": "ゲームアセット",
+      "en": "Game Assets"
+    },
+    "filter_tooltip": {
+      "ja": "ファイルタイプでフィルター",
+      "en": "Filter by file type"
     }
   }
 }

@@ -6,8 +6,8 @@ import os
 from typing import Optional, List
 from PySide6.QtWidgets import (QTreeWidget, QTreeWidgetItem, QVBoxLayout, 
                               QWidget, QPushButton, QHBoxLayout, QFileDialog,
-                              QMenu, QMessageBox)
-from PySide6.QtCore import Signal, Qt, QUrl
+                              QMenu, QMessageBox, QLineEdit, QComboBox, QLabel)
+from PySide6.QtCore import Signal, Qt, QUrl, QTimer
 from PySide6.QtGui import QAction, QIcon, QDragEnterEvent, QDropEvent
 
 from src.core.workspace_manager import WorkspaceManager
@@ -25,6 +25,50 @@ class FileTreeWidget(QWidget):
         
         # Use provided workspace_manager or create new one
         self.workspace_manager = workspace_manager if workspace_manager else WorkspaceManager()
+        
+        # Search functionality
+        self.search_timer = QTimer()
+        self.search_timer.setSingleShot(True)
+        self.search_timer.timeout.connect(self.perform_search)
+        self.search_delay = 300  # 300ms delay for debouncing
+        
+        # File type filter categories
+        self.file_categories = {
+            'all': set(),  # Empty set means all files
+            'source': {
+                '.py', '.cpp', '.c', '.h', '.hpp', '.cxx', '.hxx',
+                '.cs', '.java', '.js', '.ts', '.jsx', '.tsx',
+                '.go', '.rs', '.php', '.rb', '.swift', '.kt',
+                '.hlsl', '.glsl', '.shader', '.cginc', '.compute'
+            },
+            'images': {
+                '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif',
+                '.webp', '.svg', '.ico', '.psd', '.ai', '.eps'
+            },
+            'media': {
+                '.wav', '.mp3', '.flac', '.aac', '.ogg', '.wma',
+                '.m4a', '.opus', '.aiff', '.au',
+                '.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv',
+                '.webm', '.m4v', '.3gp', '.ogv'
+            },
+            'config': {
+                '.json', '.yaml', '.yml', '.xml', '.toml', '.ini', '.cfg', '.config',
+                '.cmake', '.make', '.gradle', '.sln', '.vcxproj',
+                '.pro', '.pri', '.qmake', '.build', '.target'
+            },
+            'docs': {
+                '.csv', '.txt', '.md', '.rst'
+            },
+            'game': {
+                '.uproject', '.uplugin', '.uasset', '.umap', '.ucpp',
+                '.unity', '.prefab', '.asset', '.mat', '.anim', '.controller',
+                '.overrideController', '.mask', '.physicMaterial', '.physicsMaterial2D',
+                '.guiskin', '.fontsettings', '.cubemap', '.flare', '.preset',
+                '.playable', '.signal', '.mixer', '.cs.meta', '.unity.meta',
+                '.prefab.meta', '.asset.meta', '.mat.meta', '.anim.meta'
+            }
+        }
+        
         self.setup_ui()
         self.load_workspaces()
         
@@ -48,6 +92,31 @@ class FileTreeWidget(QWidget):
         
         layout.addLayout(toolbar_layout)
         
+        # 検索バー
+        search_layout = QHBoxLayout()
+        
+        self.search_box = QLineEdit()
+        self.search_box.setPlaceholderText(tr("search_placeholder"))
+        self.search_box.setToolTip(tr("search_tooltip"))
+        self.search_box.textChanged.connect(self.on_search_text_changed)
+        search_layout.addWidget(self.search_box)
+        
+        layout.addLayout(search_layout)
+        
+        # フィルターバー
+        filter_layout = QHBoxLayout()
+        
+        filter_label = QLabel(tr("filter_label"))
+        filter_layout.addWidget(filter_label)
+        
+        self.filter_combo = QComboBox()
+        self.filter_combo.setToolTip(tr("filter_tooltip"))
+        self.populate_filter_combo()
+        self.filter_combo.currentTextChanged.connect(self.on_filter_changed)
+        filter_layout.addWidget(self.filter_combo)
+        
+        layout.addLayout(filter_layout)
+        
         # ツリーウィジェット
         self.tree = QTreeWidget()
         self.tree.setHeaderLabel(tr("tree_header"))
@@ -63,6 +132,10 @@ class FileTreeWidget(QWidget):
         self.add_workspace_btn.setText(tr("button_add_folder"))
         self.refresh_btn.setText(tr("button_refresh"))
         self.tree.setHeaderLabel(tr("tree_header"))
+        self.search_box.setPlaceholderText(tr("search_placeholder"))
+        self.search_box.setToolTip(tr("search_tooltip"))
+        self.filter_combo.setToolTip(tr("filter_tooltip"))
+        self.populate_filter_combo()  # Refresh filter combo with new language
     
     def add_workspace(self):
         """ワークスペースを追加"""
@@ -213,7 +286,14 @@ class FileTreeWidget(QWidget):
             print(f"Error loading folder: {path} - {e}")
     
     def refresh_tree(self):
-        """ツリーを更新"""
+        """ツリーを更新（検索とフィルターもリセット）"""
+        # 検索ボックスをクリア
+        self.search_box.clear()
+        
+        # フィルターを「すべて」にリセット
+        self.filter_combo.setCurrentIndex(0)  # First item is "All Files"
+        
+        # ツリーを再読み込み
         self.load_workspaces()
     
     def on_item_clicked(self, item: QTreeWidgetItem, column: int = 0):
@@ -317,3 +397,124 @@ class FileTreeWidget(QWidget):
             )
         
         event.acceptProposedAction()
+    
+    def on_search_text_changed(self, text: str):
+        """検索テキストが変更されたときの処理（デバウンス付き）"""
+        self.search_timer.stop()
+        self.search_timer.start(self.search_delay)
+    
+    def perform_search(self):
+        """実際の検索処理を実行"""
+        self.apply_filters()
+    
+    def apply_filters(self):
+        """検索とフィルターを組み合わせて適用"""
+        search_text = self.search_box.text().strip().lower()
+        current_filter = self.get_current_filter_key()
+        
+        if not search_text and current_filter == 'all':
+            # 検索テキストもフィルターもない場合、すべて表示
+            self.show_all_items()
+        else:
+            # 検索とフィルターを実行
+            self.filter_tree_items(search_text, current_filter)
+    
+    def populate_filter_combo(self):
+        """フィルターコンボボックスを設定"""
+        current_selection = self.filter_combo.currentText() if hasattr(self, 'filter_combo') else tr("filter_all")
+        
+        self.filter_combo.clear()
+        self.filter_combo.addItem(tr("filter_all"))
+        self.filter_combo.addItem(tr("filter_source"))
+        self.filter_combo.addItem(tr("filter_images"))
+        self.filter_combo.addItem(tr("filter_media"))
+        self.filter_combo.addItem(tr("filter_config"))
+        self.filter_combo.addItem(tr("filter_docs"))
+        self.filter_combo.addItem(tr("filter_game"))
+        
+        # Restore previous selection if possible
+        index = self.filter_combo.findText(current_selection)
+        if index >= 0:
+            self.filter_combo.setCurrentIndex(index)
+    
+    def get_current_filter_key(self) -> str:
+        """現在選択されているフィルターのキーを取得"""
+        current_text = self.filter_combo.currentText()
+        filter_map = {
+            tr("filter_all"): 'all',
+            tr("filter_source"): 'source',
+            tr("filter_images"): 'images',
+            tr("filter_media"): 'media',
+            tr("filter_config"): 'config',
+            tr("filter_docs"): 'docs',
+            tr("filter_game"): 'game'
+        }
+        return filter_map.get(current_text, 'all')
+    
+    def on_filter_changed(self):
+        """フィルターが変更されたときの処理"""
+        self.apply_filters()
+    
+    def show_all_items(self):
+        """すべてのアイテムを表示"""
+        for i in range(self.tree.topLevelItemCount()):
+            item = self.tree.topLevelItem(i)
+            self.set_item_visible_recursive(item, True)
+    
+    def filter_tree_items(self, search_text: str, filter_key: str):
+        """ツリーアイテムを検索テキストとファイルタイプでフィルタリング"""
+        for i in range(self.tree.topLevelItemCount()):
+            workspace_item = self.tree.topLevelItem(i)
+            # ワークスペースは常に表示
+            workspace_item.setHidden(False)
+            # 子アイテムをフィルタリング
+            has_visible_children = self.filter_item_recursive(workspace_item, search_text, filter_key)
+            # 子に表示可能なアイテムがない場合はワークスペースを非表示
+            workspace_item.setHidden(not has_visible_children)
+    
+    def filter_item_recursive(self, item: QTreeWidgetItem, search_text: str, filter_key: str) -> bool:
+        """再帰的にアイテムをフィルタリング（子に一致するものがあるかチェック）"""
+        has_visible_children = False
+        item_matches = False
+        
+        # 現在のアイテムの名前をチェック
+        item_name = item.text(0).lower()
+        data = item.data(0, Qt.UserRole)
+        
+        # ワークスペース以外のアイテムのみ名前とタイプでマッチング
+        if data and data.get('type') != 'workspace':
+            # 検索テキストのマッチング
+            search_matches = not search_text or search_text in item_name
+            
+            # ファイルタイプフィルターのマッチング
+            type_matches = True
+            if data.get('type') == 'file' and filter_key != 'all':
+                file_ext = os.path.splitext(item_name)[1].lower()
+                type_matches = file_ext in self.file_categories.get(filter_key, set())
+            
+            item_matches = search_matches and type_matches
+        
+        # 子アイテムを再帰的にチェック
+        for i in range(item.childCount()):
+            child = item.child(i)
+            child_has_match = self.filter_item_recursive(child, search_text, filter_key)
+            if child_has_match:
+                has_visible_children = True
+        
+        # アイテム自体がマッチするか、子にマッチするものがある場合は表示
+        should_show = item_matches or has_visible_children
+        
+        # ワークスペースアイテムは特別扱い（常に表示するが、子の状態によって決まる）
+        if data and data.get('type') == 'workspace':
+            item.setHidden(False)
+            return has_visible_children
+        else:
+            item.setHidden(not should_show)
+            return should_show
+    
+    def set_item_visible_recursive(self, item: QTreeWidgetItem, visible: bool):
+        """再帰的にアイテムの表示状態を設定"""
+        item.setHidden(not visible)
+        for i in range(item.childCount()):
+            child = item.child(i)
+            self.set_item_visible_recursive(child, visible)
