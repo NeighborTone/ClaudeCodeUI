@@ -148,7 +148,6 @@ class PromptInputWidget(QWidget):
         self.workspace_manager = workspace_manager
         self.file_searcher = FileSearcher(workspace_manager)
         self.thinking_level = "think"
-        self.path_mode = PathConverter.get_default_mode()
         
         # 状態管理
         self.current_at_match = None
@@ -291,7 +290,7 @@ class PromptInputWidget(QWidget):
         if workspace_relative_path is None:
             workspace_relative_path = os.path.basename(file_path)
         
-        workspace_relative_path = PathConverter.convert_path(workspace_relative_path, self.path_mode)
+        workspace_relative_path = PathConverter.normalize_path(workspace_relative_path)
         
         # テキスト置換
         text = self.text_edit.toPlainText()
@@ -331,9 +330,6 @@ class PromptInputWidget(QWidget):
         self.thinking_level = level
         self.update_token_count()
     
-    def set_path_mode(self, mode: str):
-        """パスモード設定"""
-        self.path_mode = mode
     
     def update_token_count(self, full_prompt_text: str = None):
         """

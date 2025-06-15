@@ -30,26 +30,6 @@ class UIStrings:
         """思考レベルの表示名を取得"""
         # すべての言語で純粋なレベル名のみを表示（説明なし）
         return level
-    
-    @classmethod
-    def get_path_mode_display(cls, mode: str) -> str:
-        """パスモードの表示名を取得"""
-        language = get_language_manager().get_current_language()
-        
-        if language == "ja":
-            mode_descriptions = {
-                "forward": "Forward (/) - WSL対応",
-                "windows": "Windows (\\) - Windows形式",
-                "wsl": "WSL (/mnt/c/) - WSL専用"
-            }
-            return mode_descriptions.get(mode, mode)
-        else:
-            mode_descriptions = {
-                "forward": "Forward (/) - WSL compatible",
-                "windows": "Windows (\\) - Windows format", 
-                "wsl": "WSL (/mnt/c/) - WSL specific"
-            }
-            return mode_descriptions.get(mode, mode)
 
 
 # 便利関数
@@ -94,9 +74,3 @@ if __name__ == "__main__":
     print(f"- Menu file: {tr('menu_file')}")
     print(f"- Button generate: {tr('button_generate')}")
     
-    # パスモード表示テスト
-    print("\nPath mode displays:")
-    lang_manager.set_language("ja")
-    print(f"- Japanese: {UIStrings.get_path_mode_display('forward')}")
-    lang_manager.set_language("en")
-    print(f"- English: {UIStrings.get_path_mode_display('forward')}")

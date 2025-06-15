@@ -19,7 +19,6 @@ from src.core.ui_strings import tr
 from src.widgets.file_tree import FileTreeWidget
 from src.widgets.prompt_input import PromptInputWidget
 from src.widgets.thinking_selector import ThinkingSelectorWidget
-from src.widgets.path_mode_selector import PathModeSelectorWidget
 from src.widgets.prompt_preview import PromptPreviewWidget
 from src.widgets.template_selector import TemplateSelector
 from src.core.template_manager import get_template_manager
@@ -83,9 +82,8 @@ class MainWindow(QMainWindow):
         # 言語変更時のコールバックを登録
         self.language_manager.register_language_change_callback("main_window", self._on_language_changed)
         
-        # 設定から思考レベル、パスモード、テーマ、プレビュー表示、スプリッターサイズ、テンプレート選択を復元
+        # 設定から思考レベル、テーマ、プレビュー表示、スプリッターサイズ、テンプレート選択を復元
         thinking_level = self.settings_manager.get_thinking_level()
-        path_mode = self.settings_manager.get_path_mode()
         theme_name = self.settings_manager.get_theme()
         preview_visible = self.settings_manager.get_preview_visible()
         splitter_sizes = self.settings_manager.get_splitter_sizes()
@@ -105,11 +103,6 @@ class MainWindow(QMainWindow):
         # 思考レベルを設定
         self.thinking_selector.set_thinking_level(thinking_level)
         self.prompt_input.set_thinking_level(thinking_level)
-        
-        # パスモードを設定
-        if path_mode:
-            self.path_mode_selector.set_path_mode(path_mode)
-            self.prompt_input.set_path_mode(path_mode)
         
         # プレビュー表示状態を復元
         self.prompt_preview.setVisible(preview_visible)
@@ -175,18 +168,9 @@ class MainWindow(QMainWindow):
         right_widget = QWidget()
         right_layout = QVBoxLayout(right_widget)
         
-        # 思考レベル選択とパスモード選択を横並びに配置
-        selector_layout = QHBoxLayout()
-        
         # 思考レベル選択
         self.thinking_selector = ThinkingSelectorWidget()
-        selector_layout.addWidget(self.thinking_selector)
-        
-        # パスモード選択
-        self.path_mode_selector = PathModeSelectorWidget()
-        selector_layout.addWidget(self.path_mode_selector)
-        
-        right_layout.addLayout(selector_layout)
+        right_layout.addWidget(self.thinking_selector)
         
         # テンプレート選択
         self.template_selector = TemplateSelector()
@@ -210,9 +194,6 @@ class MainWindow(QMainWindow):
         """イベント接続"""
         # 思考レベル変更
         self.thinking_selector.thinking_level_changed.connect(self.on_thinking_level_changed)
-        
-        # パスモード変更
-        self.path_mode_selector.path_mode_changed.connect(self.on_path_mode_changed)
         
         # テンプレート変更
         self.template_selector.template_changed.connect(self.on_template_changed)
@@ -293,7 +274,7 @@ class MainWindow(QMainWindow):
         for theme_name in theme_names:
             display_name = theme_display_names.get(theme_name, theme_name)
             theme_action = QAction(display_name, self)
-            theme_action.triggered.connect(lambda checked, t=theme_name: self.change_theme(t))
+            theme_action.triggered.connect(lambda _checked=False, t=theme_name: self.change_theme(t))
             theme_menu.addAction(theme_action)
         
         # 設定メニュー
@@ -395,11 +376,6 @@ class MainWindow(QMainWindow):
         # プロンプトプレビューを更新
         self.update_prompt_preview()
     
-    def on_path_mode_changed(self, mode: str):
-        """パスモードが変更されたとき"""
-        self.prompt_input.set_path_mode(mode)
-        self.settings_manager.set_path_mode(mode)
-        self.statusBar().showMessage(tr("status_path_mode_changed", mode=mode), 2000)
     
     def on_prompt_generated(self, main_content: str, thinking_level: str):
         """プロンプトが生成されたとき"""
@@ -439,8 +415,8 @@ class MainWindow(QMainWindow):
         if workspace_relative_path is None:
             workspace_relative_path = os.path.basename(file_path)
         
-        # パスを適切に変換
-        workspace_relative_path = PathConverter.convert_path(workspace_relative_path, self.prompt_input.path_mode)
+        # パスを正規化（「/」区切りに統一）
+        workspace_relative_path = PathConverter.normalize_path(workspace_relative_path)
         
         # ファイル内容をプロンプトに挿入
         current_text = self.prompt_input.get_prompt_text()
@@ -505,7 +481,6 @@ class MainWindow(QMainWindow):
         self.file_tree.update_language()
         self.prompt_input.update_language()
         self.thinking_selector.update_language()
-        self.path_mode_selector.update_language()
         self.template_selector.update_language()
         self.prompt_preview.update_language()
         
@@ -563,7 +538,7 @@ class MainWindow(QMainWindow):
         else:
             self.statusBar().showMessage(tr("status_preview_hidden"), 2000)
     
-    def on_splitter_moved(self, pos: int, index: int):
+    def on_splitter_moved(self, _pos: int, _index: int):
         """スプリッターが移動されたとき"""
         sizes = self.main_splitter.sizes()
         self.settings_manager.set_splitter_sizes(sizes)
