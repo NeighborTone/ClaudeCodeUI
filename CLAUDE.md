@@ -225,15 +225,17 @@ class CustomTheme(BaseTheme):
 ### Template Management System
 
 #### Template Types
-- **Pre-prompts**: Task initialization templates (Claude Code Best Practice included)
-- **Post-prompts**: Additional instruction templates (expandable system for custom templates)
+- **Pre-prompts**: Task initialization templates (Claude Code Best Practice, Sample templates)
+- **Post-prompts**: Additional instruction templates (Sample templates, expandable system)
 
 #### Template Storage Structure
 ```
 templates/
 ├── pre/                    # Pre-prompt templates
-│   └── ClaudeCodeBestPractice.json
-└── post/                   # Post-prompt templates (expandable)
+│   ├── ClaudeCodeBestPractice.json
+│   └── Sample_Pre.json
+└── post/                   # Post-prompt templates
+    └── Sample_Post.json
 ```
 
 #### Template Format

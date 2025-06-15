@@ -79,9 +79,8 @@ pip3 install -r ClaudeCodeUI/requirements.txt
 
 #### テンプレート活用
 - **Claude Code Best Practice**: Claude Code使用時のベストプラクティス集
+- **サンプルテンプレート**: プリ・ポストプロンプトのシンプルな使用例
 - **カスタムテンプレート**: JSONファイルで独自テンプレートを追加可能
-- **プリプロンプト**: タスク開始時の定型文を自動挿入
-- **ポストプロンプト**: 追加指示を自動付加（将来対応予定）
 
 #### トークンカウンター
 - 日本語と英語で異なる文字/トークン比率を適用
@@ -157,8 +156,10 @@ ClaudeCodeUI/
 │   └── path_mode_selector.py  # パスモード選択
 ├── templates/                  # テンプレートシステム
 │   ├── pre/                   # プリプロンプト
-│   │   └── ClaudeCodeBestPractice.json
-│   └── post/                  # ポストプロンプト（カスタム追加可能）
+│   │   ├── ClaudeCodeBestPractice.json
+│   │   └── Sample_Pre.json
+│   └── post/                  # ポストプロンプト
+│       └── Sample_Post.json
 └── resources/                  # リソース
     └── icons/                 # アイコン
 ```

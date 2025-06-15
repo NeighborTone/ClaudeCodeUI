@@ -253,13 +253,6 @@ class MainWindow(QMainWindow):
         generate_action.triggered.connect(self.prompt_input.generate_prompt)
         edit_menu.addAction(generate_action)
         
-        # テンプレートメニュー
-        template_menu = menubar.addMenu(tr("menu_templates"))
-        
-        # サンプルテンプレート作成
-        create_sample_action = QAction(tr("menu_create_sample_templates"), self)
-        create_sample_action.triggered.connect(self.create_sample_templates)
-        template_menu.addAction(create_sample_action)
         
         # 表示メニュー
         view_menu = menubar.addMenu(tr("menu_view"))
@@ -424,19 +417,6 @@ class MainWindow(QMainWindow):
         # プロンプトプレビューを更新
         self.update_prompt_preview()
     
-    def create_sample_templates(self):
-        """サンプルテンプレートを作成"""
-        template_manager = get_template_manager()
-        template_manager.create_sample_templates()
-        
-        # テンプレートセレクターを更新
-        self.template_selector.refresh_templates()
-        
-        # ステータスメッセージ
-        self.statusBar().showMessage(tr("msg_sample_templates_created"), 3000)
-        
-        # 確認ダイアログ
-        QMessageBox.information(self, tr("dialog_success"), tr("msg_sample_templates_created"))
     
     def update_prompt_preview(self, text: str = None):
         """プロンプトプレビューを更新"""

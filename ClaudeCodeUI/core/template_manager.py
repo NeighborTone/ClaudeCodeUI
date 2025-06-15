@@ -224,46 +224,6 @@ class TemplateManager:
         """テンプレートディレクトリのパスを取得"""
         return self.templates_dir
     
-    def create_sample_templates(self) -> None:
-        """サンプルテンプレートを作成"""
-        # サンプルプリプロンプトテンプレート
-        sample_pre_templates = [
-            {
-                "title": "Code Review",
-                "content": "Please review the following code carefully and provide suggestions for improvement, focusing on:\n- Code quality and best practices\n- Performance optimizations\n- Security considerations\n- Maintainability"
-            },
-            {
-                "title": "Bug Analysis",
-                "content": "Please analyze the following code to identify potential bugs and issues:\n- Logic errors\n- Edge cases\n- Memory leaks\n- Race conditions"
-            },
-            {
-                "title": "Documentation",
-                "content": "Please help me create comprehensive documentation for the following code:\n- Function/method descriptions\n- Parameter explanations\n- Usage examples\n- Best practices"
-            }
-        ]
-        
-        # サンプルポストプロンプトテンプレート
-        sample_post_templates = [
-            {
-                "title": "Explanation Request",
-                "content": "Please provide a clear, step-by-step explanation of your solution and reasoning."
-            },
-            {
-                "title": "Alternative Solutions",
-                "content": "Please also suggest alternative approaches or solutions to this problem."
-            },
-            {
-                "title": "Testing Guidance",
-                "content": "Please provide guidance on how to test this code, including edge cases to consider."
-            }
-        ]
-        
-        # サンプルテンプレートを作成
-        for template in sample_pre_templates:
-            self.create_template("pre", template["title"], template["content"])
-        
-        for template in sample_post_templates:
-            self.create_template("post", template["title"], template["content"])
 
 
 # シングルトンインスタンス用
