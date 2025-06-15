@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                               QApplication, QLabel, QDialog, QScrollArea, QTextEdit,
                               QPushButton, QDialogButtonBox)
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QAction, QCloseEvent, QIcon
+from PySide6.QtGui import QAction, QCloseEvent, QIcon, QScreen
 
 from src.core.workspace_manager import WorkspaceManager
 from src.core.settings import SettingsManager
@@ -93,7 +93,9 @@ class MainWindow(QMainWindow):
         self.setup_ui()
         self.setup_menu()
         self.setup_status_bar()
-        self.load_window_geometry()
+        
+        # ウィンドウジオメトリの復元（中心配置との調整）
+        self.setup_window_position()
         
         # 保存されたテーマを適用
         apply_theme(self, theme_name)
@@ -135,6 +137,9 @@ class MainWindow(QMainWindow):
             self.setWindowIcon(QIcon(icon_path))
         
         self.setMinimumSize(800, 600)
+        
+        # 初期ウィンドウサイズを設定（位置は後で決定）
+        self.resize(1200, 800)
         
         # 中央ウィジェット
         central_widget = QWidget()
@@ -333,10 +338,32 @@ class MainWindow(QMainWindow):
         self.thinking_level_label = QLabel(f"{tr('label_thinking_level')} think")
         self.statusBar().addPermanentWidget(self.thinking_level_label)
     
+    def setup_window_position(self):
+        """ウィンドウ位置とサイズを設定（初回起動時は中心配置、以降は保存された位置を復元）"""
+        settings_file_exists = os.path.exists(self.settings_manager.config_file)
+        
+        if settings_file_exists:
+            # 設定ファイルが存在する場合
+            geometry = self.settings_manager.get_window_geometry()
+            
+            # 保存された位置がデフォルト位置(100, 100)かどうかを判定
+            # デフォルト位置の場合は初回起動とみなして中心配置
+            is_default_position = (geometry['x'] == 100 and geometry['y'] == 100)
+            
+            if not is_default_position:
+                # カスタム位置が保存されている場合は復元
+                self.setGeometry(geometry['x'], geometry['y'], geometry['width'], geometry['height'])
+            else:
+                # デフォルト位置の場合は中心配置を適用
+                self.resize(geometry['width'], geometry['height'])
+                self.center_on_primary_screen()
+        else:
+            # 設定ファイルが存在しない場合（真の初回起動）
+            self.center_on_primary_screen()
+    
     def load_window_geometry(self):
-        """ウィンドウジオメトリを読み込み"""
-        geometry = self.settings_manager.get_window_geometry()
-        self.setGeometry(geometry['x'], geometry['y'], geometry['width'], geometry['height'])
+        """レガシーメソッド - setup_window_position()に移行済み"""
+        pass
     
     def save_window_geometry(self):
         """ウィンドウジオメトリを保存"""
@@ -526,6 +553,35 @@ class MainWindow(QMainWindow):
         """スプリッターが移動されたとき"""
         sizes = self.main_splitter.sizes()
         self.settings_manager.set_splitter_sizes(sizes)
+    
+    def center_on_primary_screen(self):
+        """ウィンドウをプライマリーモニターの中心に配置"""
+        # プライマリーモニターを取得
+        app = QApplication.instance()
+        if app is None:
+            return
+        
+        primary_screen = app.primaryScreen()
+        if primary_screen is None:
+            return
+        
+        # プライマリーモニターの幾何学情報を取得
+        screen_geometry = primary_screen.availableGeometry()
+        
+        # ウィンドウサイズを取得（未設定の場合はデフォルトサイズ使用）
+        window_size = self.size()
+        if window_size.width() < 800 or window_size.height() < 600:
+            # 初回起動時のデフォルトサイズ
+            window_size.setWidth(1200)
+            window_size.setHeight(800)
+            self.resize(window_size)
+        
+        # 中心座標を計算
+        x = screen_geometry.x() + (screen_geometry.width() - window_size.width()) // 2
+        y = screen_geometry.y() + (screen_geometry.height() - window_size.height()) // 2
+        
+        # ウィンドウを移動
+        self.move(x, y)
     
     def closeEvent(self, event: QCloseEvent):
         """ウィンドウが閉じられるとき"""
