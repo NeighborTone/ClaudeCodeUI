@@ -83,12 +83,14 @@ class MainWindow(QMainWindow):
         # 言語変更時のコールバックを登録
         self.language_manager.register_language_change_callback("main_window", self._on_language_changed)
         
-        # 設定から思考レベル、パスモード、テーマ、プレビュー表示、スプリッターサイズを復元
+        # 設定から思考レベル、パスモード、テーマ、プレビュー表示、スプリッターサイズ、テンプレート選択を復元
         thinking_level = self.settings_manager.get_thinking_level()
         path_mode = self.settings_manager.get_path_mode()
         theme_name = self.settings_manager.get_theme()
         preview_visible = self.settings_manager.get_preview_visible()
         splitter_sizes = self.settings_manager.get_splitter_sizes()
+        selected_pre_template = self.settings_manager.get_selected_pre_template()
+        selected_post_template = self.settings_manager.get_selected_post_template()
         
         self.setup_ui()
         self.setup_menu()
@@ -115,6 +117,12 @@ class MainWindow(QMainWindow):
         
         # スプリッターサイズを復元
         self.main_splitter.setSizes(splitter_sizes)
+        
+        # テンプレート選択を復元
+        if selected_pre_template:
+            self.template_selector.set_selected_pre_template(selected_pre_template)
+        if selected_post_template:
+            self.template_selector.set_selected_post_template(selected_post_template)
         
         # スプリッターサイズ変更時のシグナル接続
         self.main_splitter.splitterMoved.connect(self.on_splitter_moved)
@@ -447,6 +455,12 @@ class MainWindow(QMainWindow):
     
     def on_template_changed(self):
         """テンプレート選択変更時"""
+        # 選択されたテンプレートを設定に保存
+        pre_template = self.template_selector.get_selected_pre_template()
+        post_template = self.template_selector.get_selected_post_template()
+        self.settings_manager.set_selected_pre_template(pre_template)
+        self.settings_manager.set_selected_post_template(post_template)
+        
         # プロンプトプレビューを更新
         self.update_prompt_preview()
     

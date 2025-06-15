@@ -41,6 +41,10 @@ class SettingsManager:
             "workspaces": {
                 "auto_load": True,
                 "max_depth": 3
+            },
+            "templates": {
+                "selected_pre_template": "",
+                "selected_post_template": ""
             }
         }
     
@@ -169,3 +173,19 @@ class SettingsManager:
     def set_splitter_sizes(self, sizes: list) -> None:
         """スプリッターサイズを設定"""
         self.set('ui.splitter_sizes', sizes)
+    
+    def get_selected_pre_template(self) -> str:
+        """選択されたプリテンプレートを取得"""
+        return self.get('templates.selected_pre_template', '')
+    
+    def set_selected_pre_template(self, template_name: str) -> None:
+        """選択されたプリテンプレートを設定"""
+        self.set('templates.selected_pre_template', template_name)
+    
+    def get_selected_post_template(self) -> str:
+        """選択されたポストテンプレートを取得"""
+        return self.get('templates.selected_post_template', '')
+    
+    def set_selected_post_template(self, template_name: str) -> None:
+        """選択されたポストテンプレートを設定"""
+        self.set('templates.selected_post_template', template_name)
