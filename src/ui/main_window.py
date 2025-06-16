@@ -16,11 +16,13 @@ from src.core.python_helper import PythonHelper
 from src.core.path_converter import PathConverter
 from src.core.language_manager import get_language_manager, set_language_manager
 from src.core.ui_strings import tr
+from src.core.prompt_history_manager import get_prompt_history_manager
 from src.widgets.file_tree import FileTreeWidget
 from src.widgets.prompt_input import PromptInputWidget
 from src.widgets.thinking_selector import ThinkingSelectorWidget
 from src.widgets.prompt_preview import PromptPreviewWidget
 from src.widgets.template_selector import TemplateSelector
+from src.widgets.prompt_history import PromptHistoryWidget
 from src.core.template_manager import get_template_manager
 from src.ui.style_themes import apply_theme, theme_manager, get_main_font
 
@@ -253,6 +255,14 @@ class MainWindow(QMainWindow):
         generate_action.triggered.connect(self.prompt_input.generate_prompt)
         edit_menu.addAction(generate_action)
         
+        edit_menu.addSeparator()
+        
+        # プロンプト履歴
+        prompt_history_action = QAction(tr("menu_prompt_history"), self)
+        prompt_history_action.setShortcut("Ctrl+H")
+        prompt_history_action.triggered.connect(self.show_prompt_history)
+        edit_menu.addAction(prompt_history_action)
+        
         
         # 表示メニュー
         view_menu = menubar.addMenu(tr("menu_view"))
@@ -393,6 +403,15 @@ class MainWindow(QMainWindow):
         clipboard = QApplication.clipboard()
         clipboard.setText(final_prompt)
         
+        # プロンプト履歴に保存
+        history_manager = get_prompt_history_manager()
+        history_manager.add_prompt(
+            prompt=final_prompt,
+            thinking_level=thinking_level,
+            pre_template=pre_template,
+            post_template=post_template
+        )
+        
         # ステータス表示
         lines = len(final_prompt.split('\n'))
         chars = len(final_prompt)
@@ -508,6 +527,64 @@ class MainWindow(QMainWindow):
         dialog = UsageDialog(self)
         dialog.setWindowTitle(tr("python_env_title"))
         dialog.set_usage_text(env_info)
+        dialog.exec()
+    
+    def show_prompt_history(self):
+        """プロンプト履歴ダイアログを表示"""
+        # ダイアログの作成
+        dialog = QDialog(self)
+        dialog.setWindowTitle(tr("prompt_history_title"))
+        dialog.setModal(True)
+        dialog.resize(800, 600)
+        
+        # レイアウト
+        layout = QVBoxLayout(dialog)
+        
+        # プロンプト履歴ウィジェット
+        history_widget = PromptHistoryWidget(dialog)
+        layout.addWidget(history_widget)
+        
+        # プロンプトが選択されたときの処理
+        def on_prompt_selected(entry):
+            # 選択されたプロンプトの内容を抽出
+            prompt = entry.get('prompt', '')
+            thinking_level = entry.get('thinking_level', '')
+            pre_template = entry.get('pre_template', '')
+            post_template = entry.get('post_template', '')
+            
+            # メインのプロンプトテキストを抽出（thinking levelとテンプレートを除く）
+            main_content = prompt
+            
+            # thinking levelを削除
+            if thinking_level and main_content.startswith(thinking_level):
+                main_content = main_content[len(thinking_level):].strip()
+            
+            # pre templateを削除
+            if pre_template and pre_template != 'None':
+                template_manager = get_template_manager()
+                pre_content = template_manager.get_pre_template_content(pre_template)
+                if pre_content and main_content.startswith(pre_content):
+                    main_content = main_content[len(pre_content):].strip()
+            
+            # post templateを削除
+            if post_template and post_template != 'None':
+                template_manager = get_template_manager()
+                post_content = template_manager.get_post_template_content(post_template)
+                if post_content and main_content.endswith(post_content):
+                    main_content = main_content[:-len(post_content)].strip()
+            
+            # UI要素に設定
+            self.prompt_input.set_text_without_completion(main_content)
+            self.thinking_selector.set_thinking_level(thinking_level)
+            self.template_selector.set_selected_pre_template(pre_template if pre_template != 'None' else '')
+            self.template_selector.set_selected_post_template(post_template if post_template != 'None' else '')
+            
+            # ダイアログを閉じる
+            dialog.accept()
+        
+        history_widget.prompt_selected.connect(on_prompt_selected)
+        
+        # ダイアログを表示
         dialog.exec()
     
     def change_theme(self, theme_name: str):

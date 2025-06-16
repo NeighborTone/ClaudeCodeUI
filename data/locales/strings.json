@@ -471,6 +471,50 @@
     "filter_tooltip": {
       "ja": "ファイルタイプでフィルター",
       "en": "Filter by file type"
+    },
+    "menu_prompt_history": {
+      "ja": "プロンプト履歴(&H)",
+      "en": "Prompt &History"
+    },
+    "prompt_history_title": {
+      "ja": "プロンプト履歴",
+      "en": "Prompt History"
+    },
+    "prompt_history_search_placeholder": {
+      "ja": "履歴を検索...",
+      "en": "Search history..."
+    },
+    "button_clear_all": {
+      "ja": "すべてクリア",
+      "en": "Clear All"
+    },
+    "button_use_prompt": {
+      "ja": "このプロンプトを使用",
+      "en": "Use This Prompt"
+    },
+    "button_delete": {
+      "ja": "削除",
+      "en": "Delete"
+    },
+    "no_history": {
+      "ja": "プロンプト履歴がありません",
+      "en": "No prompt history"
+    },
+    "confirm_delete_title": {
+      "ja": "プロンプトを削除",
+      "en": "Delete Prompt"
+    },
+    "confirm_delete_message": {
+      "ja": "このプロンプトを削除してもよろしいですか？",
+      "en": "Are you sure you want to delete this prompt?"
+    },
+    "confirm_clear_all_title": {
+      "ja": "すべての履歴をクリア",
+      "en": "Clear All History"
+    },
+    "confirm_clear_all_message": {
+      "ja": "すべてのプロンプト履歴をクリアしてもよろしいですか？",
+      "en": "Are you sure you want to clear all prompt history?"
     }
   }
 }

@@ -199,6 +199,7 @@ saved/*~
 saved/
 saved/settings.json
 saved/workspace.json
+saved/prompt_history.json
 
 # Claude Code settings (auto-generated)
 .claude/
