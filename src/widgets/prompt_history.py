@@ -46,15 +46,36 @@ class PromptHistoryWidget(QWidget):
         search_layout.addWidget(self.clear_all_button)
         layout.addLayout(search_layout)
         
-        # スプリッター（リストと詳細表示）
-        splitter = QSplitter(Qt.Vertical)
+        # スプリッター（左右分割：リストと詳細表示）
+        splitter = QSplitter(Qt.Horizontal)
         layout.addWidget(splitter)
         
-        # 履歴リスト
+        # 左側：履歴リスト
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # 履歴リストのラベル
+        list_label = QLabel(tr("label_history_list"))
+        list_label.setStyleSheet("font-weight: bold; padding: 5px;")
+        left_layout.addWidget(list_label)
+        
         self.history_list = QListWidget()
         self.history_list.currentItemChanged.connect(self.on_item_selected)
         self.history_list.itemDoubleClicked.connect(self.on_item_double_clicked)
-        splitter.addWidget(self.history_list)
+        left_layout.addWidget(self.history_list)
+        
+        splitter.addWidget(left_widget)
+        
+        # 右側：詳細表示エリア
+        right_widget = QWidget()
+        right_layout = QVBoxLayout(right_widget)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # プレビューラベル
+        preview_label = QLabel(tr("label_prompt_preview"))
+        preview_label.setStyleSheet("font-weight: bold; padding: 5px;")
+        right_layout.addWidget(preview_label)
         
         # 詳細表示エリア
         details_widget = QWidget()
@@ -62,15 +83,19 @@ class PromptHistoryWidget(QWidget):
         details_layout.setContentsMargins(5, 5, 5, 5)
         
         # メタ情報表示
+        meta_group = QGroupBox(tr("label_meta_info"))
+        meta_layout = QVBoxLayout(meta_group)
         self.meta_info_label = QLabel()
         self.meta_info_label.setWordWrap(True)
-        details_layout.addWidget(self.meta_info_label)
+        self.meta_info_label.setStyleSheet("padding: 5px;")
+        meta_layout.addWidget(self.meta_info_label)
+        details_layout.addWidget(meta_group)
         
         # プロンプト内容表示
         self.prompt_display = QTextEdit()
         self.prompt_display.setReadOnly(True)
         self.prompt_display.setFont(QFont("Consolas", 9))
-        details_layout.addWidget(self.prompt_display)
+        details_layout.addWidget(self.prompt_display, 1)  # stretch factor 1
         
         # ボタンエリア
         button_layout = QHBoxLayout()
@@ -87,8 +112,11 @@ class PromptHistoryWidget(QWidget):
         button_layout.addStretch()
         details_layout.addLayout(button_layout)
         
-        splitter.addWidget(details_widget)
-        splitter.setSizes([300, 200])
+        right_layout.addWidget(details_widget)
+        splitter.addWidget(right_widget)
+        
+        # 左右の幅を設定（左:右 = 2:3の比率）
+        splitter.setSizes([400, 600])
         
         # 検索デバウンスタイマー
         self.search_timer = QTimer()

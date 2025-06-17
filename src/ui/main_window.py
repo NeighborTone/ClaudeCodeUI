@@ -535,7 +535,21 @@ class MainWindow(QMainWindow):
         dialog = QDialog(self)
         dialog.setWindowTitle(tr("prompt_history_title"))
         dialog.setModal(True)
-        dialog.resize(800, 600)
+        
+        # メインウィンドウのサイズを取得して、やや小さめに設定
+        main_width = self.width()
+        main_height = self.height()
+        dialog_width = int(main_width * 0.85)  # メインウィンドウの85%
+        dialog_height = int(main_height * 0.95)  # メインウィンドウの95%（縦長に）
+        dialog.resize(dialog_width, dialog_height)
+        
+        # ダイアログを画面中央に配置
+        screen = self.screen()
+        if screen:
+            screen_rect = screen.availableGeometry()
+            x = (screen_rect.width() - dialog_width) // 2
+            y = (screen_rect.height() - dialog_height) // 2
+            dialog.move(x, y)
         
         # レイアウト
         layout = QVBoxLayout(dialog)

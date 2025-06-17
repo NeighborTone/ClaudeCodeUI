@@ -480,6 +480,18 @@
       "ja": "プロンプト履歴",
       "en": "Prompt History"
     },
+    "label_history_list": {
+      "ja": "履歴一覧",
+      "en": "History List"
+    },
+    "label_prompt_preview": {
+      "ja": "プロンプトプレビュー",
+      "en": "Prompt Preview"
+    },
+    "label_meta_info": {
+      "ja": "メタ情報",
+      "en": "Meta Information"
+    },
     "prompt_history_search_placeholder": {
       "ja": "履歴を検索...",
       "en": "Search history..."
