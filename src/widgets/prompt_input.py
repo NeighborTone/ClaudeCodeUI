@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QTextEdit, QPushButton,
 from PySide6.QtCore import Signal, Qt, QTimer
 from PySide6.QtGui import QKeyEvent, QTextCursor, QFont
 
-from src.core.file_searcher import FileSearcher
+from src.core.fast_file_searcher import FastFileSearcher
 from src.core.workspace_manager import WorkspaceManager
 from src.core.token_counter import TokenCounter
 from src.core.path_converter import PathConverter
@@ -155,11 +155,11 @@ class PromptInputWidget(QWidget):
     generate_and_copy = Signal(str, str)
     text_changed = Signal(str)  # テキスト変更シグナル（リアルタイム更新用）
     
-    def __init__(self, workspace_manager: WorkspaceManager, parent=None):
+    def __init__(self, workspace_manager: WorkspaceManager, fast_searcher: FastFileSearcher = None, parent=None):
         super().__init__(parent)
         
         self.workspace_manager = workspace_manager
-        self.file_searcher = FileSearcher(workspace_manager)
+        self.file_searcher = fast_searcher
         self.thinking_level = "think"
         
         # 状態管理
@@ -262,7 +262,7 @@ class PromptInputWidget(QWidget):
     
     def show_completion(self):
         """補完表示"""
-        if not self.current_at_match:
+        if not self.current_at_match or not self.file_searcher:
             return
         
         filename = self.current_at_match.group(1)
@@ -414,3 +414,7 @@ class PromptInputWidget(QWidget):
         
         # トークン数表示を更新
         self.update_token_count()
+    
+    def update_file_searcher(self, fast_searcher: FastFileSearcher):
+        """ファイル検索エンジンを更新"""
+        self.file_searcher = fast_searcher

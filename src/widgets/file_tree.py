@@ -19,6 +19,7 @@ class FileTreeWidget(QWidget):
     
     file_selected = Signal(str)  # File selected signal
     file_double_clicked = Signal(str)  # File double-clicked signal
+    workspace_changed = Signal()  # Workspace changed signal
     
     def __init__(self, workspace_manager: WorkspaceManager = None, parent=None):
         super().__init__(parent)
@@ -87,7 +88,7 @@ class FileTreeWidget(QWidget):
         toolbar_layout.addWidget(self.add_workspace_btn)
         
         self.refresh_btn = QPushButton(tr("button_refresh"))
-        self.refresh_btn.clicked.connect(self.refresh_tree)
+        self.refresh_btn.clicked.connect(self.rebuild_index)
         toolbar_layout.addWidget(self.refresh_btn)
         
         layout.addLayout(toolbar_layout)
@@ -149,6 +150,8 @@ class FileTreeWidget(QWidget):
                 # Process UI updates immediately to ensure sync
                 from PySide6.QtCore import QCoreApplication
                 QCoreApplication.processEvents()
+                # ワークスペース変更を通知
+                self.workspace_changed.emit()
             else:
                 QMessageBox.warning(self, tr("dialog_warning"), tr("msg_folder_already_exists"))
     
@@ -285,6 +288,11 @@ class FileTreeWidget(QWidget):
         except Exception as e:
             print(f"Error loading folder: {path} - {e}")
     
+    def rebuild_index(self):
+        """インデックスを再構築"""
+        # インデックス再構築の信号を発信
+        self.workspace_changed.emit()
+    
     def refresh_tree(self):
         """ツリーを更新（検索とフィルターもリセット）"""
         # 検索ボックスをクリア
@@ -343,6 +351,8 @@ class FileTreeWidget(QWidget):
         if reply == QMessageBox.Yes:
             if self.workspace_manager.remove_workspace(path):
                 self.load_workspaces()
+                # ワークスペース変更を通知
+                self.workspace_changed.emit()
     
     def copy_path_to_clipboard(self, path: str):
         """パスをクリップボードにコピー"""

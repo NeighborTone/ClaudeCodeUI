@@ -3,6 +3,7 @@
 Main Window - Main application window
 """
 import os
+from typing import List, Dict
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                               QSplitter, QStatusBar, QMenuBar, QMenu, QMessageBox,
                               QApplication, QLabel, QDialog, QScrollArea, QTextEdit,
@@ -17,6 +18,8 @@ from src.core.path_converter import PathConverter
 from src.core.language_manager import get_language_manager, set_language_manager
 from src.core.ui_strings import tr
 from src.core.prompt_history_manager import get_prompt_history_manager
+from src.core.indexing_worker import IndexingManager
+from src.core.fast_file_searcher import FastFileSearcher
 from src.widgets.file_tree import FileTreeWidget
 from src.widgets.prompt_input import PromptInputWidget
 from src.widgets.thinking_selector import ThinkingSelectorWidget
@@ -77,6 +80,10 @@ class MainWindow(QMainWindow):
         self.settings_manager = SettingsManager()
         self.workspace_manager = WorkspaceManager()
         
+        # インデックス管理システム
+        self.indexing_manager = IndexingManager(self)
+        self.fast_searcher = FastFileSearcher(self.indexing_manager.get_indexer())
+        
         # 言語マネージャーを初期化
         self.language_manager = get_language_manager(self.settings_manager)
         set_language_manager(self.language_manager)
@@ -129,6 +136,9 @@ class MainWindow(QMainWindow):
         self.auto_save_timer = QTimer()
         self.auto_save_timer.timeout.connect(self.auto_save_settings)
         self.auto_save_timer.start(30000)  # 30秒ごとに自動保存
+        
+        # 初期インデックスチェック（起動時の高速化）
+        QTimer.singleShot(2000, self.initialize_index_on_startup)
     
     def setup_ui(self):
         """UIの初期化"""
@@ -179,7 +189,7 @@ class MainWindow(QMainWindow):
         right_layout.addWidget(self.template_selector)
         
         # プロンプト入力
-        self.prompt_input = PromptInputWidget(self.workspace_manager)
+        self.prompt_input = PromptInputWidget(self.workspace_manager, self.fast_searcher)
         right_layout.addWidget(self.prompt_input)
         
         self.main_splitter.addWidget(right_widget)
@@ -212,6 +222,15 @@ class MainWindow(QMainWindow):
         # ファイル選択
         self.file_tree.file_selected.connect(self.on_file_selected)
         self.file_tree.file_double_clicked.connect(self.on_file_double_clicked)
+        
+        # ワークスペース変更
+        self.file_tree.workspace_changed.connect(self.update_index_after_workspace_change)
+        
+        # インデックス管理イベント
+        self.indexing_manager.indexing_started.connect(self.on_indexing_started)
+        self.indexing_manager.indexing_progress.connect(self.on_indexing_progress)
+        self.indexing_manager.indexing_completed.connect(self.on_indexing_completed)
+        self.indexing_manager.indexing_failed.connect(self.on_indexing_failed)
     
     def setup_menu(self):
         """メニューバーの設定"""
@@ -229,7 +248,7 @@ class MainWindow(QMainWindow):
         # 更新
         refresh_action = QAction(tr("button_refresh"), self)
         refresh_action.setShortcut("F5")
-        refresh_action.triggered.connect(self.file_tree.refresh_tree)
+        refresh_action.triggered.connect(self.rebuild_index)
         file_menu.addAction(refresh_action)
         
         file_menu.addSeparator()
@@ -303,6 +322,23 @@ class MainWindow(QMainWindow):
         english_action.triggered.connect(lambda: self.language_manager.set_language("en"))
         language_menu.addAction(english_action)
         
+        # インデックスメニュー
+        index_menu = menubar.addMenu("インデックス")
+        
+        rebuild_index_action = QAction("インデックスを再構築", self)
+        rebuild_index_action.triggered.connect(self.rebuild_index)
+        index_menu.addAction(rebuild_index_action)
+        
+        reload_index_action = QAction("インデックスを再読み込み", self)
+        reload_index_action.triggered.connect(self.reload_index)
+        index_menu.addAction(reload_index_action)
+        
+        index_menu.addSeparator()
+        
+        index_stats_action = QAction("インデックス統計", self)
+        index_stats_action.triggered.connect(self.show_index_stats)
+        index_menu.addAction(index_stats_action)
+        
         # ヘルプメニュー
         help_menu = menubar.addMenu(tr("menu_help"))
         
@@ -333,9 +369,21 @@ class MainWindow(QMainWindow):
             self.statusBar().removeWidget(widget)
             widget.deleteLater()
         
+        # プログレス表示（通常は非表示）
+        self.progress_label = QLabel()
+        self.statusBar().addWidget(self.progress_label)
+        self.progress_label.hide()
+        
+        # インデックス状態表示
+        self.index_status_label = QLabel("インデックス: 未構築")
+        self.statusBar().addPermanentWidget(self.index_status_label)
+        
         # 思考レベル表示
         self.thinking_level_label = QLabel(f"{tr('label_thinking_level')} think")
         self.statusBar().addPermanentWidget(self.thinking_level_label)
+        
+        # インデックス統計を更新
+        self.update_index_status()
     
     def setup_window_position(self):
         """ウィンドウ位置とサイズを設定（初回起動時は中心配置、以降は保存された位置を復元）"""
@@ -673,3 +721,147 @@ class MainWindow(QMainWindow):
         self.auto_save_timer.stop()
         
         event.accept()
+    
+    # インデックス管理メソッド
+    def update_index_status(self):
+        """インデックス状態を更新"""
+        try:
+            stats = self.indexing_manager.get_stats()
+            total_entries = stats.get('total_entries', 0)
+            files = stats.get('files', 0)
+            folders = stats.get('folders', 0)
+            
+            if total_entries > 0:
+                self.index_status_label.setText(f"インデックス: {files}ファイル, {folders}フォルダ")
+            else:
+                self.index_status_label.setText("インデックス: 未構築")
+        except Exception as e:
+            self.index_status_label.setText("インデックス: エラー")
+            print(f"インデックス状態更新エラー: {e}")
+    
+    def rebuild_index(self):
+        """インデックスを再構築"""
+        if self.indexing_manager.is_indexing():
+            QMessageBox.information(self, "情報", "インデックス構築中です。しばらくお待ちください。")
+            return
+        
+        workspaces = self.workspace_manager.get_workspaces()
+        if not workspaces:
+            QMessageBox.information(self, "情報", "ワークスペースが登録されていません。")
+            return
+        
+        reply = QMessageBox.question(
+            self, "確認", 
+            "インデックスを再構築しますか？\n大きなプロジェクトでは時間がかかる場合があります。",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            self.indexing_manager.start_indexing(workspaces, rebuild_all=True)
+    
+    def reload_index(self):
+        """インデックスを再読み込み"""
+        if self.indexing_manager.is_indexing():
+            QMessageBox.information(self, "情報", "インデックス構築中です。しばらくお待ちください。")
+            return
+        
+        success = self.indexing_manager.reload_index()
+        if success:
+            self.update_index_status()
+            # FastFileSearcherのインデックスも更新
+            self.fast_searcher = FastFileSearcher(self.indexing_manager.get_indexer())
+            self.prompt_input.update_file_searcher(self.fast_searcher)
+            QMessageBox.information(self, "成功", "インデックスを再読み込みしました。")
+        else:
+            QMessageBox.warning(self, "エラー", "インデックスの再読み込みに失敗しました。")
+    
+    def show_index_stats(self):
+        """インデックス統計を表示"""
+        try:
+            stats = self.indexing_manager.get_stats()
+            
+            import time
+            last_updated = stats.get('last_updated', 0)
+            if last_updated > 0:
+                last_updated_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last_updated))
+            else:
+                last_updated_str = "未構築"
+            
+            message = f"""インデックス統計情報:
+
+総エントリ数: {stats.get('total_entries', 0)}
+ファイル数: {stats.get('files', 0)}
+フォルダ数: {stats.get('folders', 0)}
+ワークスペース数: {stats.get('workspaces', 0)}
+拡張子数: {stats.get('extensions', 0)}
+最終更新: {last_updated_str}"""
+            
+            QMessageBox.information(self, "インデックス統計", message)
+        except Exception as e:
+            QMessageBox.critical(self, "エラー", f"統計情報の取得に失敗しました: {e}")
+    
+    def update_index_after_workspace_change(self):
+        """ワークスペース変更後のインデックス更新"""
+        workspaces = self.workspace_manager.get_workspaces()
+        if workspaces and not self.indexing_manager.is_indexing():
+            # インデックスが必要な場合のみ構築
+            QTimer.singleShot(1000, lambda: self.start_smart_indexing(workspaces))
+    
+    def start_smart_indexing(self, workspaces: List[Dict[str, str]]):
+        """必要な場合のみインデックス構築を開始"""
+        if not self.indexing_manager.check_indexing_needed(workspaces):
+            # インデックス不要の場合、既存インデックスの状態を更新
+            self.update_index_status()
+            return
+        
+        # インデックス構築が必要な場合のみ実行
+        self.indexing_manager.start_smart_indexing(workspaces)
+    
+    def initialize_index_on_startup(self):
+        """起動時のインデックス初期化（高速化対応）"""
+        workspaces = self.workspace_manager.get_workspaces()
+        if not workspaces:
+            # ワークスペースがない場合はインデックス状態を更新するだけ
+            self.update_index_status()
+            return
+        
+        # 既存のインデックスが有効かチェック
+        if not self.indexing_manager.check_indexing_needed(workspaces):
+            # インデックスが有効な場合、状態表示のみ更新
+            self.update_index_status()
+            print("起動時: 既存インデックスが有効なため、再構築をスキップしました")
+            return
+        
+        # インデックスが必要な場合のみ構築
+        print("起動時: インデックス構築が必要です")
+        self.start_smart_indexing(workspaces)
+    
+    # インデックス管理イベントハンドラー
+    def on_indexing_started(self):
+        """インデックス構築開始時"""
+        self.progress_label.setText("インデックス構築中...")
+        self.progress_label.show()
+        self.index_status_label.setText("インデックス: 構築中...")
+    
+    def on_indexing_progress(self, progress: float, message: str):
+        """インデックス構築進捗更新時"""
+        self.progress_label.setText(f"{message} ({progress:.1f}%)")
+    
+    def on_indexing_completed(self, stats: dict):
+        """インデックス構築完了時"""
+        self.progress_label.hide()
+        self.update_index_status()
+        
+        # FastFileSearcherのインデックスを更新
+        self.fast_searcher = FastFileSearcher(self.indexing_manager.get_indexer())
+        self.prompt_input.update_file_searcher(self.fast_searcher)
+        
+        files = stats.get('files', 0)
+        folders = stats.get('folders', 0)
+        self.statusBar().showMessage(f"インデックス構築完了: {files}ファイル, {folders}フォルダ", 3000)
+    
+    def on_indexing_failed(self, error_message: str):
+        """インデックス構築失敗時"""
+        self.progress_label.hide()
+        self.index_status_label.setText("インデックス: エラー")
+        QMessageBox.critical(self, "エラー", f"インデックス構築に失敗しました:\n{error_message}")
