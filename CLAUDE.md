@@ -4,7 +4,7 @@ This file provides comprehensive guidance for Claude Code when working with this
 
 ## High-Performance SQLite Indexing System
 
-This application now features a **state-of-the-art SQLite-based indexing system** that dramatically improves startup time and search performance:
+This application features a **state-of-the-art SQLite-based indexing system** that dramatically improves startup time and search performance:
 
 ### Performance Improvements
 - **90% faster startup**: Cold start time reduced from ~30 seconds to ~3 seconds for large projects
@@ -36,6 +36,22 @@ This application now features a **state-of-the-art SQLite-based indexing system*
 | **Search When Needed** | Use web search for additional context |
 | **Structured Questioning** | When facing ambiguous requests, ask specific clarifying questions |
 
+### 2. Development Quality Assurance Rules
+
+⚠️ **MANDATORY QUALITY REQUIREMENTS:**
+
+| Rule | Implementation |
+|------|----------------|
+| **Always Test First** | Execute tests and verify functionality before completing any task |
+| **Verify Runtime Behavior** | Check for runtime errors and handle them appropriately |
+| **Log and Monitor** | Write diagnostic logs during testing to ensure proper operation |
+| **Clarify Before Implementing** | Ask for clarification on unclear requirements - never guess |
+| **Verify Before Completion** | Always verify implementation works as expected before marking complete |
+| **Follow Existing Patterns** | Study and maintain consistency with existing code patterns and architecture |
+| **Implement Only What's Requested** | Build exactly what is asked for, nothing more, nothing less |
+| **Utilize Existing Resources** | Use existing files, functions, and patterns whenever possible |
+| **Research When Needed** | Use web search for additional context when encountering unfamiliar concepts |
+
 #### Ambiguity Resolution Protocol
 
 When receiving unclear instructions, ALWAYS follow this questioning pattern:
@@ -44,7 +60,7 @@ When receiving unclear instructions, ALWAYS follow this questioning pattern:
 2. **Where** - Clarify the location, file, or context 
 3. **How** - Determine the method, approach, or level of detail required
 
-### 2. Language Requirements
+### 3. Language Requirements
 
 | Context | Language | Reason |
 |---------|----------|---------|
@@ -56,7 +72,7 @@ When receiving unclear instructions, ALWAYS follow this questioning pattern:
 | **Log Error Messages** | English | Debugging |
 | **User-facing Messages** | Japanese | End users |
 
-### 3. Implementation Philosophy
+### 4. Implementation Philosophy
 
 ```
 NO UNNECESSARY:
@@ -190,18 +206,23 @@ The application follows a clear separation between application data and user-spe
 
 ```
 ClaudeCodeUI/
-├── core/                   # Core business logic
-├── ui/                     # User interface components
-├── widgets/                # Specialized UI widgets
+├── src/                    # Source code directory
+│   ├── core/              # Core business logic
+│   ├── ui/                # User interface components
+│   └── widgets/           # Specialized UI widgets
 ├── data/                   # Application data (committed to version control)
 │   └── locales/           # Localization files
 │       └── strings.json   # UI strings for all supported languages
 ├── saved/                  # User-specific data (NOT committed to version control)
 │   ├── settings.json      # User preferences and application state
-│   └── workspace.json     # User's workspace configuration
-└── templates/              # Prompt templates
-    ├── pre/               # Pre-prompt templates
-    └── post/              # Post-prompt templates
+│   ├── workspace.json     # User's workspace configuration
+│   └── file_index.db*     # SQLite index database files
+├── templates/              # Prompt templates
+│   ├── pre/               # Pre-prompt templates
+│   └── post/              # Post-prompt templates
+├── assets/                 # Application assets
+│   └── icons/             # Icon files for themes and UI
+└── main.py                 # Application entry point
 ```
 
 ##### Important Directory Distinctions
@@ -218,44 +239,57 @@ ClaudeCodeUI/
 
 ### Architecture Layers
 
-#### Core Layer (`core/`)
+#### Core Layer (`src/core/`)
 **Central business logic and system management**
 
 **High-Performance Indexing System:**
 - `SQLiteIndexer` - High-performance SQLite database with FTS5 full-text search capabilities
 - `FastSQLiteSearcher` - Advanced search system with LRU caching and fuzzy search
 - `SQLiteIndexingWorker` - Background indexing worker with progress tracking and optimization
+- `SQLitePersistentConnection` - Efficient database connection management with connection pooling
 - `StartupOptimizer` - Intelligent startup optimization with background processing
 - `IndexingAdapter` - Seamless integration layer for old/new system compatibility
 
-**Traditional System Components:**
+**System Management Components:**
 - `SettingsManager` - Hierarchical JSON configuration with dot-notation access and auto-save
 - `WorkspaceManager` - VSCode-like multi-project workspace management with file discovery
 - `FileSearcher` - Original Trie-based `@filename` completion with relevance scoring
 - `TemplateManager` - Pre/post prompt template management system with JSON-based storage
 - `TokenCounter` - Intelligent token estimation for Japanese/English mixed content
+- `PromptHistoryManager` - Manages prompt history with search and persistence capabilities
+
+**Internationalization & Environment:**
 - `LocalizationManager` - Language management with strings loaded from `data/locales/strings.json`
+- `LanguageManager` - Dynamic language switching and preference management
+- `UIStrings` - Internationalized string management for UI components
 - `EnvironmentDetector` - Windows/WSL environment detection and path conversion
 - `PathConverter` - Cross-platform path normalization for Claude Code compatibility
 - `PythonHelper` - Python execution environment assistance and script generation
-- `UIStrings` - Internationalized string management for UI components
 
-#### UI Layer (`ui/`)
+**Utilities:**
+- `Logger` - Application-wide logging system with multiple output levels
+
+#### UI Layer (`src/ui/`)
 **Main application interface and orchestration**
 
 - `MainWindow` - Central orchestrator managing all components, menu system, and application state
 - `style.py` - Global style management and application-wide theming
+- `style_themes.py` - Theme-specific style definitions and customizations
 - `themes/` - Modular theme system with pluggable theme architecture
+  - `ThemeManager` - Dynamic theme registration and switching system
+  - `BaseTheme` - Abstract base class for all themes
+  - **Available Themes**: Light, Dark, Cyberpunk, Nordic, Electric, Material, Retro, Sci-Fi
 
-#### Widget Layer (`widgets/`)
+#### Widget Layer (`src/widgets/`)
 **Specialized UI components with specific functionality**
 
 - `PromptInputWidget` - Rich text editor with real-time file completion and thinking level integration
-- `FileTreeWidget` - Hierarchical workspace browser with file type filtering
+- `FileTreeWidget` - Hierarchical workspace browser with file type filtering and async loading
+- `FileTreeWorker` - Background worker for asynchronous file tree operations
 - `ThinkingSelectorWidget` - 14-level thinking system for Claude Code prompts
 - `TemplateSelector` - Pre/post prompt template selection and management interface
 - `PromptPreviewWidget` - Real-time final prompt preview with syntax highlighting
-- `PathModeSelector` - Windows/WSL path mode selection widget
+- `PromptHistory` - Prompt history management and search interface
 
 ### Key Design Patterns
 
@@ -319,13 +353,17 @@ special_handling = urls + code_blocks    # Additional token overhead
 ### Theme System Architecture
 
 #### Modular Theme Structure
-**Location**: `ui/themes/`
+**Location**: `src/ui/themes/`
 
 - `BaseTheme` - Abstract base class defining theme interface
 - `LightTheme` - Clean, traditional light theme with blue accents
 - `DarkTheme` - Modern dark theme with subtle color palette
 - `CyberpunkTheme` - Original neon-purple theme with cyberpunk aesthetics
-- `NordicTheme` - Minimalist Nordic-inspired theme
+- `NordicTheme` - Minimalist Nordic-inspired theme with neutral colors
+- `ElectricTheme` - High-contrast electric theme with bright accents
+- `MaterialTheme` - Google Material Design inspired theme
+- `RetroTheme` - Vintage retro theme with warm color palette
+- `SciFiTheme` - Futuristic sci-fi theme with cool tones
 - `ThemeManager` - Dynamic theme switching and registration system
 
 #### Theme Implementation Pattern

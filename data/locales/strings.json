@@ -236,6 +236,10 @@
       "ja": "有効なフォルダがドロップされていないか、フォルダが既に存在します",
       "en": "No valid folders were dropped or folders already exist"
     },
+    "msg_loading_failed": {
+      "ja": "読み込みに失敗しました: {error}",
+      "en": "Loading failed: {error}"
+    },
     "status_ready": {
       "ja": "準備完了",
       "en": "Ready"
