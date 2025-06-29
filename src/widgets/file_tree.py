@@ -398,6 +398,8 @@ class FileTreeWidget(QWidget):
             # Notify that workspaces have been updated
             from PySide6.QtCore import QCoreApplication
             QCoreApplication.processEvents()  # Process UI updates immediately
+            # ワークスペース変更を通知してインデックス構築をトリガー
+            self.workspace_changed.emit()
             QMessageBox.information(
                 self, tr("dialog_success"), 
                 tr("msg_folders_added", count=added_count)
