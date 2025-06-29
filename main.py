@@ -29,9 +29,8 @@ def main():
     if os.path.exists(icon_path):
         app.setWindowIcon(QIcon(icon_path))
     
-    # Application settings
-    app.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-    app.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+    # High DPI support (Qt 6.0+では自動的に有効になるため設定不要)
+    # PySide6では高DPI設定が自動的に処理されます
     
     # Create main window
     main_window = MainWindow()
