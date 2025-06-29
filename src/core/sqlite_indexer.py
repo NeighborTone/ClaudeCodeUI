@@ -194,20 +194,22 @@ class SQLiteIndexer:
                 # 2. FTS5による全文検索（エラーハンドリング付き）
                 if len(all_rows) < max_results:
                     try:
-                        # SQLiteのFTS5でワイルドカードを使用
-                        fts_query = f'"{prefix}"*'
-                        cursor = self.connection.execute("""
-                            SELECT fe.* FROM file_entries fe
-                            JOIN file_search fs ON fe.rowid = fs.rowid
-                            WHERE file_search MATCH ?
-                            ORDER BY fe.priority DESC, fe.type DESC, length(fe.name)
-                            LIMIT ?
-                        """, (fts_query, max_results - len(all_rows)))
+                        # FTS5クエリの特殊文字をチェック
+                        escaped_prefix = self._escape_fts5_query(prefix)
                         
-                        existing_paths = set(row['path'] for row in all_rows)
-                        for row in cursor:
-                            if row['path'] not in existing_paths:
-                                all_rows.append(row)
+                        if escaped_prefix:  # エスケープが成功した場合のみFTS5使用
+                            cursor = self.connection.execute("""
+                                SELECT fe.* FROM file_entries fe
+                                JOIN file_search fs ON fe.rowid = fs.rowid
+                                WHERE file_search MATCH ?
+                                ORDER BY fe.priority DESC, fe.type DESC, length(fe.name)
+                                LIMIT ?
+                            """, (escaped_prefix, max_results - len(all_rows)))
+                            
+                            existing_paths = set(row['path'] for row in all_rows)
+                            for row in cursor:
+                                if row['path'] not in existing_paths:
+                                    all_rows.append(row)
                                 
                     except Exception as e:
                         # FTS5エラーの場合は部分一致検索でフォールバック
@@ -237,52 +239,54 @@ class SQLiteIndexer:
             return []
     
     def search_fuzzy(self, query: str, max_results: int = 50) -> List[FileEntry]:
-        """ファジー検索（部分一致を含む）"""
+        """ファジー検索（部分一致を含む） - FTS5エラーに対処したLIKEフォールバック付き"""
         if not query:
             return []
         
         try:
             with self._lock:
-                # 複数の検索戦略を組み合わせ
-                queries = [
-                    f'"{query}"',  # 完全一致
-                    f'{query}*',   # 前方一致
-                    f'*{query}*'   # 部分一致
-                ]
-                
                 all_results = []
                 seen_paths = set()
                 
-                for search_query in queries:
-                    cursor = self.connection.execute("""
-                        SELECT fe.* FROM file_entries fe
-                        JOIN file_search fs ON fe.rowid = fs.rowid
-                        WHERE file_search MATCH ?
-                        ORDER BY fe.priority DESC, fe.type DESC, length(fe.name)
-                        LIMIT ?
-                    """, (search_query, max_results))
+                # FTS5を使用した検索を試み、エラー時はLIKEにフォールバック
+                try:
+                    # FTS5クエリの特殊文字をエスケープ
+                    escaped_query = self._escape_fts5_query(query)
                     
-                    for row in cursor:
-                        if row['path'] not in seen_paths:
-                            seen_paths.add(row['path'])
-                            entry = FileEntry(
-                                name=row['name'],
-                                path=row['path'],
-                                relative_path=row['relative_path'],
-                                workspace=row['workspace'],
-                                type=row['type'],
-                                size=row['size'],
-                                modified_time=row['modified_time'],
-                                extension=row['extension'],
-                                path_hash=row['path_hash']
-                            )
-                            all_results.append(entry)
-                            
-                            if len(all_results) >= max_results:
-                                break
-                    
-                    if len(all_results) >= max_results:
-                        break
+                    if escaped_query:  # エスケープが成功した場合のFTS5検索
+                        cursor = self.connection.execute("""
+                            SELECT fe.* FROM file_entries fe
+                            JOIN file_search fs ON fe.rowid = fs.rowid
+                            WHERE file_search MATCH ?
+                            ORDER BY fe.priority DESC, fe.type DESC, length(fe.name)
+                            LIMIT ?
+                        """, (escaped_query, max_results))
+                        
+                        for row in cursor:
+                            if row['path'] not in seen_paths:
+                                seen_paths.add(row['path'])
+                                entry = FileEntry(
+                                    name=row['name'],
+                                    path=row['path'],
+                                    relative_path=row['relative_path'],
+                                    workspace=row['workspace'],
+                                    type=row['type'],
+                                    size=row['size'],
+                                    modified_time=row['modified_time'],
+                                    extension=row['extension'],
+                                    path_hash=row['path_hash']
+                                )
+                                all_results.append(entry)
+                                
+                except Exception as e:
+                    logger.debug(f"FTS5検索失敗、LIKEにフォールバック: {e}")
+                    # FTS5が失敗した場合はLIKE検索を使用
+                    pass
+                
+                # FTS5で十分な結果が得られなかった場合、LIKE検索で補完
+                if len(all_results) < max_results:
+                    like_results = self._search_with_like(query, max_results - len(all_results), seen_paths)
+                    all_results.extend(like_results)
                 
                 return all_results
                 
@@ -574,6 +578,67 @@ class SQLiteIndexer:
         if debug:
             logger.debug(f"再インデックスが必要なワークスペース: {len(workspaces_to_index)}個")
         return workspaces_to_index
+    
+    def _escape_fts5_query(self, query: str) -> str:
+        """
+        FTS5クエリの特殊文字をエスケープ
+        ドットやその他の特殊文字が含まれる場合はNoneを返してLIKEフォールバックを促す
+        """
+        # FTS5で問題となる特殊文字をチェック
+        problematic_chars = ['.', '(', ')', '[', ']', '{', '}', '"', "'", '*', '?']
+        
+        if any(char in query for char in problematic_chars):
+            # 特殊文字が含まれる場合はLIKE検索を使用
+            return None
+        
+        # シンプルな文字列の場合は前方一致検索
+        return f'{query}*'
+    
+    def _search_with_like(self, query: str, max_results: int, seen_paths: set) -> List[FileEntry]:
+        """
+        LIKE演算子を使用したフォールバック検索
+        """
+        results = []
+        
+        try:
+            # 複数の検索パターンを試行
+            search_patterns = [
+                f'{query}%',      # 前方一致  
+                f'%{query}%',     # 部分一致
+                f'%{query}',      # 後方一致
+            ]
+            
+            for pattern in search_patterns:
+                if len(results) >= max_results:
+                    break
+                    
+                cursor = self.connection.execute("""
+                    SELECT * FROM file_entries
+                    WHERE (name LIKE ? OR relative_path LIKE ?)
+                    ORDER BY priority DESC, type DESC, length(name)
+                    LIMIT ?
+                """, (pattern, pattern, max_results - len(results)))
+                
+                for row in cursor:
+                    if row['path'] not in seen_paths and len(results) < max_results:
+                        seen_paths.add(row['path'])
+                        entry = FileEntry(
+                            name=row['name'],
+                            path=row['path'],
+                            relative_path=row['relative_path'],
+                            workspace=row['workspace'],
+                            type=row['type'],
+                            size=row['size'],
+                            modified_time=row['modified_time'],
+                            extension=row['extension'],
+                            path_hash=row['path_hash']
+                        )
+                        results.append(entry)
+            
+        except Exception as e:
+            logger.debug(f"LIKE検索エラー: {e}")
+        
+        return results
     
     def close(self):
         """データベース接続を閉じる（持続的接続なので実際には閉じない）"""

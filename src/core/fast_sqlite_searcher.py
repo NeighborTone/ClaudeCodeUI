@@ -100,9 +100,10 @@ class FastSQLiteSearcher:
         # 結果をキャッシュ
         self._add_to_cache(cache_key, results)
         
-        # デバッグ情報（開発時のみ）
+        # デバッグ情報をログに出力（プリント文を削除）
+        from src.core.logger import logger
         if len(query) > 2:  # 短いクエリ以外でログ出力
-            print(f"検索完了: '{query}' -> {len(results)}件 ({search_time:.3f}秒)")
+            logger.debug(f"検索完了: '{query}' -> {len(results)}件 ({search_time:.3f}秒)")
         
         return results
     

@@ -176,7 +176,7 @@ class FileTreeWidget(QWidget):
             # ファイルとフォルダを追加
             self.populate_workspace(workspace_item, workspace['path'])
     
-    def populate_workspace(self, parent_item: QTreeWidgetItem, path: str, max_depth: int = 2, current_depth: int = 0):
+    def populate_workspace(self, parent_item: QTreeWidgetItem, path: str, max_depth: int = 15, current_depth: int = 0):
         """Populate workspace with folders and files"""
         if current_depth >= max_depth:
             return
