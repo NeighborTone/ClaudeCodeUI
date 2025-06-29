@@ -105,7 +105,18 @@ class SimpleCompletionWidget(QWidget):
                 
                 type_text = f" {tr('completion_file')}"
             
-            list_item.setText(f"{icon} {item['name']}{type_text} ({item['workspace']})")
+            # パス情報を追加して表示
+            relative_path = item.get('relative_path', '')
+            parent_dir = os.path.dirname(relative_path) if relative_path else ''
+            
+            if parent_dir:
+                # 親ディレクトリがある場合
+                display_text = f"{icon} {item['name']} ({parent_dir}) - {item['workspace']}"
+            else:
+                # ルートレベルの場合
+                display_text = f"{icon} {item['name']} - {item['workspace']}"
+            
+            list_item.setText(display_text)
             list_item.setData(Qt.UserRole, item)
             self.list_widget.addItem(list_item)
         
