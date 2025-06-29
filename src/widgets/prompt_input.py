@@ -47,6 +47,8 @@ class SimpleCompletionWidget(QWidget):
         super().__init__(parent)
         self.setWindowFlags(Qt.ToolTip)
         self.setMaximumHeight(200)
+        self.setMinimumWidth(600)  # 最小幅を600pxに設定
+        self.setMaximumWidth(800)  # 最大幅を800pxに設定
         
         layout = QVBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
