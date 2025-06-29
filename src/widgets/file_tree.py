@@ -193,8 +193,8 @@ class FileTreeWidget(QWidget):
             for item in items:
                 item_path = os.path.join(path, item)
                 
-                # Skip hidden files and specific directories
-                if item.startswith('.'):
+                # Skip hidden files and specific directories (but allow .claude)
+                if item.startswith('.') and item != '.claude':
                     continue
                 if item in ['node_modules', '__pycache__', 'Binaries', 'Intermediate', 'Saved', 'DerivedDataCache']:
                     continue
