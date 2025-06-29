@@ -322,30 +322,26 @@ class MainWindow(QMainWindow):
         language_menu.addAction(english_action)
         
         # インデックスメニュー
-        index_menu = menubar.addMenu("インデックス")
+        index_menu = menubar.addMenu(tr("menu_index"))
         
-        rebuild_index_action = QAction("インデックスを再構築", self)
+        rebuild_index_action = QAction(tr("menu_index_rebuild"), self)
         rebuild_index_action.triggered.connect(self.rebuild_index)
         index_menu.addAction(rebuild_index_action)
-        
-        reload_index_action = QAction("インデックスを再読み込み", self)
-        reload_index_action.triggered.connect(self.reload_index)
-        index_menu.addAction(reload_index_action)
         
         index_menu.addSeparator()
         
         # 起動最適化メニュー
-        startup_stats_action = QAction("🚀 起動統計", self)
+        startup_stats_action = QAction(tr("menu_index_startup_stats"), self)
         startup_stats_action.triggered.connect(self.show_startup_stats)
         index_menu.addAction(startup_stats_action)
         
-        force_optimize_action = QAction("⚡ 起動最適化を実行", self)
+        force_optimize_action = QAction(tr("menu_index_optimize"), self)
         force_optimize_action.triggered.connect(self.force_startup_optimization)
         index_menu.addAction(force_optimize_action)
         
         index_menu.addSeparator()
         
-        index_stats_action = QAction("インデックス統計", self)
+        index_stats_action = QAction(tr("menu_index_stats"), self)
         index_stats_action.triggered.connect(self.show_index_stats)
         index_menu.addAction(index_stats_action)
         
@@ -385,7 +381,7 @@ class MainWindow(QMainWindow):
         self.progress_label.hide()
         
         # インデックス状態表示
-        self.index_status_label = QLabel("インデックス: 未構築")
+        self.index_status_label = QLabel(tr("index_status_not_built"))
         self.statusBar().addPermanentWidget(self.index_status_label)
         
         # 思考レベル表示
@@ -742,48 +738,34 @@ class MainWindow(QMainWindow):
             folders = stats.get('folders', 0)
             
             if total_entries > 0:
-                self.index_status_label.setText(f"インデックス: {files}ファイル, {folders}フォルダ")
+                self.index_status_label.setText(tr("index_status_files_folders", files=files, folders=folders))
             else:
-                self.index_status_label.setText("インデックス: 未構築")
+                self.index_status_label.setText(tr("index_status_not_built"))
         except Exception as e:
-            self.index_status_label.setText("インデックス: エラー")
+            self.index_status_label.setText(tr("index_status_error"))
             from src.core.logger import logger
             logger.error(f"インデックス状態更新エラー: {e}")
     
     def rebuild_index(self):
         """インデックスを再構築"""
         if self.indexing_manager.is_indexing():
-            QMessageBox.information(self, "情報", "インデックス構築中です。しばらくお待ちください。")
+            QMessageBox.information(self, tr("dialog_info"), tr("index_rebuild_in_progress"))
             return
         
         workspaces = self.workspace_manager.get_workspaces()
         if not workspaces:
-            QMessageBox.information(self, "情報", "ワークスペースが登録されていません。")
+            QMessageBox.information(self, tr("dialog_info"), tr("index_no_workspace"))
             return
         
         reply = QMessageBox.question(
-            self, "確認", 
-            "インデックスを再構築しますか？\n大きなプロジェクトでは時間がかかる場合があります。",
+            self, tr("index_rebuild_confirm_title"), 
+            tr("index_rebuild_confirm_message"),
             QMessageBox.Yes | QMessageBox.No
         )
         
         if reply == QMessageBox.Yes:
             self.indexing_manager.start_indexing(workspaces, rebuild_all=True)
     
-    def reload_index(self):
-        """インデックスを再読み込み"""
-        if self.indexing_manager.is_indexing():
-            QMessageBox.information(self, "情報", "インデックス構築中です。しばらくお待ちください。")
-            return
-        
-        # 新しい統合システムでは再読み込みは自動的に処理される
-        self.update_index_status()
-        
-        # ファイル検索システムのキャッシュをクリア
-        if hasattr(self.fast_searcher, 'clear_cache'):
-            self.fast_searcher.clear_cache()
-        
-        QMessageBox.information(self, "成功", "インデックスを再読み込みしました。")
     
     def show_index_stats(self):
         """インデックス統計を表示"""
@@ -795,41 +777,38 @@ class MainWindow(QMainWindow):
             if last_updated > 0:
                 last_updated_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last_updated))
             else:
-                last_updated_str = "未構築"
+                last_updated_str = tr("status_not_built")
             
-            message = f"""インデックス統計情報:
-
-総エントリ数: {stats.get('total_entries', 0)}
-ファイル数: {stats.get('files', 0)}
-フォルダ数: {stats.get('folders', 0)}
-ワークスペース数: {stats.get('workspaces', 0)}
-拡張子数: {stats.get('extensions', 0)}
-最終更新: {last_updated_str}"""
+            message = tr("index_stats_message", 
+                        total_entries=stats.get('total_entries', 0),
+                        files=stats.get('files', 0),
+                        folders=stats.get('folders', 0),
+                        workspaces=stats.get('workspaces', 0),
+                        extensions=stats.get('extensions', 0),
+                        last_updated=last_updated_str)
             
-            QMessageBox.information(self, "インデックス統計", message)
+            QMessageBox.information(self, tr("index_stats_title"), message)
         except Exception as e:
-            QMessageBox.critical(self, "エラー", f"統計情報の取得に失敗しました: {e}")
+            QMessageBox.critical(self, tr("dialog_error"), tr("index_stats_error", error=str(e)))
     
     def show_startup_stats(self):
         """起動統計を表示"""
         try:
             stats = self.indexing_manager.get_stats() if hasattr(self.indexing_manager, 'get_stats') else {}
             
-            message = f"""システム統計:
-
-インデックス情報:
-- 総エントリ数: {stats.get('total_entries', 0)}
-- ファイル数: {stats.get('files', 0)}
-- フォルダ数: {stats.get('folders', 0)}
-- ワークスペース数: {stats.get('workspaces', 0)}
-- 拡張子の種類: {stats.get('extensions', 0)}
-
-状態:
-- インデックス構築中: {'はい' if self.indexing_manager.is_indexing() else 'いいえ'}"""
+            building_status = tr("building_status_yes") if self.indexing_manager.is_indexing() else tr("building_status_no")
             
-            QMessageBox.information(self, "システム統計", message)
+            message = tr("startup_stats_message",
+                        total_entries=stats.get('total_entries', 0),
+                        files=stats.get('files', 0),
+                        folders=stats.get('folders', 0),
+                        workspaces=stats.get('workspaces', 0),
+                        extensions=stats.get('extensions', 0),
+                        building_status=building_status)
+            
+            QMessageBox.information(self, tr("startup_stats_title"), message)
         except Exception as e:
-            QMessageBox.critical(self, "エラー", f"統計情報の取得に失敗しました: {e}")
+            QMessageBox.critical(self, tr("dialog_error"), tr("index_stats_error", error=str(e)))
     
     def force_startup_optimization(self):
         """インデックスを強制的に再構築"""
@@ -838,16 +817,12 @@ class MainWindow(QMainWindow):
         try:
             workspaces = self.workspace_manager.get_workspaces()
             if not workspaces:
-                QMessageBox.information(self, "情報", "ワークスペースが登録されていません。")
+                QMessageBox.information(self, tr("dialog_info"), tr("index_no_workspace"))
                 return
             
             reply = QMessageBox.question(
-                self, "確認", 
-                "インデックスの再構築を実行しますか？\n\n"
-                "この処理では以下が実行されます:\n"
-                "• 既存インデックスのクリア\n"
-                "• 全ワークスペースの再インデックス\n"
-                "• ファイル検索の最適化",
+                self, tr("startup_optimize_title"), 
+                tr("startup_optimize_message"),
                 QMessageBox.Yes | QMessageBox.No
             )
             
@@ -858,14 +833,13 @@ class MainWindow(QMainWindow):
                 self.indexing_manager.start_indexing(workspaces, rebuild_all=True)
                 
                 QMessageBox.information(
-                    self, "完了", 
-                    "インデックスの再構築を開始しました。\n\n"
-                    "構築完了まで数分かかる場合があります。"
+                    self, tr("dialog_success"), 
+                    tr("startup_optimize_complete")
                 )
                 
         except Exception as e:
             logger.error(f"Manual index rebuild failed: {e}")
-            QMessageBox.critical(self, "エラー", f"インデックス再構築の実行に失敗しました: {e}")
+            QMessageBox.critical(self, tr("dialog_error"), tr("startup_optimize_error", error=str(e)))
     
     def on_workspace_changed(self):
         """ワークスペース変更時に自動的にインデックスを再構築"""
@@ -876,7 +850,7 @@ class MainWindow(QMainWindow):
             return
         
         # ステータスメッセージを表示
-        self.statusBar().showMessage("ワークスペースが変更されました。インデックスを再構築しています...", 3000)
+        self.statusBar().showMessage(tr("workspace_changed_message"), 3000)
         
         # インデックスを再構築
         self.indexing_manager.start_indexing(workspaces, rebuild_all=True)
@@ -938,9 +912,9 @@ class MainWindow(QMainWindow):
     # インデックス管理イベントハンドラー
     def on_indexing_started(self):
         """インデックス構築開始時"""
-        self.progress_label.setText("インデックス構築中...")
+        self.progress_label.setText(tr("index_building_progress"))
         self.progress_label.show()
-        self.index_status_label.setText("インデックス: 構築中...")
+        self.index_status_label.setText(tr("index_status_building"))
     
     def on_indexing_progress(self, progress: float, message: str):
         """インデックス構築進捗更新時"""
@@ -960,10 +934,10 @@ class MainWindow(QMainWindow):
         
         files = stats.get('total_files_indexed', stats.get('files', 0))
         folders = stats.get('total_folders_indexed', stats.get('folders', 0))
-        self.statusBar().showMessage(f"インデックス構築完了: {files}ファイル, {folders}フォルダ", 3000)
+        self.statusBar().showMessage(tr("index_completed_message", files=files, folders=folders), 3000)
     
     def on_indexing_failed(self, error_message: str):
         """インデックス構築失敗時"""
         self.progress_label.hide()
-        self.index_status_label.setText("インデックス: エラー")
-        QMessageBox.critical(self, "エラー", f"インデックス構築に失敗しました:\n{error_message}")
+        self.index_status_label.setText(tr("index_status_error"))
+        QMessageBox.critical(self, tr("dialog_error"), tr("index_failed_message", error=error_message))

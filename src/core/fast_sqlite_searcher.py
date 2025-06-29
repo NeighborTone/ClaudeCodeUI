@@ -17,7 +17,7 @@ class FastSQLiteSearcher:
     
     def __init__(self, sqlite_indexer: SQLiteIndexer):
         self.sqlite_indexer = sqlite_indexer
-        self.max_results = 20  # デフォルト結果数を増加
+        self.max_results = 30  # オートコンプリート候補数上限を30に設定
         self._search_cache = {}  # 簡単なキャッシュ
         self._cache_max_size = 100
         self._cache_ttl = 300  # 5分間のTTL
@@ -84,6 +84,9 @@ class FastSQLiteSearcher:
         
         # 結果を従来の形式に変換
         results = []
+        folders_count = 0
+        files_count = 0
+        
         for score, entry in scored_entries[:self.max_results]:
             result = {
                 'name': entry.name,
@@ -94,16 +97,16 @@ class FastSQLiteSearcher:
                 'score': score  # デバッグ用スコア
             }
             results.append(result)
+            
+            if entry.type == 'folder':
+                folders_count += 1
+            else:
+                files_count += 1
         
         search_time = time.time() - start_time
         
         # 結果をキャッシュ
         self._add_to_cache(cache_key, results)
-        
-        # デバッグ情報をログに出力（プリント文を削除）
-        from src.core.logger import logger
-        if len(query) > 2:  # 短いクエリ以外でログ出力
-            logger.debug(f"検索完了: '{query}' -> {len(results)}件 ({search_time:.3f}秒)")
         
         return results
     
@@ -118,9 +121,9 @@ class FastSQLiteSearcher:
         base_score = self.sqlite_indexer.extension_priorities.get(entry.extension, 30)
         score += base_score / 10  # 基本スコアを調整
         
-        # フォルダの場合は少しボーナス
+        # フォルダの場合は高優先度ボーナス（ファイルと同等以上にする）
         if entry.type == 'folder':
-            score += 10
+            score += 50  # フォルダに大幅なボーナス点を与える
         
         # 完全一致（最高スコア）
         if query_lower == name_lower:
@@ -354,7 +357,9 @@ class FastSQLiteSearcher:
                 cursor = self.sqlite_indexer.connection.execute("""
                     SELECT * FROM file_entries
                     WHERE name LIKE ? OR relative_path LIKE ?
-                    ORDER BY priority DESC, type DESC, length(name)
+                    ORDER BY CASE WHEN type = 'folder' THEN 0 ELSE 1 END,
+                             priority DESC,
+                             length(name)
                     LIMIT ?
                 """, (f"%{query}%", f"%{query}%", max_results))
                 

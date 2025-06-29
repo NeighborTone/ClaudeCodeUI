@@ -49,10 +49,12 @@ class SQLiteIndexer:
         
         # ファイル拡張子の優先度設定
         self.extension_priorities = {
-            # ソースファイル（最高優先度）
-            '.py': 100, '.cpp': 95, '.c': 95, '.h': 95, '.hpp': 95,
+            # ソースファイル（最高優先度）- C++とC#を最優先
+            '.cpp': 110, '.c': 110, '.h': 110, '.hpp': 110, '.cxx': 110, '.hxx': 110,
+            '.cs': 105,  # C#を第二優先
+            '.py': 100, 
             '.js': 90, '.ts': 90, '.jsx': 90, '.tsx': 90,
-            '.java': 85, '.cs': 85, '.go': 85, '.rs': 85,
+            '.java': 85, '.go': 85, '.rs': 85,
             '.php': 80, '.rb': 80, '.swift': 80, '.kt': 80,
             
             # 設定・データファイル（高優先度）
@@ -180,11 +182,13 @@ class SQLiteIndexer:
                 # 複数の検索戦略を試行
                 all_rows = []
                 
-                # 1. 前方一致検索（LIKE使用）
+                # 1. 前方一致検索（LIKE使用） - フォルダを優先
                 cursor = self.connection.execute("""
                     SELECT * FROM file_entries
                     WHERE name LIKE ? OR relative_path LIKE ?
-                    ORDER BY priority DESC, type DESC, length(name)
+                    ORDER BY CASE WHEN type = 'folder' THEN 0 ELSE 1 END,
+                             priority DESC, 
+                             length(name)
                     LIMIT ?
                 """, (f"{prefix}%", f"%{prefix}%", max_results))
                 
@@ -202,7 +206,9 @@ class SQLiteIndexer:
                                 SELECT fe.* FROM file_entries fe
                                 JOIN file_search fs ON fe.rowid = fs.rowid
                                 WHERE file_search MATCH ?
-                                ORDER BY fe.priority DESC, fe.type DESC, length(fe.name)
+                                ORDER BY CASE WHEN fe.type = 'folder' THEN 0 ELSE 1 END,
+                                         fe.priority DESC,
+                                         length(fe.name)
                                 LIMIT ?
                             """, (escaped_prefix, max_results - len(all_rows)))
                             
@@ -258,7 +264,9 @@ class SQLiteIndexer:
                             SELECT fe.* FROM file_entries fe
                             JOIN file_search fs ON fe.rowid = fs.rowid
                             WHERE file_search MATCH ?
-                            ORDER BY fe.priority DESC, fe.type DESC, length(fe.name)
+                            ORDER BY CASE WHEN fe.type = 'folder' THEN 0 ELSE 1 END,
+                                     fe.priority DESC,
+                                     length(fe.name)
                             LIMIT ?
                         """, (escaped_query, max_results))
                         
@@ -330,7 +338,7 @@ class SQLiteIndexer:
                         
                         try:
                             stat = os.stat(dir_path)
-                            priority = 50  # フォルダの基本優先度
+                            priority = 80  # フォルダの基本優先度（ファイルより高い優先度）
                             
                             file_entries.append((
                                 hashlib.md5(dir_path.encode('utf-8')).hexdigest(),
@@ -615,7 +623,9 @@ class SQLiteIndexer:
                 cursor = self.connection.execute("""
                     SELECT * FROM file_entries
                     WHERE (name LIKE ? OR relative_path LIKE ?)
-                    ORDER BY priority DESC, type DESC, length(name)
+                    ORDER BY CASE WHEN type = 'folder' THEN 0 ELSE 1 END,
+                             priority DESC,
+                             length(name)
                     LIMIT ?
                 """, (pattern, pattern, max_results - len(results)))
                 

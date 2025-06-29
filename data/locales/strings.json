@@ -204,6 +204,10 @@
       "ja": "確認",
       "en": "Confirm"
     },
+    "dialog_info": {
+      "ja": "情報",
+      "en": "Information"
+    },
     "dialog_warning": {
       "ja": "警告",
       "en": "Warning"
@@ -527,6 +531,122 @@
     "confirm_clear_all_message": {
       "ja": "すべてのプロンプト履歴をクリアしてもよろしいですか？",
       "en": "Are you sure you want to clear all prompt history?"
+    },
+    "menu_index": {
+      "ja": "インデックス(&I)",
+      "en": "&Index"
+    },
+    "menu_index_rebuild": {
+      "ja": "インデックスを再構築(&R)",
+      "en": "&Rebuild Index"
+    },
+    "menu_index_startup_stats": {
+      "ja": "起動統計(&S)",
+      "en": "&Startup Statistics"
+    },
+    "menu_index_optimize": {
+      "ja": "起動最適化を実行(&O)",
+      "en": "&Optimize Startup"
+    },
+    "menu_index_stats": {
+      "ja": "インデックス統計(&T)",
+      "en": "Index S&tatistics"
+    },
+    "index_status_not_built": {
+      "ja": "インデックス: 未構築",
+      "en": "Index: Not Built"
+    },
+    "index_status_building": {
+      "ja": "インデックス: 構築中...",
+      "en": "Index: Building..."
+    },
+    "index_status_error": {
+      "ja": "インデックス: エラー",
+      "en": "Index: Error"
+    },
+    "index_status_files_folders": {
+      "ja": "インデックス: {files}ファイル, {folders}フォルダ",
+      "en": "Index: {files} files, {folders} folders"
+    },
+    "index_building_progress": {
+      "ja": "インデックス構築中...",
+      "en": "Building index..."
+    },
+    "index_rebuild_confirm_title": {
+      "ja": "確認",
+      "en": "Confirm"
+    },
+    "index_rebuild_confirm_message": {
+      "ja": "インデックスを再構築しますか？\n大きなプロジェクトでは時間がかかる場合があります。",
+      "en": "Rebuild the index?\nThis may take time for large projects."
+    },
+    "index_rebuild_in_progress": {
+      "ja": "インデックス構築中です。しばらくお待ちください。",
+      "en": "Index is currently being built. Please wait."
+    },
+    "index_no_workspace": {
+      "ja": "ワークスペースが登録されていません。",
+      "en": "No workspace is registered."
+    },
+    "index_stats_title": {
+      "ja": "インデックス統計",
+      "en": "Index Statistics"
+    },
+    "index_stats_message": {
+      "ja": "インデックス統計情報:\n\n総エントリ数: {total_entries}\nファイル数: {files}\nフォルダ数: {folders}\nワークスペース数: {workspaces}\n拡張子数: {extensions}\n最終更新: {last_updated}",
+      "en": "Index Statistics:\n\nTotal Entries: {total_entries}\nFiles: {files}\nFolders: {folders}\nWorkspaces: {workspaces}\nExtensions: {extensions}\nLast Updated: {last_updated}"
+    },
+    "index_stats_error": {
+      "ja": "統計情報の取得に失敗しました: {error}",
+      "en": "Failed to get statistics: {error}"
+    },
+    "startup_stats_title": {
+      "ja": "システム統計",
+      "en": "System Statistics"
+    },
+    "startup_stats_message": {
+      "ja": "システム統計:\n\nインデックス情報:\n- 総エントリ数: {total_entries}\n- ファイル数: {files}\n- フォルダ数: {folders}\n- ワークスペース数: {workspaces}\n- 拡張子の種類: {extensions}\n\n状態:\n- インデックス構築中: {building_status}",
+      "en": "System Statistics:\n\nIndex Information:\n- Total Entries: {total_entries}\n- Files: {files}\n- Folders: {folders}\n- Workspaces: {workspaces}\n- Extension Types: {extensions}\n\nStatus:\n- Index Building: {building_status}"
+    },
+    "startup_optimize_title": {
+      "ja": "確認",
+      "en": "Confirm"
+    },
+    "startup_optimize_message": {
+      "ja": "インデックスの再構築を実行しますか？\n\nこの処理では以下が実行されます:\n• 既存インデックスのクリア\n• 全ワークスペースの再インデックス\n• ファイル検索の最適化",
+      "en": "Execute index rebuild?\n\nThis process will:\n• Clear existing index\n• Re-index all workspaces\n• Optimize file search"
+    },
+    "startup_optimize_complete": {
+      "ja": "インデックスの再構築を開始しました。\n\n構築完了まで数分かかる場合があります。",
+      "en": "Index rebuild started.\n\nIt may take several minutes to complete."
+    },
+    "startup_optimize_error": {
+      "ja": "インデックス再構築の実行に失敗しました: {error}",
+      "en": "Failed to execute index rebuild: {error}"
+    },
+    "index_completed_message": {
+      "ja": "インデックス構築完了: {files}ファイル, {folders}フォルダ",
+      "en": "Index build completed: {files} files, {folders} folders"
+    },
+    "index_failed_message": {
+      "ja": "インデックス構築に失敗しました:\n{error}",
+      "en": "Index build failed:\n{error}"
+    },
+    "workspace_changed_message": {
+      "ja": "ワークスペースが変更されました。インデックスを再構築しています...",
+      "en": "Workspace changed. Rebuilding index..."
+    },
+    "status_not_built": {
+      "ja": "未構築",
+      "en": "Not Built"
+    },
+    "building_status_yes": {
+      "ja": "はい",
+      "en": "Yes"
+    },
+    "building_status_no": {
+      "ja": "いいえ",
+      "en": "No"
     }
   }
 }

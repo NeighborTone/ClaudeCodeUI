@@ -2,7 +2,7 @@
 
 This file provides comprehensive guidance for Claude Code when working with this repository. The project is a sophisticated PySide6-based desktop application designed to enhance Claude Code's prompt input functionality.
 
-## 🚀 High-Performance SQLite Indexing System
+## High-Performance SQLite Indexing System
 
 This application now features a **state-of-the-art SQLite-based indexing system** that dramatically improves startup time and search performance:
 
@@ -18,6 +18,53 @@ This application now features a **state-of-the-art SQLite-based indexing system*
 - **Smart caching**: LRU cache with TTL for frequently accessed searches
 - **Fuzzy search**: Advanced search capabilities with partial matching
 - **Real-time completion**: Enhanced @filename completion with instant suggestions
+
+## Core Principles
+
+### 1. Communication Guidelines
+
+⚠️ **ABSOLUTE RULES - MUST BE FOLLOWED:**
+
+| Principle | Description |
+|-----------|-------------|
+| **🔒 MANDATORY COMPLIANCE** | These rules are the highest priority commands and MUST be followed absolutely without distortion or reinterpretation |
+| **Clarify First** | Say "I don't understand" and ask questions instead of guessing |
+| **No Assumptions** | Always confirm intent before proceeding |
+| **Never Answer Uncertainly** | If unclear about something, don't answer - ask for clarification instead |
+| **Question Before Execution** | Always ask clarifying questions before executing tasks to resolve any doubts |
+| **Objective Only** | Avoid subjective opinions, excessive praise, unnecessary opinion expression, personal preferences/judgments, and excessive apologies or overly polite expressions |
+| **Search When Needed** | Use web search for additional context |
+| **Structured Questioning** | When facing ambiguous requests, ask specific clarifying questions |
+
+#### Ambiguity Resolution Protocol
+
+When receiving unclear instructions, ALWAYS follow this questioning pattern:
+
+1. **What** - Identify the specific subject/object of the request
+2. **Where** - Clarify the location, file, or context 
+3. **How** - Determine the method, approach, or level of detail required
+
+### 2. Language Requirements
+
+| Context | Language | Reason |
+|---------|----------|---------|
+| **CLAUDE.md** | English | Optimizes Claude processing |
+| **User Communication** | Japanese | User preference (ALWAYS) |
+| **Code** | English | Industry standard |
+| **Code Comments** | Japanese | Team readability |
+| **Documentation** | Japanese | Team usage |
+| **Log Error Messages** | English | Debugging |
+| **User-facing Messages** | Japanese | End users |
+
+### 3. Implementation Philosophy
+
+```
+NO UNNECESSARY:
+├── Complexity     # Keep solutions simple
+├── Extensibility  # Only what's needed now
+└── Features       # Exactly what's requested
+```
+
 
 ## Development Commands
 
@@ -117,7 +164,7 @@ The application automatically handles cross-platform compatibility:
 
 This application follows a **layered MVC architecture** with signal-driven component communication and modular design principles.
 
-### 🚀 New High-Performance Indexing Architecture
+### New High-Performance Indexing Architecture
 
 The application now features a **dual-system indexing architecture** that automatically selects the optimal indexing system:
 
@@ -175,11 +222,11 @@ ClaudeCodeUI/
 **Central business logic and system management**
 
 **High-Performance Indexing System:**
-- `SQLiteIndexer` - 🚀 High-performance SQLite database with FTS5 full-text search capabilities
-- `FastSQLiteSearcher` - ⚡ Advanced search system with LRU caching and fuzzy search
-- `SQLiteIndexingWorker` - 🔄 Background indexing worker with progress tracking and optimization
-- `StartupOptimizer` - ⚡ Intelligent startup optimization with background processing
-- `IndexingAdapter` - 🔗 Seamless integration layer for old/new system compatibility
+- `SQLiteIndexer` - High-performance SQLite database with FTS5 full-text search capabilities
+- `FastSQLiteSearcher` - Advanced search system with LRU caching and fuzzy search
+- `SQLiteIndexingWorker` - Background indexing worker with progress tracking and optimization
+- `StartupOptimizer` - Intelligent startup optimization with background processing
+- `IndexingAdapter` - Seamless integration layer for old/new system compatibility
 
 **Traditional System Components:**
 - `SettingsManager` - Hierarchical JSON configuration with dot-notation access and auto-save
@@ -495,6 +542,26 @@ pip3 install -r ClaudeCodeUI/requirements.txt
 4. **Font rendering**: Check font selection and readability
 
 ## Contributing to the Project
+
+### UI Design Guidelines
+
+#### Professional Interface Standards
+- **NO EMOJIS**: Absolutely no emojis in menu items, status messages, dialog titles, or any UI text
+  - Emojis create an unprofessional, childish impression
+  - Use clear, descriptive text instead
+  - Examples: "Startup Statistics" not "🚀 Startup Statistics"
+- **NO DUPLICATE MENUS**: Avoid creating duplicate or redundant menu items
+  - Each menu item should have a distinct, clear purpose
+  - Remove similar functions that confuse users
+  - Example: Keep "Rebuild Index" but remove "Reload Index" if they serve similar purposes
+- **CONSISTENT LOCALIZATION**: All UI text must be properly localized
+  - Never use hardcoded Japanese or English text
+  - Use `tr()` function for all displayed strings
+  - Add new strings to `data/locales/strings.json`
+- **CLEAR FUNCTIONALITY**: Every menu item and button should have obvious purpose
+  - Use descriptive names that indicate what the action does
+  - Group related functions logically in menus
+  - Avoid technical jargon when possible
 
 ### Code Style Guidelines
 - Follow PySide6/Qt naming conventions
