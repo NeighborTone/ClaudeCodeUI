@@ -125,8 +125,8 @@ class WorkspaceManager:
                 
             workspace_file_count = 0
             for root, dirs, file_list in os.walk(workspace_path):
-                # Exclude hidden directories and build/cache directories
-                dirs[:] = [d for d in dirs if not d.startswith('.') and d not in [
+                # Exclude hidden directories and build/cache directories (but allow .claude)
+                dirs[:] = [d for d in dirs if (not d.startswith('.') or d == '.claude') and d not in [
                     'node_modules', '__pycache__', 'Binaries', 'Intermediate', 
                     'Saved', 'DerivedDataCache', '.vs', 'obj', 'bin'
                 ]]
@@ -202,8 +202,8 @@ class WorkspaceManager:
                 
             workspace_folder_count = 0
             for root, dirs, file_list in os.walk(workspace_path):
-                # Exclude hidden directories and build/cache directories
-                dirs[:] = [d for d in dirs if not d.startswith('.') and d not in [
+                # Exclude hidden directories and build/cache directories (but allow .claude)
+                dirs[:] = [d for d in dirs if (not d.startswith('.') or d == '.claude') and d not in [
                     'node_modules', '__pycache__', 'Binaries', 'Intermediate', 
                     'Saved', 'DerivedDataCache', '.vs', 'obj', 'bin'
                 ]]
