@@ -59,6 +59,7 @@ class FileIndexer:
             "total_files": 0,
             "total_folders": 0
         }
+        self._trie_built = False  # Trie構築状態フラグ
         
         # ファイル拡張子の優先度設定
         self.extension_priorities = {
@@ -130,9 +131,13 @@ class FileIndexer:
         node.is_end_word = True
     
     def search_by_prefix(self, prefix: str, max_results: int = 50) -> List[FileEntry]:
-        """前方一致検索"""
+        """前方一致検索（遅延Trie構築対応）"""
         if not prefix:
             return []
+        
+        # Trieが構築されていない場合は構築
+        if not self._trie_built:
+            self._build_trie_lazy()
         
         prefix_lower = prefix.lower()
         node = self.trie_root
@@ -163,6 +168,23 @@ class FileIndexer:
         scored_entries.sort(key=lambda x: x[0], reverse=True)
         
         return [entry for _, entry in scored_entries[:max_results]]
+    
+    def _build_trie_lazy(self):
+        """遅延Trie構築"""
+        if self._trie_built:
+            return
+        
+        print(f"Trie構築開始: {len(self.entries_by_path)} エントリ")
+        start_time = time.time()
+        
+        self.trie_root = TrieNode()  # リセット
+        for entry in self.entries_by_path.values():
+            self.add_entry_to_trie(entry)
+        
+        self._trie_built = True
+        
+        end_time = time.time()
+        print(f"Trie構築完了: {end_time - start_time:.3f}秒")
     
     def _collect_entries(self, node: TrieNode, entries: Set[FileEntry], max_count: int) -> None:
         """ノード以下のエントリを再帰的に収集"""
@@ -274,9 +296,10 @@ class FileIndexer:
                         extension=''
                     )
                     
-                    self.add_entry_to_trie(entry)
+                    # Trie追加は遅延実行
                     self.entries_by_path[dir_path] = entry
                     folders_count += 1
+                    self._trie_built = False  # Trie再構築が必要
                     
                 except (OSError, PermissionError):
                     continue
@@ -312,10 +335,11 @@ class FileIndexer:
                         extension=file_ext
                     )
                     
-                    self.add_entry_to_trie(entry)
+                    # Trie追加は遅延実行
                     self.entries_by_path[file_path] = entry
                     self.entries_by_extension[file_ext].append(entry)
                     files_count += 1
+                    self._trie_built = False  # Trie再構築が必要
                     
                 except (OSError, PermissionError):
                     continue
@@ -427,7 +451,7 @@ class FileIndexer:
             print(f"インデックス保存エラー: {e}")
     
     def load_index(self) -> bool:
-        """インデックスを読み込み"""
+        """インデックスを読み込み（Trie構築の最適化）"""
         try:
             if not os.path.exists(self.INDEX_FILE):
                 return False
@@ -443,15 +467,18 @@ class FileIndexer:
             self.index_metadata = data.get("metadata", {})
             self.workspaces = data.get("workspaces", {})
             
-            # エントリを復元
+            # エントリを復元（Trie構築は遅延実行）
             entries_data = data.get("entries", [])
             for entry_dict in entries_data:
                 entry = FileEntry(**entry_dict)
                 self.entries_by_path[entry.path] = entry
                 self.entries_by_extension[entry.extension].append(entry)
-                self.add_entry_to_trie(entry)
+                # Trie構築は遅延実行 - 最初の検索時に実行
             
-            print(f"インデックス読み込み完了: {len(self.entries_by_path)} エントリ")
+            # Trieは遅延構築のため、まだ構築していない
+            self._trie_built = False
+            
+            print(f"インデックス読み込み完了: {len(self.entries_by_path)} エントリ（Trie構築は遅延実行）")
             return True
             
         except Exception as e:
@@ -472,10 +499,10 @@ class FileIndexer:
             "extensions": len(self.entries_by_extension)
         }
     
-    def is_index_valid_for_workspaces(self, workspace_list: List[Dict[str, str]]) -> bool:
+    def is_index_valid_for_workspaces(self, workspace_list: List[Dict[str, str]], debug: bool = False) -> bool:
         """指定されたワークスペースリストに対してインデックスが有効かどうかをチェック"""
         if not self.entries_by_path:
-            # インデックスが空の場合は無効
+            if debug: print("デバッグ: インデックスが空")
             return False
         
         # ワークスペースパスのセットを作成
@@ -484,36 +511,36 @@ class FileIndexer:
         
         # ワークスペースが一致しない場合は無効
         if current_workspace_paths != indexed_workspace_paths:
+            if debug: 
+                print(f"デバッグ: ワークスペースパス不一致")
+                print(f"  現在: {current_workspace_paths}")
+                print(f"  インデックス: {indexed_workspace_paths}")
             return False
         
-        # 各ワークスペースが存在し、大きな変更がないかチェック
+        # 各ワークスペースがインデックスに存在するかチェック
         for workspace in workspace_list:
             workspace_path = workspace['path']
             
-            # ワークスペースディレクトリが存在するかチェック
-            if not os.path.exists(workspace_path):
-                return False
-            
             # インデックスされたワークスペース情報を取得
             if workspace_path not in self.workspaces:
+                if debug: print(f"デバッグ: ワークスペースがインデックスにない: {workspace_path}")
                 return False
+            
+            # 既にインデックスに存在する場合は、パス存在チェックをスキップ
+            # （WSL環境からWindowsパスへのアクセス問題を回避）
+            if debug: print(f"デバッグ: ワークスペース確認OK - {workspace_path} (インデックス済み)")
         
-        # 最後の更新から24時間以内であれば有効とみなす
-        last_updated = self.index_metadata.get("last_updated", 0)
-        if last_updated == 0:
-            return False
-        
-        current_time = time.time()
-        hours_since_update = (current_time - last_updated) / 3600
-        
-        # 24時間以内なら有効
-        return hours_since_update < 24
+        # 時間ベースの無効化は削除 - 手動再構築のみに依存
+        if debug: print("デバッグ: インデックス有効性チェック完了 - 有効")
+        return True
     
-    def needs_workspace_indexing(self, workspace_list: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    def needs_workspace_indexing(self, workspace_list: List[Dict[str, str]], debug: bool = False) -> List[Dict[str, str]]:
         """インデックスが必要なワークスペースのリストを返す"""
-        if not self.is_index_valid_for_workspaces(workspace_list):
-            # インデックス全体が無効な場合は全ワークスペースを返す
+        if not self.is_index_valid_for_workspaces(workspace_list, debug):
+            if debug: print("デバッグ: インデックス全体が無効 - 全ワークスペースを再構築")
             return workspace_list
+        
+        if debug: print("デバッグ: インデックスは有効 - 部分更新チェックを実行")
         
         # 部分的な更新が必要なワークスペースをチェック
         workspaces_to_index = []
@@ -523,31 +550,46 @@ class FileIndexer:
             
             # 新しいワークスペースかチェック
             if workspace_path not in self.workspaces:
+                if debug: print(f"デバッグ: 新しいワークスペース: {workspace_path}")
                 workspaces_to_index.append(workspace)
                 continue
             
-            # ワークスペース内のファイル数が大きく変わっていないかチェック
+            # 大規模プロジェクト（50,000ファイル以上）の場合はファイル数チェックをスキップ
+            indexed_info = self.workspaces[workspace_path]
+            indexed_file_count = indexed_info.get('files_count', 0)
+            
+            if indexed_file_count > 50000:
+                if debug: print(f"デバッグ: 大規模プロジェクト({indexed_file_count}ファイル) - ファイル数チェックをスキップ")
+                continue
+            
+            # 小規模プロジェクトのみファイル数チェックを実行
             try:
-                # 簡単なファイル数チェック（詳細なチェックはしない）
                 current_file_count = 0
+                sample_limit = min(1000, indexed_file_count * 2)  # サンプル数を動的に調整
+                
                 for root, dirs, files in os.walk(workspace_path):
                     # 除外ディレクトリをスキップ
                     dirs[:] = [d for d in dirs if (not d.startswith('.') or d == '.claude') and d not in self.excluded_dirs]
                     current_file_count += len([f for f in files if not f.startswith('.')])
                     
-                    # 100件以上カウントしたら打ち切り（概算で十分）
-                    if current_file_count > 100:
+                    # サンプル数に達したら打ち切り
+                    if current_file_count > sample_limit:
                         break
                 
-                indexed_info = self.workspaces[workspace_path]
-                indexed_file_count = indexed_info.get('files_count', 0)
+                # ファイル数が大きく変わっている場合のみ再インデックス
+                change_threshold = max(indexed_file_count * 0.3, 50)  # 30%以上の変化
+                file_count_diff = abs(current_file_count - indexed_file_count)
                 
-                # ファイル数が大きく変わっている場合（50%以上の差）
-                if abs(current_file_count - indexed_file_count) > max(indexed_file_count * 0.5, 10):
+                if file_count_diff > change_threshold:
+                    if debug: print(f"デバッグ: ファイル数大幅変化 - 現在:{current_file_count}, インデックス:{indexed_file_count}, 差:{file_count_diff}")
                     workspaces_to_index.append(workspace)
+                elif debug:
+                    print(f"デバッグ: ファイル数変化なし - 現在:{current_file_count}, インデックス:{indexed_file_count}")
                     
-            except Exception:
+            except Exception as e:
+                if debug: print(f"デバッグ: ファイル数チェックエラー: {e}")
                 # エラーが発生した場合は安全のため再インデックス
                 workspaces_to_index.append(workspace)
         
+        if debug: print(f"デバッグ: 再インデックスが必要なワークスペース: {len(workspaces_to_index)}個")
         return workspaces_to_index

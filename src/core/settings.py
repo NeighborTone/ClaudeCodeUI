@@ -37,6 +37,11 @@ class SettingsManager:
                 "max_results": 10,
                 "max_preview_lines": 10
             },
+            "indexing": {
+                "use_sqlite": True,
+                "auto_index_on_startup": True,
+                "cache_ttl": 300
+            },
             "workspaces": {
                 "auto_load": True,
                 "max_depth": 3

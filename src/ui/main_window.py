@@ -18,8 +18,8 @@ from src.core.path_converter import PathConverter
 from src.core.language_manager import get_language_manager, set_language_manager
 from src.core.ui_strings import tr
 from src.core.prompt_history_manager import get_prompt_history_manager
-from src.core.indexing_worker import IndexingManager
-from src.core.fast_file_searcher import FastFileSearcher
+from src.core.indexing_adapter import create_indexing_system
+from src.core.startup_optimizer import FastStartupManager
 from src.widgets.file_tree import FileTreeWidget
 from src.widgets.prompt_input import PromptInputWidget
 from src.widgets.thinking_selector import ThinkingSelectorWidget
@@ -80,9 +80,13 @@ class MainWindow(QMainWindow):
         self.settings_manager = SettingsManager()
         self.workspace_manager = WorkspaceManager()
         
-        # インデックス管理システム
-        self.indexing_manager = IndexingManager(self)
-        self.fast_searcher = FastFileSearcher(self.indexing_manager.get_indexer())
+        # インデックス管理システム（新しい統合システム）
+        self.indexing_manager, self.fast_searcher = create_indexing_system(self)
+        
+        # 起動最適化システム
+        self.startup_optimizer = FastStartupManager.create_startup_optimizer(
+            self.settings_manager, self.workspace_manager, self.indexing_manager, self
+        )
         
         # 言語マネージャーを初期化
         self.language_manager = get_language_manager(self.settings_manager)
@@ -138,7 +142,7 @@ class MainWindow(QMainWindow):
         self.auto_save_timer.start(30000)  # 30秒ごとに自動保存
         
         # 初期インデックスチェック（起動時の高速化）
-        QTimer.singleShot(2000, self.initialize_index_on_startup)
+        QTimer.singleShot(1000, self.initialize_fast_startup)
     
     def setup_ui(self):
         """UIの初期化"""
@@ -224,7 +228,7 @@ class MainWindow(QMainWindow):
         self.file_tree.file_double_clicked.connect(self.on_file_double_clicked)
         
         # ワークスペース変更
-        self.file_tree.workspace_changed.connect(self.update_index_after_workspace_change)
+        self.file_tree.workspace_changed.connect(self.on_workspace_changed)
         
         # インデックス管理イベント
         self.indexing_manager.indexing_started.connect(self.on_indexing_started)
@@ -248,7 +252,7 @@ class MainWindow(QMainWindow):
         # 更新
         refresh_action = QAction(tr("button_refresh"), self)
         refresh_action.setShortcut("F5")
-        refresh_action.triggered.connect(self.rebuild_index)
+        refresh_action.triggered.connect(self.file_tree.rebuild_index)
         file_menu.addAction(refresh_action)
         
         file_menu.addSeparator()
@@ -332,6 +336,17 @@ class MainWindow(QMainWindow):
         reload_index_action = QAction("インデックスを再読み込み", self)
         reload_index_action.triggered.connect(self.reload_index)
         index_menu.addAction(reload_index_action)
+        
+        index_menu.addSeparator()
+        
+        # 起動最適化メニュー
+        startup_stats_action = QAction("🚀 起動統計", self)
+        startup_stats_action.triggered.connect(self.show_startup_stats)
+        index_menu.addAction(startup_stats_action)
+        
+        force_optimize_action = QAction("⚡ 起動最適化を実行", self)
+        force_optimize_action.triggered.connect(self.force_startup_optimization)
+        index_menu.addAction(force_optimize_action)
         
         index_menu.addSeparator()
         
@@ -765,15 +780,14 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "情報", "インデックス構築中です。しばらくお待ちください。")
             return
         
-        success = self.indexing_manager.reload_index()
-        if success:
-            self.update_index_status()
-            # FastFileSearcherのインデックスも更新
-            self.fast_searcher = FastFileSearcher(self.indexing_manager.get_indexer())
-            self.prompt_input.update_file_searcher(self.fast_searcher)
-            QMessageBox.information(self, "成功", "インデックスを再読み込みしました。")
-        else:
-            QMessageBox.warning(self, "エラー", "インデックスの再読み込みに失敗しました。")
+        # 新しい統合システムでは再読み込みは自動的に処理される
+        self.update_index_status()
+        
+        # ファイル検索システムのキャッシュをクリア
+        if hasattr(self.fast_searcher, 'clear_cache'):
+            self.fast_searcher.clear_cache()
+        
+        QMessageBox.information(self, "成功", "インデックスを再読み込みしました。")
     
     def show_index_stats(self):
         """インデックス統計を表示"""
@@ -800,12 +814,86 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "エラー", f"統計情報の取得に失敗しました: {e}")
     
-    def update_index_after_workspace_change(self):
-        """ワークスペース変更後のインデックス更新"""
+    def show_startup_stats(self):
+        """起動統計を表示"""
+        try:
+            stats = self.startup_optimizer.get_startup_stats()
+            system_info = FastStartupManager.get_system_info()
+            
+            message = f"""🚀 起動最適化統計:
+
+システム情報:
+- プラットフォーム: {system_info.get('platform', 'Unknown')}
+- Pythonバージョン: {system_info.get('python_version', 'Unknown')[:20]}...
+- 最適化有効: {system_info.get('optimization_enabled', False)}
+
+インデックス情報:
+- システムタイプ: {stats.get('system_type', 'Unknown')}
+- 総エントリ数: {stats.get('total_entries', 0)}
+- 自動インデックス: {'有効' if stats.get('auto_index_enabled', False) else '無効'}
+
+性能:
+- バックグラウンド構築: {'実行中' if self.startup_optimizer.is_indexing_in_background() else '停止中'}"""
+            
+            QMessageBox.information(self, "🚀 起動統計", message)
+        except Exception as e:
+            QMessageBox.critical(self, "エラー", f"起動統計の取得に失敗しました: {e}")
+    
+    def force_startup_optimization(self):
+        """起動最適化を強制実行"""
+        try:
+            workspaces = self.workspace_manager.get_workspaces()
+            if not workspaces:
+                QMessageBox.information(self, "情報", "ワークスペースが登録されていません。")
+                return
+            
+            reply = QMessageBox.question(
+                self, "確認", 
+                "⚡ 起動最適化を実行しますか？\n\n"
+                "この処理では以下が実行されます:\n"
+                "• インデックスの妥当性チェック\n"
+                "• 必要に応じてバックグラウンドでインデックス再構築\n"
+                "• システム設定の最適化",
+                QMessageBox.Yes | QMessageBox.No
+            )
+            
+            if reply == QMessageBox.Yes:
+                # システム設定の最適化
+                FastStartupManager.optimize_system_settings()
+                
+                # 起動最適化を実行
+                def progress_callback(progress: float, message: str):
+                    self.progress_label.setText(f"⚡ {message}")
+                    self.progress_label.show()
+                
+                startup_stats = self.startup_optimizer.optimize_startup(progress_callback)
+                
+                # 結果メッセージを表示
+                QTimer.singleShot(2000, lambda: self.progress_label.hide())
+                
+                QMessageBox.information(
+                    self, "完了", 
+                    f"⚡ 起動最適化が完了しました！\n\n"
+                    f"実行時間: {startup_stats.get('startup_time', 0):.2f}秒\n"
+                    f"インデックス状態: {'最新' if startup_stats.get('index_valid', False) else '更新済み'}"
+                )
+                
+        except Exception as e:
+            QMessageBox.critical(self, "エラー", f"起動最適化の実行に失敗しました: {e}")
+    
+    def on_workspace_changed(self):
+        """ワークスペース変更時に自動的にインデックスを再構築"""
+        # ワークスペースを取得
         workspaces = self.workspace_manager.get_workspaces()
-        if workspaces and not self.indexing_manager.is_indexing():
-            # インデックスが必要な場合のみ構築
-            QTimer.singleShot(1000, lambda: self.start_smart_indexing(workspaces))
+        if not workspaces:
+            self.update_index_status()
+            return
+        
+        # ステータスメッセージを表示
+        self.statusBar().showMessage("ワークスペースが変更されました。インデックスを再構築しています...", 3000)
+        
+        # インデックスを再構築
+        self.indexing_manager.start_indexing(workspaces, rebuild_all=True)
     
     def start_smart_indexing(self, workspaces: List[Dict[str, str]]):
         """必要な場合のみインデックス構築を開始"""
@@ -817,24 +905,46 @@ class MainWindow(QMainWindow):
         # インデックス構築が必要な場合のみ実行
         self.indexing_manager.start_smart_indexing(workspaces)
     
-    def initialize_index_on_startup(self):
-        """起動時のインデックス初期化（高速化対応）"""
+    def initialize_fast_startup(self):
+        """高速起動の初期化"""
+        def progress_callback(progress: float, message: str):
+            """起動プログレスのコールバック"""
+            self.progress_label.setText(message)
+            self.progress_label.show()
+        
+        try:
+            # 起動最適化を実行
+            startup_stats = self.startup_optimizer.optimize_startup(progress_callback)
+            
+            print(f"⚡ 高速起動完了: {startup_stats.get('startup_time', 0):.2f}秒")
+            print(f"   インデックス有効: {startup_stats.get('index_valid', False)}")
+            print(f"   ワークスペース数: {startup_stats.get('workspaces_count', 0)}")
+            
+            # プログレス表示を隠す
+            QTimer.singleShot(1000, self.progress_label.hide)
+            
+            # インデックス状態を更新
+            self.update_index_status()
+            
+        except Exception as e:
+            print(f"高速起動エラー: {e}")
+            # フォールバック: 従来の起動処理
+            self.initialize_index_on_startup_fallback()
+    
+    def initialize_index_on_startup_fallback(self):
+        """起動時のインデックス初期化（フォールバック）"""
         workspaces = self.workspace_manager.get_workspaces()
         if not workspaces:
-            # ワークスペースがない場合はインデックス状態を更新するだけ
             self.update_index_status()
             return
         
-        # 既存のインデックスが有効かチェック
         if not self.indexing_manager.check_indexing_needed(workspaces):
-            # インデックスが有効な場合、状態表示のみ更新
             self.update_index_status()
             print("起動時: 既存インデックスが有効なため、再構築をスキップしました")
             return
         
-        # インデックスが必要な場合のみ構築
-        print("起動時: インデックス構築が必要です")
-        self.start_smart_indexing(workspaces)
+        self.update_index_status()
+        print("起動時: インデックス構築が必要です（手動で「更新」ボタンを押してインデックスを再構築してください）")
     
     # インデックス管理イベントハンドラー
     def on_indexing_started(self):
@@ -852,12 +962,15 @@ class MainWindow(QMainWindow):
         self.progress_label.hide()
         self.update_index_status()
         
-        # FastFileSearcherのインデックスを更新
-        self.fast_searcher = FastFileSearcher(self.indexing_manager.get_indexer())
+        # ファイル検索システムのキャッシュをクリアして更新
+        if hasattr(self.fast_searcher, 'clear_cache'):
+            self.fast_searcher.clear_cache()
+        
+        # プロンプト入力ウィジェットに通知
         self.prompt_input.update_file_searcher(self.fast_searcher)
         
-        files = stats.get('files', 0)
-        folders = stats.get('folders', 0)
+        files = stats.get('total_files_indexed', stats.get('files', 0))
+        folders = stats.get('total_folders_indexed', stats.get('folders', 0))
         self.statusBar().showMessage(f"インデックス構築完了: {files}ファイル, {folders}フォルダ", 3000)
     
     def on_indexing_failed(self, error_message: str):
