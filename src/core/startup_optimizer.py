@@ -10,6 +10,7 @@ from PySide6.QtCore import QObject, Signal, QTimer
 from src.core.settings import SettingsManager
 from src.core.workspace_manager import WorkspaceManager
 from src.core.indexing_adapter import IndexingAdapter
+from src.core.logger import logger
 
 
 class StartupOptimizer(QObject):
@@ -102,12 +103,12 @@ class StartupOptimizer(QObject):
             return False
             
         except Exception as e:
-            print(f"インデックスチェックエラー: {e}")
+            logger.error(f"インデックスチェックエラー: {e}")
             return False
     
     def _start_background_indexing(self, workspaces: List[Dict[str, str]]):
         """バックグラウンドでインデックス構築を開始"""
-        print("🔄 バックグラウンドインデックス構築を開始")
+        logger.info("バックグラウンドインデックス構築を開始")
         
         self.background_indexing_started.emit()
         
@@ -119,12 +120,12 @@ class StartupOptimizer(QObject):
         success = self.indexing_adapter.start_smart_indexing(workspaces)
         
         if not success:
-            print("バックグラウンドインデックス構築は不要でした")
+            logger.info("バックグラウンドインデックス構築は不要でした")
             self._on_background_indexing_completed({'message': 'not_needed'})
     
     def _on_background_indexing_completed(self, stats: Dict):
         """バックグラウンドインデックス構築完了"""
-        print(f"✅ バックグラウンドインデックス構築完了: {stats}")
+        logger.info(f"バックグラウンドインデックス構築完了: {stats}")
         self.background_indexing_completed.emit()
         
         # シグナル接続を解除
@@ -137,7 +138,7 @@ class StartupOptimizer(QObject):
     
     def _on_background_indexing_failed(self, error_message: str):
         """バックグラウンドインデックス構築失敗"""
-        print(f"❌ バックグラウンドインデックス構築失敗: {error_message}")
+        logger.error(f"バックグラウンドインデックス構築失敗: {error_message}")
         
         # シグナル接続を解除
         try:
@@ -160,7 +161,7 @@ class StartupOptimizer(QObject):
             stats['system_type'] = 'SQLite' if hasattr(self.indexing_adapter.indexing_manager.get_indexer(), 'connection') else 'Trie'
             return stats
         except Exception as e:
-            print(f"起動統計取得エラー: {e}")
+            logger.error(f"起動統計取得エラー: {e}")
             return {'error': str(e)}
     
     def force_reindex(self, workspaces: List[Dict[str, str]]) -> bool:
@@ -203,7 +204,7 @@ class FastStartupManager:
         # SQLiteの最適化設定
         os.environ['SQLITE_ENABLE_FTS5'] = '1'
         
-        print("⚡ システム設定を最適化しました")
+        logger.info("システム設定を最適化しました")
     
     @staticmethod
     def get_system_info() -> Dict[str, any]:

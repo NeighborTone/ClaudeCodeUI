@@ -12,6 +12,7 @@ from PySide6.QtGui import QAction, QIcon, QDragEnterEvent, QDropEvent
 
 from src.core.workspace_manager import WorkspaceManager
 from src.core.ui_strings import tr
+from src.core.logger import logger
 
 
 class FileTreeWidget(QWidget):
@@ -71,7 +72,8 @@ class FileTreeWidget(QWidget):
         }
         
         self.setup_ui()
-        self.load_workspaces()
+        # Defer workspace loading to improve startup speed
+        QTimer.singleShot(100, self.load_workspaces)
         
         # Enable drag & drop
         self.setAcceptDrops(True)
@@ -174,20 +176,20 @@ class FileTreeWidget(QWidget):
             # ファイルとフォルダを追加
             self.populate_workspace(workspace_item, workspace['path'])
     
-    def populate_workspace(self, parent_item: QTreeWidgetItem, path: str, max_depth: int = 6, current_depth: int = 0):
+    def populate_workspace(self, parent_item: QTreeWidgetItem, path: str, max_depth: int = 2, current_depth: int = 0):
         """Populate workspace with folders and files"""
         if current_depth >= max_depth:
             return
             
         try:
             if not os.path.exists(path):
-                print(f"Path does not exist: {path}")
+                logger.warning(f"Path does not exist: {path}")
                 return
                 
             items = os.listdir(path)
             items.sort()
             
-            print(f"Loading directory: {path} (depth: {current_depth}, items: {len(items)})")
+            logger.debug(f"Loading directory: {path} (depth: {current_depth}, items: {len(items)})")
             
             # Separate folders and files
             folders = []
@@ -281,12 +283,12 @@ class FileTreeWidget(QWidget):
                         'type': 'file',
                         'path': file_path
                     })
-                    print(f"Added file: {file_name}")
+                    logger.debug(f"Added file: {file_name}")
                     
         except PermissionError as e:
-            print(f"Permission denied: {path} - {e}")
+            logger.warning(f"Permission denied: {path} - {e}")
         except Exception as e:
-            print(f"Error loading folder: {path} - {e}")
+            logger.error(f"Error loading folder: {path} - {e}")
     
     def rebuild_index(self):
         """インデックスを再構築"""

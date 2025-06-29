@@ -19,7 +19,6 @@ from src.core.language_manager import get_language_manager, set_language_manager
 from src.core.ui_strings import tr
 from src.core.prompt_history_manager import get_prompt_history_manager
 from src.core.indexing_adapter import create_indexing_system
-from src.core.startup_optimizer import FastStartupManager
 from src.widgets.file_tree import FileTreeWidget
 from src.widgets.prompt_input import PromptInputWidget
 from src.widgets.thinking_selector import ThinkingSelectorWidget
@@ -83,10 +82,6 @@ class MainWindow(QMainWindow):
         # インデックス管理システム（新しい統合システム）
         self.indexing_manager, self.fast_searcher = create_indexing_system(self)
         
-        # 起動最適化システム
-        self.startup_optimizer = FastStartupManager.create_startup_optimizer(
-            self.settings_manager, self.workspace_manager, self.indexing_manager, self
-        )
         
         # 言語マネージャーを初期化
         self.language_manager = get_language_manager(self.settings_manager)
@@ -141,8 +136,8 @@ class MainWindow(QMainWindow):
         self.auto_save_timer.timeout.connect(self.auto_save_settings)
         self.auto_save_timer.start(30000)  # 30秒ごとに自動保存
         
-        # 初期インデックスチェック（起動時の高速化）
-        QTimer.singleShot(1000, self.initialize_fast_startup)
+        # Initialize indexing system
+        QTimer.singleShot(500, self.check_indexing_needed)
     
     def setup_ui(self):
         """UIの初期化"""
@@ -752,7 +747,8 @@ class MainWindow(QMainWindow):
                 self.index_status_label.setText("インデックス: 未構築")
         except Exception as e:
             self.index_status_label.setText("インデックス: エラー")
-            print(f"インデックス状態更新エラー: {e}")
+            from src.core.logger import logger
+            logger.error(f"インデックス状態更新エラー: {e}")
     
     def rebuild_index(self):
         """インデックスを再構築"""
@@ -817,30 +813,28 @@ class MainWindow(QMainWindow):
     def show_startup_stats(self):
         """起動統計を表示"""
         try:
-            stats = self.startup_optimizer.get_startup_stats()
-            system_info = FastStartupManager.get_system_info()
+            stats = self.indexing_manager.get_stats() if hasattr(self.indexing_manager, 'get_stats') else {}
             
-            message = f"""🚀 起動最適化統計:
-
-システム情報:
-- プラットフォーム: {system_info.get('platform', 'Unknown')}
-- Pythonバージョン: {system_info.get('python_version', 'Unknown')[:20]}...
-- 最適化有効: {system_info.get('optimization_enabled', False)}
+            message = f"""システム統計:
 
 インデックス情報:
-- システムタイプ: {stats.get('system_type', 'Unknown')}
 - 総エントリ数: {stats.get('total_entries', 0)}
-- 自動インデックス: {'有効' if stats.get('auto_index_enabled', False) else '無効'}
+- ファイル数: {stats.get('files', 0)}
+- フォルダ数: {stats.get('folders', 0)}
+- ワークスペース数: {stats.get('workspaces', 0)}
+- 拡張子の種類: {stats.get('extensions', 0)}
 
-性能:
-- バックグラウンド構築: {'実行中' if self.startup_optimizer.is_indexing_in_background() else '停止中'}"""
+状態:
+- インデックス構築中: {'はい' if self.indexing_manager.is_indexing() else 'いいえ'}"""
             
-            QMessageBox.information(self, "🚀 起動統計", message)
+            QMessageBox.information(self, "システム統計", message)
         except Exception as e:
-            QMessageBox.critical(self, "エラー", f"起動統計の取得に失敗しました: {e}")
+            QMessageBox.critical(self, "エラー", f"統計情報の取得に失敗しました: {e}")
     
     def force_startup_optimization(self):
-        """起動最適化を強制実行"""
+        """インデックスを強制的に再構築"""
+        from src.core.logger import logger
+        
         try:
             workspaces = self.workspace_manager.get_workspaces()
             if not workspaces:
@@ -849,37 +843,29 @@ class MainWindow(QMainWindow):
             
             reply = QMessageBox.question(
                 self, "確認", 
-                "⚡ 起動最適化を実行しますか？\n\n"
+                "インデックスの再構築を実行しますか？\n\n"
                 "この処理では以下が実行されます:\n"
-                "• インデックスの妥当性チェック\n"
-                "• 必要に応じてバックグラウンドでインデックス再構築\n"
-                "• システム設定の最適化",
+                "• 既存インデックスのクリア\n"
+                "• 全ワークスペースの再インデックス\n"
+                "• ファイル検索の最適化",
                 QMessageBox.Yes | QMessageBox.No
             )
             
             if reply == QMessageBox.Yes:
-                # システム設定の最適化
-                FastStartupManager.optimize_system_settings()
+                logger.info("Manual index rebuild started")
                 
-                # 起動最適化を実行
-                def progress_callback(progress: float, message: str):
-                    self.progress_label.setText(f"⚡ {message}")
-                    self.progress_label.show()
-                
-                startup_stats = self.startup_optimizer.optimize_startup(progress_callback)
-                
-                # 結果メッセージを表示
-                QTimer.singleShot(2000, lambda: self.progress_label.hide())
+                # インデックス再構築を実行
+                self.indexing_manager.start_indexing(workspaces, rebuild_all=True)
                 
                 QMessageBox.information(
                     self, "完了", 
-                    f"⚡ 起動最適化が完了しました！\n\n"
-                    f"実行時間: {startup_stats.get('startup_time', 0):.2f}秒\n"
-                    f"インデックス状態: {'最新' if startup_stats.get('index_valid', False) else '更新済み'}"
+                    "インデックスの再構築を開始しました。\n\n"
+                    "構築完了まで数分かかる場合があります。"
                 )
                 
         except Exception as e:
-            QMessageBox.critical(self, "エラー", f"起動最適化の実行に失敗しました: {e}")
+            logger.error(f"Manual index rebuild failed: {e}")
+            QMessageBox.critical(self, "エラー", f"インデックス再構築の実行に失敗しました: {e}")
     
     def on_workspace_changed(self):
         """ワークスペース変更時に自動的にインデックスを再構築"""
@@ -905,30 +891,31 @@ class MainWindow(QMainWindow):
         # インデックス構築が必要な場合のみ実行
         self.indexing_manager.start_smart_indexing(workspaces)
     
-    def initialize_fast_startup(self):
-        """高速起動の初期化"""
-        def progress_callback(progress: float, message: str):
-            """起動プログレスのコールバック"""
-            self.progress_label.setText(message)
-            self.progress_label.show()
+    def check_indexing_needed(self):
+        """インデックスの必要性をチェックし、必要に応じて構築を実行"""
+        from src.core.logger import logger
         
         try:
-            # 起動最適化を実行
-            startup_stats = self.startup_optimizer.optimize_startup(progress_callback)
+            workspaces = self.workspace_manager.get_workspaces()
             
-            print(f"⚡ 高速起動完了: {startup_stats.get('startup_time', 0):.2f}秒")
-            print(f"   インデックス有効: {startup_stats.get('index_valid', False)}")
-            print(f"   ワークスペース数: {startup_stats.get('workspaces_count', 0)}")
+            if not workspaces:
+                logger.info("No workspaces configured")
+                return
             
-            # プログレス表示を隠す
-            QTimer.singleShot(1000, self.progress_label.hide)
+            # Check if indexing is needed
+            if hasattr(self.indexing_manager, 'check_indexing_needed'):
+                if self.indexing_manager.check_indexing_needed(workspaces):
+                    logger.info(f"Starting background indexing for {len(workspaces)} workspace(s)")
+                    self.indexing_manager.start_smart_indexing(workspaces)
+                else:
+                    logger.info("Index is up to date")
             
-            # インデックス状態を更新
+            # Update index status
             self.update_index_status()
             
         except Exception as e:
-            print(f"高速起動エラー: {e}")
-            # フォールバック: 従来の起動処理
+            logger.error(f"Error checking indexing requirements: {e}")
+            # Fallback to basic indexing
             self.initialize_index_on_startup_fallback()
     
     def initialize_index_on_startup_fallback(self):
@@ -940,11 +927,13 @@ class MainWindow(QMainWindow):
         
         if not self.indexing_manager.check_indexing_needed(workspaces):
             self.update_index_status()
-            print("起動時: 既存インデックスが有効なため、再構築をスキップしました")
+            from src.core.logger import logger
+            logger.info("起動時: 既存インデックスが有効なため、再構築をスキップしました")
             return
         
         self.update_index_status()
-        print("起動時: インデックス構築が必要です（手動で「更新」ボタンを押してインデックスを再構築してください）")
+        from src.core.logger import logger
+        logger.info("起動時: インデックス構築が必要です（手動で「更新」ボタンを押してインデックスを再構築してください）")
     
     # インデックス管理イベントハンドラー
     def on_indexing_started(self):

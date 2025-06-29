@@ -14,6 +14,7 @@ from collections import defaultdict
 import hashlib
 
 from src.core.sqlite_persistent_connection import SQLitePersistentConnection
+from src.core.logger import logger
 
 
 @dataclass
@@ -97,7 +98,7 @@ class SQLiteIndexer:
                 self._create_tables()
                 
         except Exception as e:
-            print(f"データベース初期化エラー: {e}")
+            logger.error(f"データベース初期化エラー: {e}")
     
     def _create_tables(self):
         """必要なテーブルを作成"""
@@ -210,7 +211,7 @@ class SQLiteIndexer:
                                 
                     except Exception as e:
                         # FTS5エラーの場合は部分一致検索でフォールバック
-                        print(f"FTS5検索エラー (フォールバック実行): {e}")
+                        logger.debug(f"FTS5検索エラー (フォールバック実行): {e}")
                         pass
                 
                 # 結果をFileEntryオブジェクトに変換
@@ -232,7 +233,7 @@ class SQLiteIndexer:
                 return file_entries
                 
         except Exception as e:
-            print(f"検索エラー: {e}")
+            logger.error(f"検索エラー: {e}")
             return []
     
     def search_fuzzy(self, query: str, max_results: int = 50) -> List[FileEntry]:
@@ -286,7 +287,7 @@ class SQLiteIndexer:
                 return all_results
                 
         except Exception as e:
-            print(f"ファジー検索エラー: {e}")
+            logger.error(f"ファジー検索エラー: {e}")
             return []
     
     def add_workspace_files(self, workspace_name: str, workspace_path: str, 
@@ -399,7 +400,7 @@ class SQLiteIndexer:
                 self.connection.commit()
                 
         except Exception as e:
-            print(f"ワークスペース追加エラー: {e}")
+            logger.error(f"ワークスペース追加エラー: {e}")
             self.connection.rollback()
         
         return files_count, folders_count
@@ -462,7 +463,7 @@ class SQLiteIndexer:
                     self.connection.commit()
                     
         except Exception as e:
-            print(f"ワークスペース削除エラー: {e}")
+            logger.error(f"ワークスペース削除エラー: {e}")
     
     def clear_index(self) -> None:
         """インデックスをクリア"""
@@ -474,7 +475,7 @@ class SQLiteIndexer:
                 self.connection.commit()
                 
         except Exception as e:
-            print(f"インデックスクリアエラー: {e}")
+            logger.error(f"インデックスクリアエラー: {e}")
     
     def get_stats(self) -> Dict[str, Any]:
         """インデックス統計情報を取得"""
@@ -507,7 +508,7 @@ class SQLiteIndexer:
                 }
                 
         except Exception as e:
-            print(f"統計情報取得エラー: {e}")
+            logger.error(f"統計情報取得エラー: {e}")
             return {
                 "total_entries": 0, "files": 0, "folders": 0,
                 "workspaces": 0, "extensions": 0, "last_updated": 0
@@ -526,25 +527,25 @@ class SQLiteIndexer:
                 # ワークスペースが一致するかチェック
                 if current_paths != indexed_paths:
                     if debug:
-                        print(f"デバッグ: ワークスペース不一致")
-                        print(f"  現在: {current_paths}")
-                        print(f"  インデックス: {indexed_paths}")
+                        logger.debug(f"ワークスペース不一致")
+                        logger.debug(f"  現在: {current_paths}")
+                        logger.debug(f"  インデックス: {indexed_paths}")
                     return False
                 
                 if debug:
-                    print("デバッグ: インデックス有効性チェック完了 - 有効")
+                    logger.debug("インデックス有効性チェック完了 - 有効")
                 return True
                 
         except Exception as e:
             if debug:
-                print(f"デバッグ: インデックス妥当性チェックエラー: {e}")
+                logger.debug(f"インデックス妥当性チェックエラー: {e}")
             return False
     
     def needs_workspace_indexing(self, workspace_list: List[Dict[str, str]], debug: bool = False) -> List[Dict[str, str]]:
         """インデックスが必要なワークスペースのリストを返す"""
         if not self.is_index_valid_for_workspaces(workspace_list, debug):
             if debug:
-                print("デバッグ: インデックス全体が無効 - 全ワークスペースを再構築")
+                logger.debug("インデックス全体が無効 - 全ワークスペースを再構築")
             return workspace_list
         
         # SQLiteベースでは基本的に増分更新は複雑なので、簡単な存在チェックのみ
@@ -562,20 +563,19 @@ class SQLiteIndexer:
                     
                     if not row:
                         if debug:
-                            print(f"デバッグ: 新しいワークスペース: {workspace_path}")
+                            logger.debug(f"新しいワークスペース: {workspace_path}")
                         workspaces_to_index.append(workspace)
                         
         except Exception as e:
             if debug:
-                print(f"デバッグ: ワークスペースチェックエラー: {e}")
+                logger.debug(f"ワークスペースチェックエラー: {e}")
             return workspace_list
         
         if debug:
-            print(f"デバッグ: 再インデックスが必要なワークスペース: {len(workspaces_to_index)}個")
+            logger.debug(f"再インデックスが必要なワークスペース: {len(workspaces_to_index)}個")
         return workspaces_to_index
     
     def close(self):
         """データベース接続を閉じる（持続的接続なので実際には閉じない）"""
         # 持続的接続を使用しているため、実際には閉じない
-        # self._connection_manager.close()
         pass

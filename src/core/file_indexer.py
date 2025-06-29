@@ -9,6 +9,7 @@ from typing import Dict, List, Set, Optional, Tuple, Any
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from collections import defaultdict
+from src.core.logger import logger
 
 
 @dataclass
@@ -531,7 +532,7 @@ class FileIndexer:
             if debug: print(f"デバッグ: ワークスペース確認OK - {workspace_path} (インデックス済み)")
         
         # 時間ベースの無効化は削除 - 手動再構築のみに依存
-        if debug: print("デバッグ: インデックス有効性チェック完了 - 有効")
+        if debug: logger.debug("インデックス有効性チェック完了 - 有効")
         return True
     
     def needs_workspace_indexing(self, workspace_list: List[Dict[str, str]], debug: bool = False) -> List[Dict[str, str]]:
