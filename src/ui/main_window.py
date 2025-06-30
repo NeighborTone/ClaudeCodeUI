@@ -543,14 +543,19 @@ class MainWindow(QMainWindow):
         """ファイルがダブルクリックされたとき"""
         # ワークスペース相対パスを取得
         workspace_relative_path = None
+        workspace_name = None
         for workspace in self.workspace_manager.get_workspaces():
             workspace_path = workspace['path']
             if file_path.startswith(workspace_path):
                 workspace_relative_path = os.path.relpath(file_path, workspace_path)
+                workspace_name = workspace['name']
                 break
         
         if workspace_relative_path is None:
             workspace_relative_path = os.path.basename(file_path)
+        
+        if workspace_name is None:
+            workspace_name = "Unknown"
         
         # パスを正規化（「/」区切りに統一）
         workspace_relative_path = PathConverter.normalize_path(workspace_relative_path)
