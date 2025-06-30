@@ -5,6 +5,7 @@ Template Manager - 定型文管理システム
 """
 import os
 import json
+import yaml
 from typing import Dict, List, Optional, Tuple
 from pathlib import Path
 
@@ -46,24 +47,52 @@ class TemplateManager:
         # プリプロンプトテンプレートを読み込み
         pre_dir = self.templates_dir / "pre"
         if pre_dir.exists():
+            # YAMLファイルを読み込み
+            for file_path in pre_dir.glob("*.yaml"):
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        data = yaml.safe_load(f)
+                        if isinstance(data, dict) and 'title' in data and 'content' in data:
+                            self._pre_templates[data['title']] = data['content']
+                except (yaml.YAMLError, KeyError, OSError) as e:
+                    print(f"Warning: Failed to load pre-template {file_path}: {e}")
+            
+            # JSONファイルも読み込み（下位互換性）
             for file_path in pre_dir.glob("*.json"):
                 try:
                     with open(file_path, 'r', encoding='utf-8') as f:
                         data = json.load(f)
                         if 'title' in data and 'content' in data:
-                            self._pre_templates[data['title']] = data['content']
+                            # YAMLファイルが既に存在する場合はスキップ
+                            yaml_path = file_path.with_suffix('.yaml')
+                            if not yaml_path.exists():
+                                self._pre_templates[data['title']] = data['content']
                 except (json.JSONDecodeError, KeyError, OSError) as e:
                     print(f"Warning: Failed to load pre-template {file_path}: {e}")
         
         # ポストプロンプトテンプレートを読み込み
         post_dir = self.templates_dir / "post"
         if post_dir.exists():
+            # YAMLファイルを読み込み
+            for file_path in post_dir.glob("*.yaml"):
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        data = yaml.safe_load(f)
+                        if isinstance(data, dict) and 'title' in data and 'content' in data:
+                            self._post_templates[data['title']] = data['content']
+                except (yaml.YAMLError, KeyError, OSError) as e:
+                    print(f"Warning: Failed to load post-template {file_path}: {e}")
+            
+            # JSONファイルも読み込み（下位互換性）
             for file_path in post_dir.glob("*.json"):
                 try:
                     with open(file_path, 'r', encoding='utf-8') as f:
                         data = json.load(f)
                         if 'title' in data and 'content' in data:
-                            self._post_templates[data['title']] = data['content']
+                            # YAMLファイルが既に存在する場合はスキップ
+                            yaml_path = file_path.with_suffix('.yaml')
+                            if not yaml_path.exists():
+                                self._post_templates[data['title']] = data['content']
                 except (json.JSONDecodeError, KeyError, OSError) as e:
                     print(f"Warning: Failed to load post-template {file_path}: {e}")
     
@@ -101,7 +130,7 @@ class TemplateManager:
     
     def create_template(self, template_type: str, title: str, content: str) -> bool:
         """
-        新しいテンプレートを作成
+        新しいテンプレートを作成（YAML形式で保存）
         
         Args:
             template_type: "pre" または "post"
@@ -124,11 +153,12 @@ class TemplateManager:
         }
         
         template_dir = self.templates_dir / template_type
-        file_path = template_dir / f"{safe_title}.json"
+        file_path = template_dir / f"{safe_title}.yaml"
         
         try:
             with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump(template_data, f, ensure_ascii=False, indent=2)
+                yaml.dump(template_data, f, default_flow_style=False, 
+                         allow_unicode=True, indent=2, sort_keys=False)
             
             # メモリ内のテンプレートも更新
             if template_type == "pre":
@@ -143,7 +173,7 @@ class TemplateManager:
     
     def delete_template(self, template_type: str, title: str) -> bool:
         """
-        テンプレートを削除
+        テンプレートを削除（YAMLとJSONファイル両方をチェック）
         
         Args:
             template_type: "pre" または "post"
@@ -167,19 +197,34 @@ class TemplateManager:
             else:
                 return False
         
-        # ファイルを削除
+        # ファイルを削除（YAMLファイルを優先）
         template_dir = self.templates_dir / template_type
-        for file_path in template_dir.glob("*.json"):
+        deleted = False
+        
+        # YAMLファイルをチェック
+        for file_path in template_dir.glob("*.yaml"):
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    if data.get('title') == title:
+                    data = yaml.safe_load(f)
+                    if isinstance(data, dict) and data.get('title') == title:
                         file_path.unlink()
-                        return True
-            except (json.JSONDecodeError, KeyError, OSError):
+                        deleted = True
+            except (yaml.YAMLError, KeyError, OSError):
                 continue
         
-        return False
+        # JSONファイルもチェック（YAMLが見つからなかった場合）
+        if not deleted:
+            for file_path in template_dir.glob("*.json"):
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        if data.get('title') == title:
+                            file_path.unlink()
+                            deleted = True
+                except (json.JSONDecodeError, KeyError, OSError):
+                    continue
+        
+        return deleted
     
     def build_final_prompt(self, thinking_level: str, pre_template: Optional[str], 
                           main_content: str, post_template: Optional[str]) -> str:
