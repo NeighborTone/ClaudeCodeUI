@@ -222,6 +222,9 @@ class MainWindow(QMainWindow):
     
     def setup_connections(self):
         """イベント接続"""
+        # プロンプト入力にプレビューへの参照を設定
+        self.prompt_input.set_prompt_preview_reference(self.prompt_preview)
+        
         # 思考レベル変更
         self.thinking_selector.thinking_level_changed.connect(self.on_thinking_level_changed)
         

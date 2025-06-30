@@ -185,6 +185,9 @@ class PromptInputWidget(QWidget):
         self.completion_active = False
         self.current_completion_symbol = '@'  # 現在の補完モード
         
+        # プレビューへの参照（後で設定される）
+        self.prompt_preview = None
+        
         self.setup_ui()
         self.setup_completion()
     
@@ -367,11 +370,12 @@ class PromptInputWidget(QWidget):
     
     def generate_prompt(self):
         """プロンプト生成"""
-        text = self.text_edit.toPlainText().strip()
-        if not text:
+        # プレビュー内容を基準にした生成可能性を判定
+        if not self.is_generation_possible():
             return
         
         # テンプレート統合は親ウィンドウで処理するため、生のテキストを渡す
+        text = self.text_edit.toPlainText().strip()
         self.generate_and_copy.emit(text, self.thinking_level)
     
     def clear_all(self):
@@ -419,6 +423,21 @@ class PromptInputWidget(QWidget):
     def set_prompt_text(self, text: str):
         """プロンプトテキスト設定"""
         self.text_edit.setPlainText(text)
+    
+    def set_prompt_preview_reference(self, prompt_preview):
+        """プロンプトプレビューへの参照を設定"""
+        self.prompt_preview = prompt_preview
+    
+    def is_generation_possible(self) -> bool:
+        """プロンプト生成が可能かどうかを判定"""
+        if self.prompt_preview is None:
+            # プレビューが利用できない場合は従来の判定（入力テキストベース）
+            text = self.text_edit.toPlainText().strip()
+            return bool(text)
+        
+        # プレビューの内容を確認
+        preview_content = self.prompt_preview.get_current_prompt().strip()
+        return bool(preview_content)
     
     def set_text_without_completion(self, text: str):
         """オートコンプリートを無効にしてテキスト設定"""
