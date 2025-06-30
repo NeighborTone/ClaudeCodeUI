@@ -138,6 +138,10 @@ class MainWindow(QMainWindow):
         
         # Initialize indexing system
         QTimer.singleShot(500, self.check_indexing_needed)
+        
+        # ファイルツリーとインデックスの状態管理
+        self.is_tree_loaded = False
+        self.is_index_ready = False
     
     def setup_ui(self):
         """UIの初期化"""
@@ -925,12 +929,16 @@ class MainWindow(QMainWindow):
         self.progress_label.hide()
         self.update_index_status()
         
+        # インデックスが準備完了
+        self.is_index_ready = True
+        
         # ファイル検索システムのキャッシュをクリアして更新
         if hasattr(self.fast_searcher, 'clear_cache'):
             self.fast_searcher.clear_cache()
         
-        # プロンプト入力ウィジェットに通知
-        self.prompt_input.update_file_searcher(self.fast_searcher)
+        # ツリーも読み込み完了していればオートコンプリートを有効化
+        if self.is_tree_loaded:
+            self.enable_autocomplete()
         
         files = stats.get('total_files_indexed', stats.get('files', 0))
         folders = stats.get('total_folders_indexed', stats.get('folders', 0))
@@ -941,3 +949,29 @@ class MainWindow(QMainWindow):
         self.progress_label.hide()
         self.index_status_label.setText(tr("index_status_error"))
         QMessageBox.critical(self, tr("dialog_error"), tr("index_failed_message", error=error_message))
+    
+    def setup_file_tree_signals(self):
+        """ファイルツリーのシグナルを設定"""
+        # ファイルツリーの読み込み完了シグナルを動的に接続
+        pass
+    
+    def on_file_tree_loading_completed(self):
+        """ファイルツリーの読み込み完了時"""
+        from src.core.logger import logger
+        self.is_tree_loaded = True
+        logger.info("File tree loading completed")
+        
+        # インデックスも準備完了していればオートコンプリートを有効化
+        if self.is_index_ready:
+            self.enable_autocomplete()
+    
+    def enable_autocomplete(self):
+        """オートコンプリート機能を有効化"""
+        from src.core.logger import logger
+        logger.info("Enabling autocomplete functionality")
+        
+        # プロンプト入力ウィジェットに通知
+        self.prompt_input.update_file_searcher(self.fast_searcher)
+        
+        # ステータスバーに表示
+        self.statusBar().showMessage(tr("message_autocomplete_enabled"), 2000)

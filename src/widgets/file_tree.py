@@ -13,6 +13,7 @@ from PySide6.QtGui import QAction, QIcon, QDragEnterEvent, QDropEvent
 from src.core.workspace_manager import WorkspaceManager
 from src.core.ui_strings import tr
 from src.core.logger import logger
+from src.widgets.file_tree_worker import FileTreeWorker, FileTreeLoadingThread, TreeNode
 
 
 class FileTreeWidget(QWidget):
@@ -71,9 +72,15 @@ class FileTreeWidget(QWidget):
             }
         }
         
+        # ワーカーとスレッドの初期化
+        self.loading_thread = None
+        self.loading_worker = None
+        self.is_loading = False
+        self.pending_workspace_update = False
+        
         self.setup_ui()
         # Defer workspace loading to improve startup speed
-        QTimer.singleShot(100, self.load_workspaces)
+        QTimer.singleShot(100, self.load_workspaces_async)
         
         # Enable drag & drop
         self.setAcceptDrops(True)
@@ -148,152 +155,128 @@ class FileTreeWidget(QWidget):
         
         if folder_path:
             if self.workspace_manager.add_workspace(folder_path):
-                self.load_workspaces()
-                # Process UI updates immediately to ensure sync
-                from PySide6.QtCore import QCoreApplication
-                QCoreApplication.processEvents()
+                self.load_workspaces_async()
                 # ワークスペース変更を通知
                 self.workspace_changed.emit()
             else:
                 QMessageBox.warning(self, tr("dialog_warning"), tr("msg_folder_already_exists"))
     
-    def load_workspaces(self):
-        """ワークスペースを読み込んでツリーに表示"""
-        self.tree.clear()
+    def load_workspaces_async(self):
+        """ワークスペースを非同期で読み込む"""
+        if self.is_loading:
+            self.pending_workspace_update = True
+            return
         
+        self.tree.clear()
         workspaces = self.workspace_manager.get_workspaces()
-        for workspace in workspaces:
-            workspace_item = QTreeWidgetItem(self.tree)
-            workspace_item.setText(0, workspace['name'])
-            workspace_item.setData(0, Qt.UserRole, {
-                'type': 'workspace',
-                'path': workspace['path']
+        
+        if not workspaces:
+            return
+        
+        # 非同期読み込みを開始
+        self.start_async_loading(workspaces)
+    
+    def start_async_loading(self, workspaces: List[dict]):
+        """非同期読み込みを開始"""
+        self.is_loading = True
+        
+        # 既存のスレッドを停止
+        if self.loading_thread and self.loading_thread.isRunning():
+            self.loading_worker.stop()
+            self.loading_thread.quit()
+            self.loading_thread.wait()
+        
+        # 新しいワーカーとスレッドを作成
+        self.loading_worker = FileTreeWorker()
+        self.loading_thread = FileTreeLoadingThread(self.loading_worker)
+        
+        # ワーカーの設定
+        self.loading_worker.set_workspaces(workspaces)
+        
+        # シグナルを接続
+        self.loading_worker.started.connect(self.on_loading_started)
+        self.loading_worker.progress.connect(self.on_loading_progress)
+        self.loading_worker.workspace_loaded.connect(self.on_workspace_loaded)
+        self.loading_worker.completed.connect(self.on_loading_completed)
+        self.loading_worker.failed.connect(self.on_loading_failed)
+        
+        # スレッドを開始
+        self.loading_thread.start()
+        
+    def on_loading_started(self):
+        """読み込み開始時の処理"""
+        logger.info("File tree loading started")
+        # ステータス表示などを追加可能
+        
+    def on_loading_progress(self, progress: float, message: str):
+        """読み込み進捗の処理"""
+        logger.debug(f"File tree loading: {progress:.1f}% - {message}")
+        # プログレスバー表示などを追加可能
+        
+    def on_workspace_loaded(self, workspace_path: str, tree_node: TreeNode):
+        """ワークスペースが読み込まれたときの処理"""
+        # ツリーにワークスペースを追加
+        workspace_item = QTreeWidgetItem(self.tree)
+        workspace_item.setText(0, tree_node.name)
+        workspace_item.setData(0, Qt.UserRole, {
+            'type': 'workspace',
+            'path': workspace_path
+        })
+        workspace_item.setExpanded(True)
+        
+        # 子ノードを再帰的に追加
+        self._add_tree_nodes(workspace_item, tree_node.children)
+        
+    def _add_tree_nodes(self, parent_item: QTreeWidgetItem, nodes: List[TreeNode]):
+        """ツリーノードを再帰的に追加"""
+        for node in nodes:
+            item = QTreeWidgetItem(parent_item)
+            item.setText(0, node.name)
+            item.setData(0, Qt.UserRole, {
+                'type': node.type,
+                'path': node.path
             })
             
-            # ワークスペースを展開した状態にする
-            workspace_item.setExpanded(True)
-            
-            # ファイルとフォルダを追加
-            self.populate_workspace(workspace_item, workspace['path'])
-    
-    def populate_workspace(self, parent_item: QTreeWidgetItem, path: str, max_depth: int = 15, current_depth: int = 0):
-        """Populate workspace with folders and files"""
-        if current_depth >= max_depth:
-            return
-            
-        try:
-            if not os.path.exists(path):
-                logger.warning(f"Path does not exist: {path}")
-                return
+            if node.children:
+                self._add_tree_nodes(item, node.children)
                 
-            items = os.listdir(path)
-            items.sort()
-            
-            logger.debug(f"Loading directory: {path} (depth: {current_depth}, items: {len(items)})")
-            
-            # Separate folders and files
-            folders = []
-            files = []
-            
-            for item in items:
-                item_path = os.path.join(path, item)
-                
-                # Skip hidden files and specific directories (but allow .claude)
-                if item.startswith('.') and item != '.claude':
-                    continue
-                if item in ['node_modules', '__pycache__', 'Binaries', 'Intermediate', 'Saved', 'DerivedDataCache']:
-                    continue
-                    
-                if os.path.isdir(item_path):
-                    folders.append((item, item_path))
-                else:
-                    files.append((item, item_path))
-            
-            # Add folders first
-            for folder_name, folder_path in folders:
-                folder_item = QTreeWidgetItem(parent_item)
-                folder_item.setText(0, folder_name)
-                folder_item.setData(0, Qt.UserRole, {
-                    'type': 'folder',
-                    'path': folder_path
-                })
-                
-                # Recursively add subfolders and files
-                self.populate_workspace(folder_item, folder_path, max_depth, current_depth + 1)
-            
-            # Add files (expanded extension support)
-            allowed_extensions = {
-                # Programming languages
-                '.py', '.cpp', '.c', '.h', '.hpp', '.cxx', '.hxx',
-                '.cs', '.java', '.js', '.ts', '.jsx', '.tsx',
-                '.go', '.rs', '.php', '.rb', '.swift', '.kt',
-                
-                # Unreal Engine files
-                '.uproject', '.uplugin', '.uasset', '.umap', '.ucpp',
-                '.build', '.target', '.ini', '.cfg', '.config',
-                
-                # Unity files
-                '.unity', '.prefab', '.asset', '.mat', '.anim', '.controller',
-                '.overrideController', '.mask', '.physicMaterial', '.physicsMaterial2D',
-                '.guiskin', '.fontsettings', '.cubemap', '.flare', '.preset',
-                '.playable', '.signal', '.mixer', '.cs.meta', '.unity.meta',
-                '.prefab.meta', '.asset.meta', '.mat.meta', '.anim.meta',
-                
-                # Config and data files
-                '.json', '.yaml', '.yml', '.xml', '.toml',
-                '.csv', '.txt', '.md', '.rst',
-                
-                # Build files
-                '.cmake', '.make', '.gradle', '.sln', '.vcxproj',
-                '.pro', '.pri', '.qmake',
-                
-                # Shaders
-                '.hlsl', '.glsl', '.shader', '.cginc', '.compute',
-                
-                # Image files
-                '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif',
-                '.webp', '.svg', '.ico', '.psd', '.ai', '.eps',
-                
-                # Audio files
-                '.wav', '.mp3', '.flac', '.aac', '.ogg', '.wma',
-                '.m4a', '.opus', '.aiff', '.au',
-                
-                # Video files
-                '.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv',
-                '.webm', '.m4v', '.3gp', '.ogv'
-            }
-            
-            for file_name, file_path in files:
-                file_ext = os.path.splitext(file_name)[1].lower()
-                
-                # Always include certain important files regardless of extension
-                important_files = {
-                    'readme', 'license', 'changelog', 'makefile', 'dockerfile',
-                    'cmakelist', 'cmakelists', 'requirements', 'package',
-                    'gulpfile', 'gruntfile', 'webpack', 'tsconfig', 'jsconfig'
-                }
-                
-                file_name_lower = file_name.lower()
-                is_important = any(important in file_name_lower for important in important_files)
-                
-                if file_ext in allowed_extensions or is_important:
-                    file_item = QTreeWidgetItem(parent_item)
-                    file_item.setText(0, file_name)
-                    file_item.setData(0, Qt.UserRole, {
-                        'type': 'file',
-                        'path': file_path
-                    })
-                    logger.debug(f"Added file: {file_name}")
-                    
-        except PermissionError as e:
-            logger.warning(f"Permission denied: {path} - {e}")
-        except Exception as e:
-            logger.error(f"Error loading folder: {path} - {e}")
+    def on_loading_completed(self):
+        """読み込み完了時の処理"""
+        logger.info("File tree loading completed")
+        self.is_loading = False
+        
+        # MainWindowに通知
+        parent = self.parent()
+        while parent:
+            if hasattr(parent, 'on_file_tree_loading_completed'):
+                parent.on_file_tree_loading_completed()
+                break
+            parent = parent.parent()
+        
+        # ペンディングの更新があれば実行
+        if self.pending_workspace_update:
+            self.pending_workspace_update = False
+            QTimer.singleShot(100, self.load_workspaces_async)
+        
+    def on_loading_failed(self, error_message: str):
+        """読み込み失敗時の処理"""
+        logger.error(f"File tree loading failed: {error_message}")
+        self.is_loading = False
+        
+        # エラーメッセージを表示
+        QMessageBox.warning(self, tr("dialog_warning"), 
+                          f"Failed to load file tree: {error_message}")
+        
+    def load_workspaces(self):
+        """ワークスペースを読み込む（後方互換性のため）"""
+        self.load_workspaces_async()
     
     def rebuild_index(self):
         """インデックスを再構築"""
         # インデックス再構築の信号を発信
         self.workspace_changed.emit()
+        # ツリーも再読み込み
+        self.refresh_tree()
     
     def refresh_tree(self):
         """ツリーを更新（検索とフィルターもリセット）"""
@@ -304,7 +287,7 @@ class FileTreeWidget(QWidget):
         self.filter_combo.setCurrentIndex(0)  # First item is "All Files"
         
         # ツリーを再読み込み
-        self.load_workspaces()
+        self.load_workspaces_async()
     
     def on_item_clicked(self, item: QTreeWidgetItem, column: int = 0):
         """アイテムがクリックされたとき"""
@@ -352,7 +335,7 @@ class FileTreeWidget(QWidget):
         
         if reply == QMessageBox.Yes:
             if self.workspace_manager.remove_workspace(path):
-                self.load_workspaces()
+                self.load_workspaces_async()
                 # ワークスペース変更を通知
                 self.workspace_changed.emit()
     
@@ -394,10 +377,7 @@ class FileTreeWidget(QWidget):
                     added_count += 1
         
         if added_count > 0:
-            self.load_workspaces()
-            # Notify that workspaces have been updated
-            from PySide6.QtCore import QCoreApplication
-            QCoreApplication.processEvents()  # Process UI updates immediately
+            self.load_workspaces_async()
             # ワークスペース変更を通知してインデックス構築をトリガー
             self.workspace_changed.emit()
             QMessageBox.information(

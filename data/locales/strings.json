@@ -651,6 +651,10 @@
     "building_status_no": {
       "ja": "いいえ",
       "en": "No"
+    },
+    "message_autocomplete_enabled": {
+      "ja": "オートコンプリート機能が有効になりました",
+      "en": "Autocomplete feature enabled"
     }
   }
 }
