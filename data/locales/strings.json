@@ -573,8 +573,8 @@
       "en": "Index: {files} files, {folders} folders"
     },
     "index_building_progress": {
-      "ja": "インデックス構築中...",
-      "en": "Building index..."
+      "ja": "インデックス構築中",
+      "en": "Building index"
     },
     "index_rebuild_confirm_title": {
       "ja": "確認",
@@ -655,6 +655,22 @@
     "message_autocomplete_enabled": {
       "ja": "オートコンプリート機能が有効になりました",
       "en": "Autocomplete feature enabled"
+    },
+    "tree_loading_message": {
+      "ja": "ワークスペースを読み込み中",
+      "en": "Loading workspace"
+    },
+    "tree_loading_tooltip": {
+      "ja": "ファイルツリーを構築しています。しばらくお待ちください。",
+      "en": "Building file tree. Please wait..."
+    },
+    "tree_loading_progress": {
+      "ja": "読み込み中... ({progress}%)",
+      "en": "Loading... ({progress}%)"
+    },
+    "tree_loading_failed": {
+      "ja": "読み込みに失敗しました",
+      "en": "Loading failed"
     }
   }
 }

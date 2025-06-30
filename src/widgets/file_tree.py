@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (QTreeWidget, QTreeWidgetItem, QVBoxLayout,
                               QWidget, QPushButton, QHBoxLayout, QFileDialog,
                               QMenu, QMessageBox, QLineEdit, QComboBox, QLabel)
 from PySide6.QtCore import Signal, Qt, QUrl, QTimer
-from PySide6.QtGui import QAction, QIcon, QDragEnterEvent, QDropEvent
+from PySide6.QtGui import QAction, QIcon, QDragEnterEvent, QDropEvent, QBrush, QColor
 
 from src.core.workspace_manager import WorkspaceManager
 from src.core.ui_strings import tr
@@ -77,6 +77,14 @@ class FileTreeWidget(QWidget):
         self.loading_worker = None
         self.is_loading = False
         self.pending_workspace_update = False
+        self.loading_item = None  # 読み込み中表示用アイテム
+        
+        # アニメーション用
+        self.loading_animation_timer = QTimer()
+        self.loading_animation_timer.timeout.connect(self.update_loading_animation)
+        self.loading_animation_timer.setInterval(500)  # 500msごとに更新
+        self.loading_dots_count = 0
+        self.loading_base_text = ""
         
         self.setup_ui()
         # Defer workspace loading to improve startup speed
@@ -168,6 +176,7 @@ class FileTreeWidget(QWidget):
             return
         
         self.tree.clear()
+        self.loading_item = None  # クリア時にリセット
         workspaces = self.workspace_manager.get_workspaces()
         
         if not workspaces:
@@ -206,15 +215,40 @@ class FileTreeWidget(QWidget):
     def on_loading_started(self):
         """読み込み開始時の処理"""
         logger.info("File tree loading started")
-        # ステータス表示などを追加可能
+        
+        # 読み込み中表示を追加
+        if not self.loading_item:
+            self.loading_item = QTreeWidgetItem(self.tree)
+            self.loading_base_text = tr("tree_loading_message").rstrip('.')  # 末尾の.を除去
+            self.loading_item.setText(0, self.loading_base_text)
+            self.loading_item.setToolTip(0, tr("tree_loading_tooltip"))
+            # アイコンやスタイルを設定して目立たせる
+            font = self.loading_item.font(0)
+            font.setItalic(True)
+            self.loading_item.setFont(0, font)
+            
+            # アニメーションを開始
+            self.loading_dots_count = 0
+            self.loading_animation_timer.start()
         
     def on_loading_progress(self, progress: float, message: str):
         """読み込み進捗の処理"""
-        logger.debug(f"File tree loading: {progress:.1f}% - {message}")
-        # プログレスバー表示などを追加可能
+        if progress >= 0:
+            logger.debug(f"File tree loading: {progress:.1f}% - {message}")
+        
+        # ツールチップにのみ詳細情報を表示
+        if self.loading_item:
+            self.loading_item.setToolTip(0, message)
         
     def on_workspace_loaded(self, workspace_path: str, tree_node: TreeNode):
         """ワークスペースが読み込まれたときの処理"""
+        # 初回のワークスペース読み込み時に読み込み中表示を削除
+        if self.loading_item:
+            self.tree.takeTopLevelItem(self.tree.indexOfTopLevelItem(self.loading_item))
+            self.loading_item = None
+            # アニメーションも停止
+            self.loading_animation_timer.stop()
+        
         # ツリーにワークスペースを追加
         workspace_item = QTreeWidgetItem(self.tree)
         workspace_item.setText(0, tree_node.name)
@@ -245,6 +279,9 @@ class FileTreeWidget(QWidget):
         logger.info("File tree loading completed")
         self.is_loading = False
         
+        # アニメーションを停止
+        self.loading_animation_timer.stop()
+        
         # MainWindowに通知
         parent = self.parent()
         while parent:
@@ -262,6 +299,16 @@ class FileTreeWidget(QWidget):
         """読み込み失敗時の処理"""
         logger.error(f"File tree loading failed: {error_message}")
         self.is_loading = False
+        
+        # アニメーションを停止
+        self.loading_animation_timer.stop()
+        
+        # 読み込み中表示をエラー表示に変更
+        if self.loading_item:
+            self.loading_item.setText(0, tr("tree_loading_failed"))
+            self.loading_item.setToolTip(0, error_message)
+            # エラーを示す色に変更（例：赤）
+            self.loading_item.setForeground(0, QBrush(QColor(Qt.red)))
         
         # エラーメッセージを表示
         QMessageBox.warning(self, tr("dialog_warning"), 
@@ -512,3 +559,16 @@ class FileTreeWidget(QWidget):
         for i in range(item.childCount()):
             child = item.child(i)
             self.set_item_visible_recursive(child, visible)
+    
+    def update_loading_animation(self):
+        """読み込み中アニメーションを更新"""
+        if not self.loading_item:
+            return
+        
+        # ドットの数を循環させる（0, 1, 2, 3, 0, 1, 2, 3...)
+        self.loading_dots_count = (self.loading_dots_count + 1) % 4
+        dots = '.' * self.loading_dots_count
+        
+        # シンプルなドットアニメーションのみ
+        text = f"{self.loading_base_text}{dots}"
+        self.loading_item.setText(0, text)

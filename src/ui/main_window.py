@@ -384,6 +384,13 @@ class MainWindow(QMainWindow):
         self.statusBar().addWidget(self.progress_label)
         self.progress_label.hide()
         
+        # インデックス構築アニメーション用
+        self.indexing_animation_timer = QTimer()
+        self.indexing_animation_timer.timeout.connect(self.update_indexing_animation)
+        self.indexing_animation_timer.setInterval(500)  # 500msごと
+        self.indexing_dots_count = 0
+        self.indexing_base_text = ""
+        
         # インデックス状態表示
         self.index_status_label = QLabel(tr("index_status_not_built"))
         self.statusBar().addPermanentWidget(self.index_status_label)
@@ -916,16 +923,23 @@ class MainWindow(QMainWindow):
     # インデックス管理イベントハンドラー
     def on_indexing_started(self):
         """インデックス構築開始時"""
-        self.progress_label.setText(tr("index_building_progress"))
+        self.indexing_base_text = tr("index_building_progress").rstrip('.')  # 末尾の.を除去
+        self.indexing_dots_count = 0
+        self.progress_label.setText(self.indexing_base_text)
         self.progress_label.show()
         self.index_status_label.setText(tr("index_status_building"))
+        
+        # アニメーションを開始
+        self.indexing_animation_timer.start()
     
     def on_indexing_progress(self, progress: float, message: str):
         """インデックス構築進捗更新時"""
-        self.progress_label.setText(f"{message} ({progress:.1f}%)")
+        self.progress_label.setText(message)
     
     def on_indexing_completed(self, stats: dict):
         """インデックス構築完了時"""
+        # アニメーションを停止
+        self.indexing_animation_timer.stop()
         self.progress_label.hide()
         self.update_index_status()
         
@@ -946,6 +960,8 @@ class MainWindow(QMainWindow):
     
     def on_indexing_failed(self, error_message: str):
         """インデックス構築失敗時"""
+        # アニメーションを停止
+        self.indexing_animation_timer.stop()
         self.progress_label.hide()
         self.index_status_label.setText(tr("index_status_error"))
         QMessageBox.critical(self, tr("dialog_error"), tr("index_failed_message", error=error_message))
@@ -975,3 +991,16 @@ class MainWindow(QMainWindow):
         
         # ステータスバーに表示
         self.statusBar().showMessage(tr("message_autocomplete_enabled"), 2000)
+    
+    def update_indexing_animation(self):
+        """インデックス構築中アニメーションを更新"""
+        if not self.progress_label.isVisible():
+            return
+        
+        # ドットの数を循環させる（0, 1, 2, 3, 0, 1, 2, 3...)
+        self.indexing_dots_count = (self.indexing_dots_count + 1) % 4
+        dots = '.' * self.indexing_dots_count
+        
+        # シンプルなドットアニメーション
+        text = f"{self.indexing_base_text}{dots}"
+        self.progress_label.setText(text)

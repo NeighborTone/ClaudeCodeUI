@@ -117,8 +117,8 @@ class FileTreeWorker(QObject):
                 workspace_path = workspace['path']
                 workspace_name = workspace['name']
                 
-                # 進捗を報告
-                progress = (idx / total_workspaces) * 100
+                # 進捗を報告（最初から0%以上になるように調整）
+                progress = ((idx + 0.5) / total_workspaces) * 100
                 self.progress.emit(progress, f"Loading workspace: {workspace_name}")
                 
                 logger.info(f"Loading workspace: {workspace_path}")
@@ -162,6 +162,11 @@ class FileTreeWorker(QObject):
             
             items = os.listdir(path)
             items.sort()
+            
+            # 深いディレクトリでも進捗を報告（簡易的な実装）
+            if current_depth <= 2:  # 浅い階層でのみ進捗を報告
+                dir_name = os.path.basename(path)
+                self.progress.emit(-1, f"Scanning: {dir_name}")  # -1は特殊な値として使用
             
             # フォルダとファイルを分離
             folders = []
