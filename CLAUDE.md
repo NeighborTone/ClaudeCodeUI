@@ -21,7 +21,29 @@ This application features a **state-of-the-art SQLite-based indexing system** th
 
 ## Core Principles
 
-### 1. Communication Guidelines
+### 1. Step by Step Planning & Preliminary Questions
+
+Plan step by step before executing tasks. If there is anything you don't understand or you have any additional questions, please ask first.
+
+---
+
+### 2. Claude Code Best Practice
+
+#### Core Principles
+
+- **Maximum Efficiency**: For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially
+- **Full Effort**: Don't hold back. Give it your all
+- **Clean Code**: If you create any temporary new files, scripts, or helper files for iteration, clean up these files by removing them at the end of the task
+- **General Solutions**: Implement a solution that works correctly for all valid inputs, not just the test cases. Do not hard-code values or create solutions that only work for specific test inputs
+- **Principled Implementation**: Focus on understanding the problem requirements and implementing the correct algorithm. Tests are there to verify correctness, not to define the solution
+- **Quality Standards**: The solution should be robust, maintainable, and extendable
+- **Feasibility Check**: If the task is unreasonable or infeasible, or if any of the tests are incorrect, please tell me
+- **TODO File Creation**: When creating TODOs, create them as markdown files in the working folder, not using the TodoWrite tool
+- **Production-Level Comments**: Source code comments should be written at production release quality, without update histories or similar, always suitable for product release
+
+---
+
+### 3. Communication Guidelines
 
 ⚠️ **ABSOLUTE RULES - MUST BE FOLLOWED:**
 
@@ -36,7 +58,7 @@ This application features a **state-of-the-art SQLite-based indexing system** th
 | **Search When Needed** | Use web search for additional context |
 | **Structured Questioning** | When facing ambiguous requests, ask specific clarifying questions |
 
-### 2. Development Quality Assurance Rules
+### 4. Development Quality Assurance Rules
 
 ⚠️ **MANDATORY QUALITY REQUIREMENTS:**
 
@@ -47,20 +69,111 @@ This application features a **state-of-the-art SQLite-based indexing system** th
 | **Log and Monitor** | Write diagnostic logs during testing to ensure proper operation |
 | **Clarify Before Implementing** | Ask for clarification on unclear requirements - never guess |
 | **Verify Before Completion** | Always verify implementation works as expected before marking complete |
+| **Mandatory Build/Execution on Task Completion** | After completing a TODO task or editing code, you must always build and execute it before starting the next task. Confirm that it operates correctly and that no warning or error logs are present |
+| **Prohibition of Ad-Hoc Fixes** | It is forbidden to implement temporary, non-fundamental fixes (e.g., hard-coding values, adding code just to suppress warnings) solely for the purpose of eliminating errors or warnings |
 | **Follow Existing Patterns** | Study and maintain consistency with existing code patterns and architecture |
 | **Implement Only What's Requested** | Build exactly what is asked for, nothing more, nothing less |
 | **Utilize Existing Resources** | Use existing files, functions, and patterns whenever possible |
 | **Research When Needed** | Use web search for additional context when encountering unfamiliar concepts |
+
+---
 
 #### Ambiguity Resolution Protocol
 
 When receiving unclear instructions, ALWAYS follow this questioning pattern:
 
 1. **What** - Identify the specific subject/object of the request
-2. **Where** - Clarify the location, file, or context 
-3. **How** - Determine the method, approach, or level of detail required
+   - What exactly needs to be modified/created/analyzed?
+   - What is the expected outcome or deliverable?
+   - What are the specific requirements or constraints?
 
-### 3. Language Requirements
+2. **Where** - Clarify the location, file, or context
+   - Where should the changes be implemented?
+   - Where are the relevant files or resources located?
+   - Where should I look for examples or existing patterns?
+
+3. **How** - Determine the method, approach, or level of detail required
+   - How detailed should the implementation be?
+   - How should this integrate with existing systems?
+   - How should I prioritize multiple requirements?
+
+---
+
+### 5. Complex Task Management Protocol
+
+For any non-trivial task requiring multiple steps or significant implementation:
+
+#### Task Execution Workflow
+
+```mermaid
+graph TD
+    A[Receive Task] --> B[Create TODO Checklist]
+    B --> C[Wait for User Approval]
+    C --> D[Execute Checkpoint]
+    D --> E[Stop for Review]
+    E --> F[Update TODO]
+    F --> G{More Tasks?}
+    G -->|Yes| C
+    G -->|No| H[Complete]
+```
+
+#### Implementation Steps
+
+1. **Create TODO checklist** in markdown format
+   - Break down complex tasks into specific, actionable items
+   - Include verification steps and acceptance criteria
+   - Estimate effort and dependencies
+
+2. **Wait for user approval**
+   - Present the TODO list for review
+   - Clarify any ambiguous requirements
+   - Get explicit approval before proceeding
+
+3. **Execute checkpoint**
+   - Implement one logical unit of work
+   - Focus on completing a specific, testable component
+   - Maintain quality and follow existing patterns
+
+4. **Stop for user review**
+   - Present completed work for feedback
+   - Explain what was accomplished
+   - Identify any issues or concerns
+
+5. **Update TODO status**
+   - Mark completed items as ✅ with completion date
+   - Update any changed requirements
+   - Note any discovered dependencies
+
+6. **Repeat from step 2**
+   - Continue with next checkpoint
+   - Maintain momentum while ensuring quality
+
+#### Task Execution Principles
+
+- **Parallel Operations**: Execute independent tasks simultaneously
+- **Full Effort**: Give maximum attention to each task
+- **Clean Up**: Remove temporary files after completion
+- **Batch Processing**: Combine tool calls when possible
+- **Progress Documentation**: Update logs and TODOs after each major work completion
+
+#### When to Use This Workflow
+
+✅ **Use for:**
+- Multi-file changes
+- New feature implementation
+- System architecture changes
+- Complex debugging tasks
+- Refactoring operations
+
+❌ **Don't use for:**
+- Simple bug fixes
+- Minor text changes
+- Single-file modifications
+- Quick parameter adjustments
+
+---
+
+### 6. Language Requirements
 
 | Context | Language | Reason |
 |---------|----------|---------|
@@ -72,7 +185,7 @@ When receiving unclear instructions, ALWAYS follow this questioning pattern:
 | **Log Error Messages** | English | Debugging |
 | **User-facing Messages** | Japanese | End users |
 
-### 4. Implementation Philosophy
+### 7. Implementation Philosophy
 
 ```
 NO UNNECESSARY:
@@ -81,6 +194,79 @@ NO UNNECESSARY:
 └── Features       # Exactly what's requested
 ```
 
+---
+
+### 8. Final Reminders & Quality Checkpoints
+
+#### Essential Principles - Always Remember
+
+1. **ASK** when unclear - don't guess
+   - Better to ask twice than implement incorrectly once
+   - Clarification prevents wasted effort and rework
+   - Use the What/Where/How questioning protocol
+
+2. **VERIFY** before completion
+   - Test functionality thoroughly
+   - Check integration with existing systems
+   - Validate against original requirements
+
+3. **FOLLOW** existing patterns
+   - Study the codebase before adding new patterns
+   - Maintain consistency with established conventions
+   - Reuse existing solutions when appropriate
+
+4. **IMPLEMENT** only what's requested
+   - Resist the urge to add "helpful" features
+   - Focus on the specific requirements given
+   - Keep solutions simple and targeted
+
+5. **USE** existing resources when possible
+   - Prefer editing existing files over creating new ones
+   - Leverage existing functions and components
+   - Build upon established foundations
+
+#### Quality Checkpoints
+
+Before marking any task as complete:
+
+- [ ] Requirements fully understood and addressed
+- [ ] Code follows project conventions and patterns
+- [ ] Functionality tested and verified
+- [ ] Integration with existing systems confirmed
+- [ ] Documentation updated if required
+- [ ] No unnecessary complexity introduced
+- [ ] Error handling appropriately implemented
+- [ ] Performance considerations addressed
+
+#### When In Doubt
+
+- **Stop and ask** rather than proceeding with uncertainty
+- **Reference existing code** for patterns and conventions
+- **Test incrementally** rather than implementing everything at once
+- **Document decisions** that might need explanation later
+- **Prioritize reliability** over clever solutions
+
+#### Success Indicators
+
+✅ **You're on the right track when:**
+- User requirements are crystal clear
+- Implementation follows established patterns
+- Code integrates seamlessly with existing systems
+- Solution is simple and focused
+- Testing confirms expected behavior
+
+❌ **Warning signs to watch for:**
+- Making assumptions about unclear requirements
+- Creating new patterns when existing ones would work
+- Adding features not explicitly requested
+- Implementing complex solutions for simple problems
+- Skipping testing or verification steps
+
+---
+
+**Remember: Quality over speed, clarity over cleverness, asking over guessing.**
+
+---
 
 ## Development Commands
 
