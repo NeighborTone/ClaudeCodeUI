@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                               QApplication, QLabel, QDialog, QScrollArea, QTextEdit,
                               QPushButton, QDialogButtonBox)
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QAction, QCloseEvent, QIcon, QScreen
+from PySide6.QtGui import QAction, QCloseEvent, QIcon, QScreen, QKeySequence, QShortcut
 
 from src.core.workspace_manager import WorkspaceManager
 from src.core.settings import SettingsManager
@@ -25,6 +25,7 @@ from src.widgets.thinking_selector import ThinkingSelectorWidget
 from src.widgets.prompt_preview import PromptPreviewWidget
 from src.widgets.template_selector import TemplateSelector
 from src.widgets.prompt_history import PromptHistoryWidget
+from src.widgets.recent_files import RecentFilesWidget
 from src.core.template_manager import get_template_manager
 from src.ui.style_themes import apply_theme, theme_manager, get_main_font
 
@@ -129,15 +130,15 @@ class MainWindow(QMainWindow):
         self.main_splitter.splitterMoved.connect(self.on_splitter_moved)
         
         # 初期プロンプトプレビューを更新（少し遅延させる）
-        QTimer.singleShot(100, self.update_prompt_preview)
+        self.update_prompt_preview()  # 遅延を削除
         
         # 自動保存タイマー
         self.auto_save_timer = QTimer()
         self.auto_save_timer.timeout.connect(self.auto_save_settings)
         self.auto_save_timer.start(30000)  # 30秒ごとに自動保存
         
-        # Initialize indexing system
-        QTimer.singleShot(500, self.check_indexing_needed)
+        # Initialize indexing system (遅延を削除)
+        self.check_indexing_needed()
         
         # ファイルツリーとインデックスの状態管理
         self.is_tree_loaded = False
@@ -168,11 +169,22 @@ class MainWindow(QMainWindow):
         self.main_splitter = QSplitter(Qt.Horizontal)
         main_layout.addWidget(self.main_splitter)
         
-        # 左側：ファイルツリー（WorkspaceManagerを共有）
+        # 左側：ファイルツリーエリア
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # ファイルツリー
         self.file_tree = FileTreeWidget(self.workspace_manager)
-        self.file_tree.setMinimumWidth(250)
-        self.file_tree.setMaximumWidth(400)
-        self.main_splitter.addWidget(self.file_tree)
+        left_layout.addWidget(self.file_tree)
+        
+        # 最近使用したファイル
+        self.recent_files = RecentFilesWidget(max_items=8)
+        left_layout.addWidget(self.recent_files)
+        
+        left_widget.setMinimumWidth(250)
+        left_widget.setMaximumWidth(400)
+        self.main_splitter.addWidget(left_widget)
         
         # 中央：プロンプトプレビューエリア
         self.prompt_preview = PromptPreviewWidget()
@@ -204,6 +216,9 @@ class MainWindow(QMainWindow):
         
         # イベント接続
         self.setup_connections()
+        
+        # キーボードショートカット
+        self.setup_shortcuts()
     
     def setup_connections(self):
         """イベント接続"""
@@ -226,6 +241,9 @@ class MainWindow(QMainWindow):
         self.file_tree.file_selected.connect(self.on_file_selected)
         self.file_tree.file_double_clicked.connect(self.on_file_double_clicked)
         
+        # 最近使用したファイル
+        self.recent_files.file_selected.connect(self.on_recent_file_selected)
+        
         # ワークスペース変更
         self.file_tree.workspace_changed.connect(self.on_workspace_changed)
         
@@ -234,6 +252,41 @@ class MainWindow(QMainWindow):
         self.indexing_manager.indexing_progress.connect(self.on_indexing_progress)
         self.indexing_manager.indexing_completed.connect(self.on_indexing_completed)
         self.indexing_manager.indexing_failed.connect(self.on_indexing_failed)
+    
+    def setup_shortcuts(self):
+        """キーボードショートカットの設定"""
+        # Ctrl+L: プロンプト入力にフォーカス
+        focus_prompt_shortcut = QShortcut(QKeySequence("Ctrl+L"), self)
+        focus_prompt_shortcut.activated.connect(self.focus_prompt_input)
+        
+        # Ctrl+T: 思考レベル切り替え
+        cycle_thinking_shortcut = QShortcut(QKeySequence("Ctrl+T"), self)
+        cycle_thinking_shortcut.activated.connect(self.cycle_thinking_level)
+        
+        # Ctrl+1-9: 思考レベル直接選択
+        for i in range(1, 10):
+            shortcut = QShortcut(QKeySequence(f"Ctrl+{i}"), self)
+            shortcut.activated.connect(lambda checked, level=i-1: self.set_thinking_level_by_index(level))
+        
+        # Shift+Return: プロンプト生成（既存機能だが念のため）
+        generate_shortcut = QShortcut(QKeySequence("Shift+Return"), self)
+        generate_shortcut.activated.connect(self.prompt_input.generate_prompt)
+    
+    def focus_prompt_input(self):
+        """プロンプト入力にフォーカス"""
+        self.prompt_input.text_edit.setFocus()
+    
+    def cycle_thinking_level(self):
+        """思考レベルを循環切り替え"""
+        current_index = self.thinking_selector.combo.currentIndex()
+        total_items = self.thinking_selector.combo.count()
+        next_index = (current_index + 1) % total_items
+        self.thinking_selector.combo.setCurrentIndex(next_index)
+    
+    def set_thinking_level_by_index(self, index: int):
+        """インデックスで思考レベルを設定"""
+        if 0 <= index < self.thinking_selector.combo.count():
+            self.thinking_selector.combo.setCurrentIndex(index)
     
     def setup_menu(self):
         """メニューバーの設定"""
@@ -504,6 +557,32 @@ class MainWindow(QMainWindow):
         
         # ファイル内容をプロンプトに挿入
         current_text = self.prompt_input.get_prompt_text()
+        if current_text:
+            new_text = f"{current_text}\n\n@{workspace_relative_path}"
+        else:
+            new_text = f"@{workspace_relative_path}"
+        
+        # オートコンプリートを一時的に無効化してテキストを設定
+        self.prompt_input.set_text_without_completion(new_text)
+        self.statusBar().showMessage(tr("status_file_added", filename=workspace_relative_path), 2000)
+        
+        # 最近使用したファイルに追加
+        file_info = {
+            'name': os.path.basename(file_path),
+            'relative_path': workspace_relative_path,
+            'workspace': workspace_name,
+            'type': 'file'
+        }
+        self.recent_files.add_file(file_info)
+    
+    def on_recent_file_selected(self, file_info: dict):
+        """最近使用したファイルが選択されたとき"""
+        workspace_relative_path = file_info.get('relative_path', '')
+        if not workspace_relative_path:
+            return
+        
+        # プロンプト入力に追加
+        current_text = self.prompt_input.get_text()
         if current_text:
             new_text = f"{current_text}\n\n@{workspace_relative_path}"
         else:

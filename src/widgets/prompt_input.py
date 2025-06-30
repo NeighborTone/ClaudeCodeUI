@@ -207,7 +207,8 @@ class PromptInputWidget(QWidget):
         # イベント接続
         self.text_edit.special_key_pressed.connect(self.handle_special_key)
         self.text_edit.textChanged.connect(self.on_text_changed)
-        self.text_edit.textChanged.connect(lambda: self.text_changed.emit(self.text_edit.toPlainText()))
+        # プレビュー更新をデバウンスに変更
+        self.text_edit.textChanged.connect(self._start_preview_timer)
     
     def setup_completion(self):
         """補完システムセットアップ"""
@@ -218,6 +219,11 @@ class PromptInputWidget(QWidget):
         self.completion_timer = QTimer()
         self.completion_timer.setSingleShot(True)
         self.completion_timer.timeout.connect(self.show_completion)
+        
+        # プレビュー更新用デバウンスタイマー
+        self.preview_timer = QTimer()
+        self.preview_timer.setSingleShot(True)
+        self.preview_timer.timeout.connect(self._emit_text_changed)
     
     def handle_special_key(self, event: QKeyEvent):
         """特殊キーハンドリング"""
@@ -257,7 +263,7 @@ class PromptInputWidget(QWidget):
         
         if at_match:
             self.current_at_match = at_match
-            self.completion_timer.start(150)
+            self.completion_timer.start(200)
         else:
             self.hide_completion()
     
@@ -419,3 +425,11 @@ class PromptInputWidget(QWidget):
     def update_file_searcher(self, fast_searcher):
         """ファイル検索エンジンを更新"""
         self.file_searcher = fast_searcher
+    
+    def _start_preview_timer(self):
+        """プレビュー更新タイマーを開始（デバウンス）"""
+        self.preview_timer.start(500)  # 500msのデバウンス
+    
+    def _emit_text_changed(self):
+        """テキスト変更シグナルを送信"""
+        self.text_changed.emit(self.text_edit.toPlainText())
