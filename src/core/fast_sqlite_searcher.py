@@ -7,9 +7,11 @@ import re
 import time
 from typing import List, Dict, Tuple, Optional
 from functools import lru_cache
+from collections import OrderedDict
 
 from src.core.sqlite_indexer import SQLiteIndexer, FileEntry
 from src.core.path_converter import PathConverter
+from src.core.logger import get_logger
 
 
 class FastSQLiteSearcher:
@@ -18,9 +20,10 @@ class FastSQLiteSearcher:
     def __init__(self, sqlite_indexer: SQLiteIndexer):
         self.sqlite_indexer = sqlite_indexer
         self.max_results = 30  # オートコンプリート候補数上限を30に設定
-        self._search_cache = {}  # 簡単なキャッシュ
+        self._search_cache = OrderedDict()  # LRUキャッシュ
         self._cache_max_size = 100
         self._cache_ttl = 300  # 5分間のTTL
+        self.logger = get_logger(__name__)
     
     def extract_file_mentions(self, text: str) -> List[Tuple[int, int, str]]:
         """
@@ -298,10 +301,12 @@ class FastSQLiteSearcher:
         return stats
     
     def _get_from_cache(self, cache_key: str) -> Optional[List]:
-        """キャッシュから取得"""
+        """LRUキャッシュから取得"""
         if cache_key in self._search_cache:
             result, timestamp = self._search_cache[cache_key]
             if time.time() - timestamp < self._cache_ttl:
+                # LRU: アクセスされたアイテムを最後に移動
+                self._search_cache.move_to_end(cache_key)
                 return result
             else:
                 # 期限切れのエントリを削除
@@ -309,14 +314,13 @@ class FastSQLiteSearcher:
         return None
     
     def _add_to_cache(self, cache_key: str, result: List):
-        """キャッシュに追加"""
-        # キャッシュサイズの制限
+        """LRUキャッシュに追加"""
+        # キャッシュサイズの制限（LRU方式）
         if len(self._search_cache) >= self._cache_max_size:
-            # 古いエントリを削除
-            oldest_key = min(self._search_cache.keys(), 
-                           key=lambda k: self._search_cache[k][1])
-            del self._search_cache[oldest_key]
+            # 最も古いエントリ（first item）を削除
+            self._search_cache.popitem(last=False)
         
+        # 新しいエントリを最後に追加
         self._search_cache[cache_key] = (result, time.time())
     
     def search_fuzzy(self, query: str, max_results: int = None) -> List[Dict[str, str]]:
@@ -382,7 +386,7 @@ class FastSQLiteSearcher:
                 return entries
                 
         except Exception as e:
-            print(f"フォールバックファジー検索エラー: {e}")
+            self.logger.error(f"Fallback fuzzy search error: {e}")
             return []
     
     def clear_cache(self):

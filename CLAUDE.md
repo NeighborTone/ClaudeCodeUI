@@ -141,6 +141,16 @@ pip3 install -r requirements.txt
 python3 main.py
 ```
 
+#### WSL Testing Environment
+**IMPORTANT**: When testing in WSL environment, always use English language mode due to font compatibility limitations:
+
+```bash
+# Force English mode for WSL testing
+LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 python3 main.py
+```
+
+**Reasoning**: WSL environment may not have proper Japanese font support, causing display issues. English mode ensures reliable testing and debugging.
+
 #### Troubleshooting Python Execution in WSL
 
 ##### Solution 1: Use WSL Python (Recommended)

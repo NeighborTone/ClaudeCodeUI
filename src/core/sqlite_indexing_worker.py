@@ -7,6 +7,7 @@ from typing import List, Tuple, Dict, Any
 from PySide6.QtCore import QThread, Signal, QObject
 
 from src.core.sqlite_indexer import SQLiteIndexer
+from src.core.logger import get_logger
 
 
 class SQLiteIndexingWorker(QThread):
@@ -24,6 +25,7 @@ class SQLiteIndexingWorker(QThread):
         self.rebuild_all = rebuild_all
         self.indexer = None
         self._is_running = False
+        self.logger = get_logger(__name__)
     
     def run(self):
         """メインの実行ループ"""
@@ -71,8 +73,8 @@ class SQLiteIndexingWorker(QThread):
                 total_files += files_count
                 total_folders += folders_count
                 
-                print(f"ワークスペース '{workspace_name}' インデックス完了: "
-                      f"{files_count}ファイル, {folders_count}フォルダ ({end_time - start_time:.2f}秒)")
+                self.logger.info(f"Workspace '{workspace_name}' index completed: "
+                                  f"{files_count} files, {folders_count} folders ({end_time - start_time:.2f}s)")
                 
                 self.workspace_completed.emit(workspace_name, files_count, folders_count)
             
@@ -92,10 +94,10 @@ class SQLiteIndexingWorker(QThread):
                 self.indexing_completed.emit(stats)
             
         except Exception as e:
-            error_message = f"SQLiteインデックス構築エラー: {str(e)}"
-            print(error_message)
+            error_message = f"SQLite index build error: {str(e)}"
+            self.logger.error(error_message)
             import traceback
-            traceback.print_exc()
+            self.logger.error(f"Traceback: {traceback.format_exc()}")
             self.indexing_failed.emit(error_message)
         finally:
             # リソースのクリーンアップは行わない（メインスレッドで引き続き使用するため）
@@ -115,10 +117,10 @@ class SQLiteIndexingWorker(QThread):
                 self.indexer.connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
                 
                 self.indexer.connection.commit()
-                print("データベース最適化完了")
+                self.logger.info("Database optimization completed")
                 
         except Exception as e:
-            print(f"データベース最適化エラー: {e}")
+            self.logger.error(f"Database optimization error: {e}")
     
     def stop(self):
         """インデックス構築を停止"""
@@ -199,10 +201,10 @@ class SQLiteIndexingManager(QObject):
         
         if not workspaces_to_index:
             # インデックス不要の場合
-            print("インデックス構築不要 - 既存のインデックスを使用")
+            self.logger.info("Index build not required - using existing index")
             return False
         
-        print(f"インデックス構築開始: {len(workspaces_to_index)}個のワークスペース")
+        self.logger.info(f"Index build started: {len(workspaces_to_index)} workspaces")
         
         # 必要なワークスペースのみインデックス構築
         rebuild_all = len(workspaces_to_index) == len(workspaces)

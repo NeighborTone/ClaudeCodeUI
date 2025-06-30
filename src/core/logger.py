@@ -89,3 +89,8 @@ def log_indexing_operation(operation: str, details: str = ""):
 def log_performance(operation: str, duration: float, details: str = ""):
     """Log performance metrics"""
     logger.info(f"Performance: {operation} took {duration:.3f}s {details}".strip())
+
+
+def get_logger(name: str = __name__) -> ApplicationLogger:
+    """Get logger instance (standardized interface)"""
+    return ApplicationLogger.get_instance()
