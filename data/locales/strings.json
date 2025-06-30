@@ -169,8 +169,8 @@
       "en": "Recent Files"
     },
     "prompt_placeholder": {
-      "ja": "プロンプトを入力してください...\n- Enterで改行\n- Shift+Enterで生成&コピー\n- @filename でファイル・フォルダを指定",
-      "en": "Enter your prompt...\n- Enter for new line\n- Shift+Enter to generate & copy\n- @filename to specify files/folders"
+      "ja": "プロンプトを入力してください...\n- Enterで改行\n- Shift+Enterで生成&コピー\n- @filename でファイル・フォルダを指定\n- !filename でファイルのみ、#foldername でフォルダのみ",
+      "en": "Enter your prompt...\n- Enter for new line\n- Shift+Enter to generate & copy\n- @filename to specify files/folders\n- !filename for files only, #foldername for folders only"
     },
     "prompt_tokens": {
       "ja": "トークン",
@@ -179,6 +179,14 @@
     "completion_header": {
       "ja": "ファイル・フォルダを選択: (Escで閉じる)",
       "en": "Select file/folder: (Esc to close)"
+    },
+    "completion_header_files": {
+      "ja": "ファイルを選択: (Escで閉じる)",
+      "en": "Select file: (Esc to close)"
+    },
+    "completion_header_folders": {
+      "ja": "フォルダを選択: (Escで閉じる)",
+      "en": "Select folder: (Esc to close)"
     },
     "completion_file": {
       "ja": "(ファイル)",
@@ -289,8 +297,8 @@
       "en": "Usage"
     },
     "usage_content": {
-      "ja": "Claude Code PromptUI 使い方\n\n■ 基本操作\n- Enterで改行\n- Shift+Enterで生成&コピー\n- @filename でファイルを指定\n- 左側のファイルツリーからファイルを選択\n- 中央でファイル内容をプレビュー\n\n■ ファイル指定\n- @を入力すると補完候補が表示されます\n- 矢印キーで選択、Enterで確定\n- Escapeで補完をキャンセル\n\n■ 思考レベル\n- Claude Codeの思考レベルを設定できます\n- think, think harder, think step by step等\n\n■ テーマ\n- ライト、ダーク、サイバーパンク、ノルディックから選択\n\n■ ショートカット\n- Ctrl+F: フォルダ追加\n- Ctrl+R: ファイルツリー更新\n- Shift+Enter: プロンプト生成&コピー",
-      "en": "Claude Code PromptUI Usage\n\n■ Basic Operations\n- Enter for new line\n- Shift+Enter to generate & copy\n- @filename to specify files\n- Select files from left tree\n- Preview file content in center\n\n■ File Specification\n- Type @ to show completion candidates\n- Use arrow keys to select, Enter to confirm\n- Escape to cancel completion\n\n■ Thinking Level\n- Set Claude Code thinking level\n- think, think harder, think step by step, etc.\n\n■ Themes\n- Choose from Light, Dark, Cyberpunk, Nordic\n\n■ Shortcuts\n- Ctrl+F: Add folder\n- Ctrl+R: Refresh file tree\n- Shift+Enter: Generate & copy prompt"
+      "ja": "Claude Code PromptUI 使い方\n\n■ 基本操作\n- Enterで改行\n- Shift+Enterで生成&コピー\n- @filename でファイル・フォルダを指定\n- 左側のファイルツリーからファイルを選択\n- 中央でファイル内容をプレビュー\n\n■ スマートファイル指定\n- @filename : ファイル・フォルダ両方を検索\n- !filename : ファイルのみを検索\n- #foldername : フォルダのみを検索\n- 矢印キーで選択、Enterで確定\n- Escapeで補完をキャンセル\n- 選択後は自動的に@形式で挿入されます\n\n■ 思考レベル\n- Claude Codeの思考レベルを設定できます\n- think, think harder, think step by step等\n\n■ テーマ\n- ライト、ダーク、サイバーパンク、ノルディックから選択\n\n■ ショートカット\n- Ctrl+F: フォルダ追加\n- Ctrl+R: ファイルツリー更新\n- Shift+Enter: プロンプト生成&コピー",
+      "en": "Claude Code PromptUI Usage\n\n■ Basic Operations\n- Enter for new line\n- Shift+Enter to generate & copy\n- @filename to specify files/folders\n- Select files from left tree\n- Preview file content in center\n\n■ Smart File Specification\n- @filename : Search both files and folders\n- !filename : Search files only\n- #foldername : Search folders only\n- Use arrow keys to select, Enter to confirm\n- Escape to cancel completion\n- Selected items are automatically inserted as @format\n\n■ Thinking Level\n- Set Claude Code thinking level\n- think, think harder, think step by step, etc.\n\n■ Themes\n- Choose from Light, Dark, Cyberpunk, Nordic\n\n■ Shortcuts\n- Ctrl+F: Add folder\n- Ctrl+R: Refresh file tree\n- Shift+Enter: Generate & copy prompt"
     },
     "python_env_title": {
       "ja": "Python実行環境",

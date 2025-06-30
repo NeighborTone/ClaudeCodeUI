@@ -64,10 +64,27 @@ class SimpleCompletionWidget(QWidget):
         self.items = []
         self.setStyleSheet(get_completion_widget_style())
     
-    def show_items(self, items: List[Dict], pos):
+    def show_items(self, items: List[Dict], pos, symbol: str = '@'):
         """補完候補を表示"""
         self.items = items
         self.list_widget.clear()
+        
+        # シンボルに応じてラベルを更新
+        try:
+            if symbol == '!':
+                self.label.setText(tr("completion_header_files"))
+            elif symbol == '#':
+                self.label.setText(tr("completion_header_folders"))
+            else:  # '@'
+                self.label.setText(tr("completion_header"))
+        except:
+            # フォールバック用テキスト
+            if symbol == '!':
+                self.label.setText("ファイルを選択: (Escで閉じる)")
+            elif symbol == '#':
+                self.label.setText("フォルダを選択: (Escで閉じる)")
+            else:  # '@'
+                self.label.setText("ファイル・フォルダを選択: (Escで閉じる)")
         
         if not items:
             self.hide()
@@ -164,8 +181,9 @@ class PromptInputWidget(QWidget):
         self.thinking_level = "think"
         
         # 状態管理
-        self.current_at_match = None
+        self.current_match = None  # {'symbol': '@'/'$'/'#', 'match': regex_match, 'query': str}
         self.completion_active = False
+        self.current_completion_symbol = '@'  # 現在の補完モード
         
         self.setup_ui()
         self.setup_completion()
@@ -248,32 +266,48 @@ class PromptInputWidget(QWidget):
         """テキスト変更時の処理"""
         self.update_token_count()
         
-        # @ 検索
+        # @/$/#検索
         cursor = self.text_edit.textCursor()
         text = self.text_edit.toPlainText()
         cursor_pos = cursor.position()
         
-        # @ パターンを検索
-        at_match = None
-        for match in re.finditer(r'@([^\s@]*)', text):
+        # @/!/# パターンを検索（単一正規表現で効率化）
+        current_match = None
+        pattern = r'([@!#])([^\s@!#]*)'
+        
+        for match in re.finditer(pattern, text):
             start, end = match.span()
             if start <= cursor_pos <= end:
-                at_match = match
+                symbol = match.group(1)
+                query = match.group(2)
+                current_match = {
+                    'symbol': symbol,
+                    'match': match,
+                    'query': query
+                }
                 break
         
-        if at_match:
-            self.current_at_match = at_match
+        if current_match:
+            self.current_match = current_match
             self.completion_timer.start(200)
         else:
             self.hide_completion()
     
     def show_completion(self):
         """補完表示"""
-        if not self.current_at_match or not self.file_searcher:
+        if not self.current_match or not self.file_searcher:
             return
         
-        filename = self.current_at_match.group(1)
-        matches = self.file_searcher.search_files_by_name(filename)
+        symbol = self.current_match['symbol']
+        query = self.current_match['query']
+        
+        # シンボルに応じて適切な検索メソッドを呼び出し
+        if symbol == '!':
+            matches = self.file_searcher.search_files_only_by_name(query)
+        elif symbol == '#':
+            matches = self.file_searcher.search_folders_only_by_name(query)
+        else:  # '@'
+            matches = self.file_searcher.search_files_by_name(query)
         
         if matches:
             cursor = self.text_edit.textCursor()
@@ -283,7 +317,8 @@ class PromptInputWidget(QWidget):
             bottom_left.setY(bottom_left.y() + 8)
             global_pos = self.text_edit.mapToGlobal(bottom_left)
             
-            self.completion_widget.show_items(matches, global_pos)
+            self.current_completion_symbol = symbol
+            self.completion_widget.show_items(matches, global_pos, symbol)
             self.completion_active = True
     
     def hide_completion(self):
@@ -294,7 +329,7 @@ class PromptInputWidget(QWidget):
     
     def on_completion_selected(self, item_data: dict):
         """補完選択時"""
-        if not self.current_at_match:
+        if not self.current_match:
             return
         
         # ワークスペース相対パスを取得
@@ -312,9 +347,9 @@ class PromptInputWidget(QWidget):
         
         workspace_relative_path = PathConverter.normalize_path(workspace_relative_path)
         
-        # テキスト置換
+        # テキスト置換（常に@から始まる形式で挿入）
         text = self.text_edit.toPlainText()
-        start, end = self.current_at_match.span()
+        start, end = self.current_match['match'].span()
         new_text = text[:start] + f"@{workspace_relative_path}" + text[end:]
         
         # カーソル位置を保存
@@ -406,8 +441,17 @@ class PromptInputWidget(QWidget):
     
     def update_language(self):
         """言語変更時にUIを更新"""
-        # 完了ウィジェットのラベル更新
-        self.completion_widget.label.setText(tr("completion_header"))
+        # 完了ウィジェットのラベル更新（現在のモードに応じて）
+        try:
+            if self.current_completion_symbol == '!':
+                self.completion_widget.label.setText(tr("completion_header_files"))
+            elif self.current_completion_symbol == '#':
+                self.completion_widget.label.setText(tr("completion_header_folders"))
+            else:  # '@'
+                self.completion_widget.label.setText(tr("completion_header"))
+        except:
+            # フォールバック用テキスト
+            self.completion_widget.label.setText("ファイル・フォルダを選択: (Escで閉じる)")
         
         # プロンプトヘッダー更新
         self.prompt_label.setText(tr("prompt_header"))

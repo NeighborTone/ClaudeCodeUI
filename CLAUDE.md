@@ -17,7 +17,7 @@ This application features a **state-of-the-art SQLite-based indexing system** th
 - **Background indexing**: Updates happen in background without blocking UI
 - **Smart caching**: LRU cache with TTL for frequently accessed searches
 - **Fuzzy search**: Advanced search capabilities with partial matching
-- **Real-time completion**: Enhanced @filename completion with instant suggestions
+- **Smart completion**: Enhanced multi-pattern completion (@filename, !files, #folders) with instant suggestions
 
 ## Core Principles
 
@@ -343,7 +343,7 @@ JSON-based template management with pre/post prompt support:
 #### File Path Handling
 - **Relative paths**: Converts absolute paths to workspace-relative format
 - **Forward slash normalization**: Ensures Claude Code compatibility across platforms
-- **@ file completion**: Implements Claude Code's @filename syntax with intelligent completion
+- **Smart file completion**: Implements Claude Code's @filename syntax with multi-pattern completion (@files+folders, !files-only, #folders-only)
 
 #### Thinking Level Integration
 14-level thinking system mapped to Claude Code commands:
@@ -501,12 +501,15 @@ EnvironmentDetector.get_recommended_language() → LanguageManager.set_language(
 
 ## Development Workflow Integration
 
-### File Completion Flow
-1. User types `@` in prompt input
-2. 300ms debounced timer triggers file search
-3. `FileSearcher.search_files_by_name()` queries workspace files
-4. Results ranked by relevance scoring algorithm
-5. Selection converts to Claude Code-compatible relative path format
+### Smart File Completion Flow
+1. User types `@`, `!`, or `#` in prompt input
+2. Pattern recognition identifies completion mode:
+   - `@filename`: Search files and folders
+   - `!filename`: Search files only
+   - `#foldername`: Search folders only
+3. 200ms debounced timer triggers appropriate search method
+4. Results filtered by type and ranked by relevance scoring algorithm
+5. Selection converts to Claude Code-compatible `@` relative path format
 6. File content automatically included in prompt
 
 ### Prompt Generation Pipeline
@@ -576,7 +579,7 @@ pip3 install -r ClaudeCodeUI/requirements.txt
 ### Manual Testing Checklist
 1. **Application startup**: Verify clean startup without errors
 2. **Workspace management**: Add/remove folders, file tree updates
-3. **File completion**: Test @filename completion accuracy
+3. **Smart file completion**: Test @filename, !files-only, and #folders-only completion accuracy
 4. **Template system**: Verify pre/post template loading and application
 5. **Theme switching**: Test all themes for visual consistency
 6. **Token counting**: Verify reasonable token estimates

@@ -113,6 +113,36 @@ class FastSQLiteSearcher:
         
         return results
     
+    def search_files_only_by_name(self, query: str) -> List[Dict[str, str]]:
+        """
+        ファイルのみを名前で検索（$ パターン用）
+        """
+        if not query:
+            return []
+        
+        # 全件検索してからフィルタリング
+        all_results = self.search_files_by_name(query)
+        
+        # ファイルのみをフィルタリング
+        files_only = [result for result in all_results if result.get('type') == 'file']
+        
+        return files_only
+    
+    def search_folders_only_by_name(self, query: str) -> List[Dict[str, str]]:
+        """
+        フォルダのみを名前で検索（# パターン用）
+        """
+        if not query:
+            return []
+        
+        # 全件検索してからフィルタリング
+        all_results = self.search_files_by_name(query)
+        
+        # フォルダのみをフィルタリング
+        folders_only = [result for result in all_results if result.get('type') == 'folder']
+        
+        return folders_only
+    
     def _calculate_relevance_score(self, query: str, entry: FileEntry) -> float:
         """関連度スコア計算（改良版）"""
         score = 0.0
