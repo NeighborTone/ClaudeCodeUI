@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Fast SQLite File Searcher - 高速SQLiteベースファイル検索
+Fast SQLite File Searcher - High-performance SQLite-based file search
 """
 import os
 import re
@@ -15,7 +15,7 @@ from src.core.logger import get_logger
 
 
 class FastSQLiteSearcher:
-    """高速SQLiteベースファイル検索クラス"""
+    """High-performance SQLite-based file search class"""
     
     def __init__(self, sqlite_indexer: SQLiteIndexer):
         self.sqlite_indexer = sqlite_indexer

@@ -10,7 +10,7 @@ from src.core.logger import get_logger
 
 
 class WorkspaceManager:
-    """ワークスペース（プロジェクトフォルダ）の管理を行うクラス"""
+    """Workspace (project folder) management class"""
     
     def __init__(self, config_file: str = "saved/workspace.json"):
         self.config_file = config_file
@@ -19,7 +19,7 @@ class WorkspaceManager:
         self.load_workspaces()
     
     def load_workspaces(self) -> None:
-        """保存されたワークスペース情報を読み込み"""
+        """Load saved workspace information"""
         try:
             if os.path.exists(self.config_file):
                 with open(self.config_file, 'r', encoding='utf-8') as f:
@@ -30,7 +30,7 @@ class WorkspaceManager:
             self.workspaces = []
     
     def save_workspaces(self) -> None:
-        """ワークスペース情報を保存"""
+        """Save workspace information"""
         try:
             os.makedirs(os.path.dirname(self.config_file), exist_ok=True)
             with open(self.config_file, 'w', encoding='utf-8') as f:
@@ -39,13 +39,13 @@ class WorkspaceManager:
             self.logger.error(f"Workspace saving error ({self.config_file}): {e}")
     
     def add_workspace(self, path: str, name: Optional[str] = None) -> bool:
-        """ワークスペースを追加"""
+        """Add workspace"""
         if not os.path.exists(path) or not os.path.isdir(path):
             return False
         
         path = os.path.abspath(path)
         
-        # 既に存在するかチェック
+        # Check if already exists
         for workspace in self.workspaces:
             if workspace['path'] == path:
                 return False
@@ -62,7 +62,7 @@ class WorkspaceManager:
         return True
     
     def remove_workspace(self, path: str) -> bool:
-        """ワークスペースを削除"""
+        """Remove workspace"""
         path = os.path.abspath(path)
         for i, workspace in enumerate(self.workspaces):
             if workspace['path'] == path:
@@ -72,7 +72,7 @@ class WorkspaceManager:
         return False
     
     def get_workspaces(self) -> List[Dict[str, str]]:
-        """全ワークスペースを取得"""
+        """Get all workspaces"""
         return self.workspaces.copy()
     
     def get_all_files(self, extensions: Optional[List[str]] = None) -> List[Dict[str, str]]:

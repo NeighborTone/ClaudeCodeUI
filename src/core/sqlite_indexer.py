@@ -100,7 +100,7 @@ class SQLiteIndexer:
                 self._create_tables()
                 
         except Exception as e:
-            logger.error(f"データベース初期化エラー: {e}")
+            logger.error(f"Database initialization error: {e}")
     
     def _create_tables(self):
         """必要なテーブルを作成"""
@@ -219,7 +219,7 @@ class SQLiteIndexer:
                                 
                     except Exception as e:
                         # FTS5エラーの場合は部分一致検索でフォールバック
-                        logger.debug(f"FTS5検索エラー (フォールバック実行): {e}")
+                        logger.debug(f"FTS5 search error (fallback executed): {e}")
                         pass
                 
                 # 結果をFileEntryオブジェクトに変換
@@ -241,7 +241,7 @@ class SQLiteIndexer:
                 return file_entries
                 
         except Exception as e:
-            logger.error(f"検索エラー: {e}")
+            logger.error(f"Search error: {e}")
             return []
     
     def search_fuzzy(self, query: str, max_results: int = 50) -> List[FileEntry]:
@@ -287,7 +287,7 @@ class SQLiteIndexer:
                                 all_results.append(entry)
                                 
                 except Exception as e:
-                    logger.debug(f"FTS5検索失敗、LIKEにフォールバック: {e}")
+                    logger.debug(f"FTS5 search failed, fallback to LIKE: {e}")
                     # FTS5が失敗した場合はLIKE検索を使用
                     pass
                 
@@ -299,7 +299,7 @@ class SQLiteIndexer:
                 return all_results
                 
         except Exception as e:
-            logger.error(f"ファジー検索エラー: {e}")
+            logger.error(f"Fuzzy search error: {e}")
             return []
     
     def add_workspace_files(self, workspace_name: str, workspace_path: str, 
@@ -406,13 +406,13 @@ class SQLiteIndexer:
                     VALUES (?, ?, ?, ?, ?)
                 """, (workspace_path, workspace_name, files_count, folders_count, time.time()))
                 
-                # FTS5インデックスを更新
+                # Update FTS5 index
                 self.connection.execute("INSERT INTO file_search(file_search) VALUES('rebuild')")
                 
                 self.connection.commit()
                 
         except Exception as e:
-            logger.error(f"ワークスペース追加エラー: {e}")
+            logger.error(f"Workspace addition error: {e}")
             self.connection.rollback()
         
         return files_count, folders_count
@@ -469,13 +469,13 @@ class SQLiteIndexer:
                         DELETE FROM workspaces WHERE path = ?
                     """, (workspace_path,))
                     
-                    # FTS5インデックスを更新
+                    # Update FTS5 index
                     self.connection.execute("INSERT INTO file_search(file_search) VALUES('rebuild')")
                     
                     self.connection.commit()
                     
         except Exception as e:
-            logger.error(f"ワークスペース削除エラー: {e}")
+            logger.error(f"Workspace deletion error: {e}")
     
     def clear_index(self) -> None:
         """インデックスをクリア"""
@@ -487,7 +487,7 @@ class SQLiteIndexer:
                 self.connection.commit()
                 
         except Exception as e:
-            logger.error(f"インデックスクリアエラー: {e}")
+            logger.error(f"Index clear error: {e}")
     
     def get_stats(self) -> Dict[str, Any]:
         """インデックス統計情報を取得"""
@@ -520,7 +520,7 @@ class SQLiteIndexer:
                 }
                 
         except Exception as e:
-            logger.error(f"統計情報取得エラー: {e}")
+            logger.error(f"Statistics retrieval error: {e}")
             return {
                 "total_entries": 0, "files": 0, "folders": 0,
                 "workspaces": 0, "extensions": 0, "last_updated": 0

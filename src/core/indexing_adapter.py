@@ -107,11 +107,11 @@ class AdaptiveFileSearcher:
         return self.searcher.search_files_by_name(query)
     
     def search_files_only_by_name(self, query: str) -> List[Dict[str, str]]:
-        """Search for files only by name ($パターン用)"""
+        """Search for files only by name (for ! pattern)"""
         return self.searcher.search_files_only_by_name(query)
     
     def search_folders_only_by_name(self, query: str) -> List[Dict[str, str]]:
-        """Search for folders only by name (#パターン用)"""
+        """Search for folders only by name (for # pattern)"""
         return self.searcher.search_folders_only_by_name(query)
     
     def get_file_content_preview(self, file_path: str, max_lines: int = 10) -> str:

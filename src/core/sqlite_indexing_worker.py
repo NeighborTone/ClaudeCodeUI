@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-SQLite Indexing Worker - 高速SQLiteベース非同期インデックス構築ワーカー
+SQLite Indexing Worker - High-performance SQLite-based asynchronous index building worker
 """
 import time
 from typing import List, Tuple, Dict, Any
@@ -11,9 +11,9 @@ from src.core.logger import get_logger
 
 
 class SQLiteIndexingWorker(QThread):
-    """高速SQLiteベース非同期インデックス構築ワーカー"""
+    """High-performance SQLite-based asynchronous index building worker"""
     
-    # シグナル定義
+    # Signal definitions
     progress_updated = Signal(float, str)  # progress%, status_message
     workspace_completed = Signal(str, int, int)  # workspace_name, files_count, folders_count
     indexing_completed = Signal(dict)  # stats
@@ -37,7 +37,7 @@ class SQLiteIndexingWorker(QThread):
             
             if self.rebuild_all:
                 self.indexer.clear_index()
-                self.progress_updated.emit(0, "インデックスをクリアしました")
+                self.progress_updated.emit(0, "Index cleared")
             
             total_workspaces = len(self.workspaces)
             total_files = 0
@@ -53,7 +53,7 @@ class SQLiteIndexingWorker(QThread):
                 
                 self.progress_updated.emit(
                     (i / total_workspaces) * 100,
-                    f"インデックス中: {workspace_name}"
+                    f"Indexing: {workspace_name}"
                 )
                 
                 # プログレスコールバック関数
@@ -80,7 +80,7 @@ class SQLiteIndexingWorker(QThread):
             
             if self._is_running:
                 # 最終処理
-                self.progress_updated.emit(95, "インデックス最適化中...")
+                self.progress_updated.emit(95, "Optimizing index...")
                 
                 # SQLiteインデックスの最適化
                 self._optimize_database()
@@ -90,7 +90,7 @@ class SQLiteIndexingWorker(QThread):
                 stats['total_files_indexed'] = total_files
                 stats['total_folders_indexed'] = total_folders
                 
-                self.progress_updated.emit(100, "インデックス構築完了")
+                self.progress_updated.emit(100, "Index build completed")
                 self.indexing_completed.emit(stats)
             
         except Exception as e:
@@ -128,9 +128,9 @@ class SQLiteIndexingWorker(QThread):
 
 
 class SQLiteIndexingManager(QObject):
-    """SQLiteインデックス管理クラス"""
+    """SQLite index management class"""
     
-    # シグナル定義
+    # Signal definitions
     indexing_started = Signal()
     indexing_progress = Signal(float, str)  # progress%, message
     indexing_completed = Signal(dict)  # stats

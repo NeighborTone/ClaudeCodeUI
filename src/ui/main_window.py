@@ -834,7 +834,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.index_status_label.setText(tr("index_status_error"))
             from src.core.logger import logger
-            logger.error(f"インデックス状態更新エラー: {e}")
+            logger.error(f"Index status update error: {e}")
     
     def rebuild_index(self):
         """インデックスを再構築"""
