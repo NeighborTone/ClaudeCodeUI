@@ -17,6 +17,8 @@ content: |
   - **Principled Implementation**: Focus on understanding the problem requirements and implementing the correct algorithm. Tests are there to verify correctness, not to define the solution
   - **Quality Standards**: The solution should be robust, maintainable, and extendable
   - **Feasibility Check**: If the task is unreasonable or infeasible, or if any of the tests are incorrect, please tell me
+  - **TODO File Creation**: When creating TODOs, create them as markdown files in the working folder, not using the TodoWrite tool
+  - **Production-Level Comments**: Source code comments should be written at production release quality, without update histories or similar, always suitable for product release
   
   ---
   
