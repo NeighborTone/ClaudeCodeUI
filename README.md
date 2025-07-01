@@ -1,36 +1,36 @@
 # Claude Code PromptUI
 
-Claude Codeのプロンプト入力を革新的に改善するPySide6ベースのデスクトップアプリケーション。  
-Claude Codeの性能検証プロジェクトとして、すべてのコードがClaude Codeによって作成されています。
+Claude Code向けのプロンプト入力機能を提供するPySide6ベースのデスクトップアプリケーション。
+Claude Codeによって開発されたプロジェクトです。
 
 ## 主要機能
 
-### 📝 高度なプロンプト入力システム
-- **スマート入力**: Enter改行、Shift+Enter生成&コピー
-- **リアルタイムプレビュー**: 最終プロンプトをリアルタイム表示
-- **トークンカウンター**: 日本語・英語対応の正確なトークン推定
-- **思考レベル選択**: 14段階の思考レベル（think ～ ultrathink）
+### プロンプト入力システム
+- Enter改行、Shift+Enter生成&コピー機能
+- 最終プロンプトのリアルタイムプレビュー
+- 日本語・英語対応のトークン推定
+- 14段階の思考レベル選択（think ～ ultrathink）
 
-### 🗂️ テンプレート管理システム
-- **プリプロンプト**: タスク開始時の定型文を自動挿入
-- **ポストプロンプト**: 追加指示を自動付加
-- **カスタマイズ可能**: JSONファイルで自由に編集・追加
+### テンプレート管理システム
+- プリプロンプトテンプレートの自動適用
+- ポストプロンプトテンプレートの追加指示機能
+- YAMLファイルベースのテンプレート編集・追加
 
-### 📁 ワークスペース管理
-- **VSCode風UI**: 複数プロジェクトを効率管理
-- **スマートファイル補完**: `@` `!` `#`で目的別インテリジェント補完
-- **ツリービュー**: 階層表示でファイルを素早く参照
-- **対応形式**: 40+のファイル形式をサポート
+### ワークスペース管理
+- 複数プロジェクトのワークスペース管理
+- ファイル補完機能：`@filename`（全て）、`!filename`（ファイルのみ）、`#foldername`（フォルダのみ）
+- 階層表示のファイルツリービュー
+- 40種類以上のファイル形式対応
 
-### 🎨 テーマシステム
-- **4種類のテーマ**: Light, Dark, Cyberpunk, Nordic
-- **動的切り替え**: 再起動不要でテーマ変更
-- **設定保持**: テーマ選択を自動保存・復元
+### テーマシステム
+- 9種類のテーマ：Light, Dark, Cyberpunk, Nordic, Electric, Material, Retro, Sci-Fi
+- 再起動不要の動的テーマ切り替え
+- ユーザー設定の自動保存・復元
 
-### 🌐 多言語対応
-- **日本語・英語対応**: 環境に応じた自動言語検出
-- **手動切り替え**: メニューから言語変更可能
-- **混在環境対応**: 日本語UIと英語技術用語の併用
+### 多言語対応
+- 日本語・英語対応
+- システム環境による自動言語検出
+- メニューからの手動言語切り替え
 
 ## セットアップ
 
@@ -45,19 +45,19 @@ git clone [repository-url]
 cd ClaudeCodeUI
 
 # 依存関係をインストール
-pip install -r ClaudeCodeUI/requirements.txt
+pip install -r requirements.txt
 
 # アプリケーションを起動
-python ClaudeCodeUI/main.py
+python main.py
 ```
 
 ### WSL環境での実行
 ```bash
-# WSL推奨: Python3を使用
-python3 ClaudeCodeUI/main.py
+# WSL環境でのPython実行
+python3 main.py
 
 # 依存関係のインストール
-pip3 install -r ClaudeCodeUI/requirements.txt
+pip3 install -r requirements.txt
 ```
 
 ## 使用方法
@@ -126,45 +126,59 @@ pip3 install -r ClaudeCodeUI/requirements.txt
 ClaudeCodeUI/
 ├── main.py                     # エントリーポイント
 ├── requirements.txt            # 依存関係定義
-├── config/                     # 設定ファイル
+├── src/                        # ソースコード
+│   ├── core/                  # コア機能（19ファイル）
+│   │   ├── settings.py        # 設定管理システム
+│   │   ├── workspace_manager.py # ワークスペース管理
+│   │   ├── file_searcher.py   # ファイル検索エンジン
+│   │   ├── fast_sqlite_searcher.py # SQLite検索エンジン
+│   │   ├── template_manager.py # テンプレート管理
+│   │   ├── token_counter.py   # トークンカウンター
+│   │   ├── language_manager.py # 言語管理
+│   │   ├── environment_detector.py # 環境検出
+│   │   ├── path_converter.py  # パス変換
+│   │   ├── python_helper.py   # Python実行支援
+│   │   └── ui_strings.py      # UI文字列管理
+│   ├── ui/                    # UI層
+│   │   ├── main_window.py     # メインウィンドウ
+│   │   ├── style.py           # スタイル管理
+│   │   └── themes/            # テーマシステム（11ファイル）
+│   │       ├── theme_manager.py # テーマ管理
+│   │       ├── base_theme.py  # ベーステーマ
+│   │       ├── light_theme.py # ライトテーマ
+│   │       ├── dark_theme.py  # ダークテーマ
+│   │       ├── cyberpunk_theme.py # サイバーパンクテーマ
+│   │       ├── nordic_theme.py # ノルディックテーマ
+│   │       ├── electric_theme.py # エレクトリックテーマ
+│   │       ├── material_theme.py # マテリアルテーマ
+│   │       ├── retro_theme.py # レトロテーマ
+│   │       └── scifi_theme.py # サイファイテーマ
+│   └── widgets/               # ウィジェット層（8ファイル）
+│       ├── prompt_input.py    # プロンプト入力
+│       ├── thinking_selector.py # 思考レベル選択
+│       ├── file_tree.py       # ファイルツリー
+│       ├── template_selector.py # テンプレート選択
+│       ├── prompt_preview.py  # プロンプトプレビュー
+│       └── prompt_history.py  # プロンプト履歴
+├── data/                       # アプリケーションデータ
+│   └── locales/               # 多言語対応
+│       └── strings.json       # UI文字列定義
+├── saved/                      # ユーザー固有データ
 │   ├── settings.json          # アプリケーション設定
-│   └── workspace.json         # ワークスペース設定
-├── core/                       # コア機能
-│   ├── settings.py            # 設定管理システム
-│   ├── workspace_manager.py   # ワークスペース管理
-│   ├── file_searcher.py       # ファイル検索エンジン
-│   ├── template_manager.py    # テンプレート管理
-│   ├── token_counter.py       # トークンカウンター
-│   ├── language_manager.py    # 言語管理
-│   ├── environment_detector.py # 環境検出
-│   ├── path_converter.py      # パス変換
-│   ├── python_helper.py       # Python実行支援
-│   └── ui_strings.py          # UI文字列管理
-├── ui/                         # UI層
-│   ├── main_window.py         # メインウィンドウ
-│   ├── style.py               # スタイル管理
-│   └── themes/                # テーマシステム
-│       ├── theme_manager.py   # テーマ管理
-│       ├── base_theme.py      # ベーステーマ
-│       ├── light_theme.py     # ライトテーマ
-│       ├── dark_theme.py      # ダークテーマ
-│       ├── cyberpunk_theme.py # サイバーパンクテーマ
-│       └── nordic_theme.py    # ノルディックテーマ
-├── widgets/                    # ウィジェット層
-│   ├── prompt_input.py        # プロンプト入力
-│   ├── thinking_selector.py   # 思考レベル選択
-│   ├── file_tree.py           # ファイルツリー
-│   ├── template_selector.py   # テンプレート選択
-│   ├── prompt_preview.py      # プロンプトプレビュー
-│   └── path_mode_selector.py  # パスモード選択
+│   ├── workspace.json         # ワークスペース設定
+│   ├── prompt_history.json    # プロンプト履歴
+│   └── file_index.db          # SQLiteインデックス
 ├── templates/                  # テンプレートシステム
 │   ├── pre/                   # プリプロンプト
-│   │   ├── ClaudeCodeBestPractice.json
-│   │   └── Sample_Pre.json
+│   │   ├── Comprehensive_Guidelines.yaml
+│   │   ├── Check CLAUDE.md_Rules.yaml
+│   │   └── Sample_Pre.yaml
 │   └── post/                  # ポストプロンプト
-│       └── Sample_Post.json
-└── resources/                  # リソース
-    └── icons/                 # アイコン
+│       ├── Comprehensive_Guidelines.yaml
+│       ├── MergeWithCLAUDE.md.yaml
+│       └── Sample_Post.yaml
+└── assets/                     # アプリケーションアセット
+    └── icons/                 # テーマ別アイコン
 ```
 
 ## 対応ファイル形式
@@ -187,21 +201,20 @@ HTML, CSS, Vue, React (JSX/TSX)
 ## 設定カスタマイズ
 
 ### テンプレート追加
-```json
-{
-  "title": "カスタムテンプレート名",
-  "content": "プロンプト内容..."
-}
+```yaml
+title: "カスタムテンプレート名"
+content: |
+  プロンプト内容...
 ```
 
 ### 言語設定
 - メニュー: `設定 → 言語` で切り替え
-- 設定ファイル: `config/settings.json` の `ui.language`
+- 設定ファイル: `saved/settings.json` の `ui.language`
 
 ### テーマカスタマイズ
 新しいテーマを追加する場合：
-1. `ui/themes/` に新しいテーマクラスを作成
-2. `theme_manager.py` に登録
+1. `src/ui/themes/` に新しいテーマクラスを作成
+2. `src/ui/themes/theme_manager.py` に登録
 3. `BaseTheme` を継承して実装
 
 ## トラブルシューティング
@@ -230,21 +243,25 @@ wsl python3 /mnt/c/.../ClaudeCodeUI/main.py
 
 ## 技術仕様
 
-- **フレームワーク**: PySide6 >= 6.5.0
-- **互換性**: PyQt6 >= 6.5.0 (バックアップ)
-- **ファイル監視**: watchdog >= 3.0.0
+### 依存関係
+- **PySide6** >= 6.5.0 (メインUIフレームワーク)
+- **PyQt6** >= 6.5.0 (フォールバック)
+- **watchdog** >= 3.0.0 (ファイル監視)
+- **PyYAML** >= 6.0 (テンプレート管理)
+
+### 実行環境
 - **Python**: 3.8以上推奨
 - **プラットフォーム**: Windows, WSL
 
 ## 開発情報
 
-このプロジェクトは Claude Code の性能検証として作成されており、すべてのコードが Claude Code によって生成されています。アーキテクチャは信号駆動のMVCパターンに基づき、モジュラー設計により高い拡張性を実現しています。
+Claude Code によって開発されたプロジェクトです。アーキテクチャは信号駆動のMVCパターンとモジュラー設計を採用しています。
 
 ### アーキテクチャ特徴
-- **信号スロット通信**: Qt信号による疎結合設計
-- **階層型設定管理**: ドット記法による設定アクセス
-- **プラガブルテーマシステム**: 動的テーマ切り替え
-- **多言語対応**: 環境自動検出と手動切り替え
+- 信号スロット通信によるコンポーネント間連携
+- ドット記法による階層型設定管理
+- モジュラーテーマシステム
+- 日本語・英語の多言語対応
 
 ## ライセンス
 
