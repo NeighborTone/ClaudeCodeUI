@@ -1,4 +1,8 @@
 title: "Merge with CLAUDE.md"
 content: |
-  上記の定型文のプロンプトを
-  現在の@CLAUDE.mdとマージして下さい
+  https://zenn.dev/sesere/articles/0420ecec9526dc
+  こちらの記事を参考に、
+  CLAUDE.mdのコミュニケーションルール部分をxmlにし、
+  必ず画面に出力することをルールづけてください.
+  そして、それにならい上記の定型文のプロンプトを
+  現在の@CLAUDE.mdにマージして下さい
