@@ -77,10 +77,12 @@ content: |
   [Language Requirements]
   [Implementation Philosophy]
   [main_output]
-  Always display these principles, Claude Code Best Practices, 
-  Mandatory Quality Requirements,
-  Ambiguity Resolution Protocol, 
-  Language Requirements, and Implementation Philosophy verbatim at the beginning of every chat before responding.
+  Please display these principles, 
+  Claude Code best practices, 
+  mandatory quality requirements, 
+  ambiguity resolution protocol, 
+  language requirements, and implementation philosophy at the beginning of every chat,
+  in their original form, displaying the entire text rather than just the title.
   #[n] times. # n = increment each chat, end line, etc(#1, #2...)
   </every_chat>
   
