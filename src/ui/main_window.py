@@ -25,7 +25,6 @@ from src.widgets.thinking_selector import ThinkingSelectorWidget
 from src.widgets.prompt_preview import PromptPreviewWidget
 from src.widgets.template_selector import TemplateSelector
 from src.widgets.prompt_history import PromptHistoryWidget
-from src.widgets.recent_files import RecentFilesWidget
 from src.core.template_manager import get_template_manager
 from src.ui.style_themes import apply_theme, theme_manager, get_main_font
 
@@ -178,9 +177,6 @@ class MainWindow(QMainWindow):
         self.file_tree = FileTreeWidget(self.workspace_manager)
         left_layout.addWidget(self.file_tree)
         
-        # 最近使用したファイル
-        self.recent_files = RecentFilesWidget(max_items=8)
-        left_layout.addWidget(self.recent_files)
         
         left_widget.setMinimumWidth(250)
         left_widget.setMaximumWidth(400)
@@ -244,8 +240,6 @@ class MainWindow(QMainWindow):
         self.file_tree.file_selected.connect(self.on_file_selected)
         self.file_tree.file_double_clicked.connect(self.on_file_double_clicked)
         
-        # 最近使用したファイル
-        self.recent_files.file_selected.connect(self.on_recent_file_selected)
         
         # ワークスペース変更
         self.file_tree.workspace_changed.connect(self.on_workspace_changed)
@@ -574,31 +568,7 @@ class MainWindow(QMainWindow):
         self.prompt_input.set_text_without_completion(new_text)
         self.statusBar().showMessage(tr("status_file_added", filename=workspace_relative_path), 2000)
         
-        # 最近使用したファイルに追加
-        file_info = {
-            'name': os.path.basename(file_path),
-            'relative_path': workspace_relative_path,
-            'workspace': workspace_name,
-            'type': 'file'
-        }
-        self.recent_files.add_file(file_info)
     
-    def on_recent_file_selected(self, file_info: dict):
-        """最近使用したファイルが選択されたとき"""
-        workspace_relative_path = file_info.get('relative_path', '')
-        if not workspace_relative_path:
-            return
-        
-        # プロンプト入力に追加
-        current_text = self.prompt_input.get_text()
-        if current_text:
-            new_text = f"{current_text}\n\n@{workspace_relative_path}"
-        else:
-            new_text = f"@{workspace_relative_path}"
-        
-        # オートコンプリートを一時的に無効化してテキストを設定
-        self.prompt_input.set_text_without_completion(new_text)
-        self.statusBar().showMessage(tr("status_file_added", filename=workspace_relative_path), 2000)
     
     def on_template_changed(self):
         """テンプレート選択変更時"""

@@ -164,10 +164,6 @@
       "ja": "プロンプト (Enterで改行, Shift+Enterで生成&コピー):",
       "en": "Prompt (Enter for new line, Shift+Enter to generate & copy):"
     },
-    "recent_files_header": {
-      "ja": "最近使用したファイル",
-      "en": "Recent Files"
-    },
     "prompt_placeholder": {
       "ja": "プロンプトを入力してください...\n- Enterで改行\n- Shift+Enterで生成&コピー\n- @filename でファイル・フォルダを指定\n- !filename でファイルのみ、#foldername でフォルダのみ",
       "en": "Enter your prompt...\n- Enter for new line\n- Shift+Enter to generate & copy\n- @filename to specify files/folders\n- !filename for files only, #foldername for folders only"
