@@ -74,59 +74,17 @@ class FileTreeWorker(QObject):
     
     def _set_default_filters(self):
         """デフォルトのファイルフィルター設定を適用"""
-        # Programming languages
-        self.allowed_extensions = {
-            '.py', '.cpp', '.c', '.h', '.hpp', '.cxx', '.hxx',
-            '.cs', '.java', '.js', '.ts', '.jsx', '.tsx',
-            '.go', '.rs', '.php', '.rb', '.swift', '.kt',
-            
-            # Unreal Engine files
-            '.uproject', '.uplugin', '.uasset', '.umap', '.ucpp',
-            '.build', '.target', '.ini', '.cfg', '.config',
-            
-            # Unity files
-            '.unity', '.prefab', '.asset', '.mat', '.anim', '.controller',
-            '.overrideController', '.mask', '.physicMaterial', '.physicsMaterial2D',
-            '.guiskin', '.fontsettings', '.cubemap', '.flare', '.preset',
-            '.playable', '.signal', '.mixer', '.cs.meta', '.unity.meta',
-            '.prefab.meta', '.asset.meta', '.mat.meta', '.anim.meta',
-            
-            # Config and data files
-            '.json', '.yaml', '.yml', '.xml', '.toml',
-            '.csv', '.txt', '.md', '.rst',
-            
-            # Build files
-            '.cmake', '.make', '.gradle', '.sln', '.vcxproj',
-            '.pro', '.pri', '.qmake',
-            
-            # Shaders
-            '.hlsl', '.glsl', '.shader', '.cginc', '.compute',
-            
-            # Image files
-            '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif',
-            '.webp', '.svg', '.ico', '.psd', '.ai', '.eps',
-            
-            # Audio files
-            '.wav', '.mp3', '.flac', '.aac', '.ogg', '.wma',
-            '.m4a', '.opus', '.aiff', '.au',
-            
-            # Video files
-            '.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv',
-            '.webm', '.m4v', '.3gp', '.ogv'
-        }
+        # 外部設定ファイルが読み込めない場合はすべてを許可
+        logger.warning("File filters configuration not available. All files and folders will be displayed.")
         
-        # 重要なファイル名
-        self.important_files = {
-            'readme', 'license', 'changelog', 'makefile', 'dockerfile',
-            'cmakelist', 'cmakelists', 'requirements', 'package',
-            'gulpfile', 'gruntfile', 'webpack', 'tsconfig', 'jsconfig'
-        }
+        # すべての拡張子を許可（空のセットは条件判定で使用しない）
+        self.allowed_extensions = None  # Noneはフィルタリング無効を意味する
         
-        # 除外するディレクトリ
-        self.excluded_dirs = {
-            'node_modules', '__pycache__', 'Binaries', 'Intermediate', 
-            'Saved', 'DerivedDataCache', '.git', '.svn', '.hg'
-        }
+        # 重要なファイル名（フィルタリング無効時は使用しない）
+        self.important_files = set()
+        
+        # 除外するディレクトリ（空のセットで全フォルダを表示）
+        self.excluded_dirs = set()
     
     def set_workspaces(self, workspaces: List[Dict[str, str]]):
         """ワークスペースを設定"""
@@ -250,7 +208,8 @@ class FileTreeWorker(QObject):
                 is_important = any(important in file_name_lower for important in self.important_files)
                 
                 # 許可された拡張子または重要なファイルのみ追加
-                if file_ext in self.allowed_extensions or is_important:
+                # allowed_extensions が None の場合はすべてのファイルを許可
+                if self.allowed_extensions is None or file_ext in self.allowed_extensions or is_important:
                     file_node = TreeNode(
                         name=file_name,
                         path=file_path,
