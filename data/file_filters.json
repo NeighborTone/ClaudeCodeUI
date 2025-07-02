@@ -20,7 +20,16 @@
     ".wav", ".mp3", ".flac", ".aac", ".ogg", ".wma",
     ".m4a", ".opus", ".aiff", ".au",
     ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv",
-    ".webm", ".m4v", ".3gp", ".ogv"
+    ".webm", ".m4v", ".3gp", ".ogv",
+    ".bat", ".sh", ".bash", ".zsh", ".fish", ".ps1", ".cmd",
+    ".zip", ".tar", ".gz", ".bz2", ".xz", ".rar", ".7z",
+    ".sql", ".db", ".sqlite", ".sqlite3", ".mdb",
+    ".html", ".htm", ".css", ".scss", ".sass", ".less",
+    ".vue", ".svelte", ".astro",
+    ".log", ".lock", ".gitignore", ".gitattributes", ".editorconfig",
+    ".env", ".env.local", ".env.production", ".env.development",
+    ".dockerfile", ".dockerignore", ".travis.yml", ".gitlab-ci.yml", ".github",
+    ".vscode", ".idea", ".vs", ".vsproj", ".vsconfig"
   ],
   "important_files": [
     "readme", "license", "changelog", "makefile", "dockerfile",
@@ -29,6 +38,10 @@
   ],
   "excluded_dirs": [
     "node_modules", "__pycache__", "Binaries", "Intermediate", 
-    "Saved", "DerivedDataCache", ".git", ".svn", ".hg"
+    "Saved", "DerivedDataCache", ".git", ".svn", ".hg",
+    "Temp", "Library", "Logs", "obj", "UserSettings",
+    "Build", "Builds", "dist", "bin", "out",
+    ".idea", ".vs", ".vscode", "*.egg-info",
+    "target", "coverage", ".pytest_cache", ".tox"
   ]
 }
