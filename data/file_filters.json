@@ -1,0 +1,34 @@
+{
+  "allowed_extensions": [
+    ".py", ".cpp", ".c", ".h", ".hpp", ".cxx", ".hxx",
+    ".cs", ".java", ".js", ".ts", ".jsx", ".tsx",
+    ".go", ".rs", ".php", ".rb", ".swift", ".kt",
+    ".uproject", ".uplugin", ".uasset", ".umap", ".ucpp",
+    ".build", ".target", ".ini", ".cfg", ".config",
+    ".unity", ".prefab", ".asset", ".mat", ".anim", ".controller",
+    ".overrideController", ".mask", ".physicMaterial", ".physicsMaterial2D",
+    ".guiskin", ".fontsettings", ".cubemap", ".flare", ".preset",
+    ".playable", ".signal", ".mixer", ".cs.meta", ".unity.meta",
+    ".prefab.meta", ".asset.meta", ".mat.meta", ".anim.meta",
+    ".json", ".yaml", ".yml", ".xml", ".toml",
+    ".csv", ".txt", ".md", ".rst",
+    ".cmake", ".make", ".gradle", ".sln", ".vcxproj",
+    ".pro", ".pri", ".qmake",
+    ".hlsl", ".glsl", ".shader", ".cginc", ".compute",
+    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".tif",
+    ".webp", ".svg", ".ico", ".psd", ".ai", ".eps",
+    ".wav", ".mp3", ".flac", ".aac", ".ogg", ".wma",
+    ".m4a", ".opus", ".aiff", ".au",
+    ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv",
+    ".webm", ".m4v", ".3gp", ".ogv"
+  ],
+  "important_files": [
+    "readme", "license", "changelog", "makefile", "dockerfile",
+    "cmakelist", "cmakelists", "requirements", "package",
+    "gulpfile", "gruntfile", "webpack", "tsconfig", "jsconfig"
+  ],
+  "excluded_dirs": [
+    "node_modules", "__pycache__", "Binaries", "Intermediate", 
+    "Saved", "DerivedDataCache", ".git", ".svn", ".hg"
+  ]
+}

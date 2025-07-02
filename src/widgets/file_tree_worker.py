@@ -3,7 +3,8 @@
 File Tree Worker - Asynchronous file tree loading worker
 """
 import os
-from typing import List, Dict, Tuple, Optional
+import json
+from typing import List, Dict, Tuple, Optional, Set
 from PySide6.QtCore import QObject, Signal, QThread
 from dataclasses import dataclass
 
@@ -39,9 +40,42 @@ class FileTreeWorker(QObject):
         self.should_stop = False
         self.max_depth = 15
         
-        # ファイルタイプ設定（FileTreeWidgetから移植）
+        # ファイルタイプ設定を外部ファイルから読み込む
+        self._load_file_filters()
+    
+    def _load_file_filters(self):
+        """外部ファイルからファイルフィルター設定を読み込む"""
+        try:
+            # 設定ファイルのパスを取得
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.dirname(os.path.dirname(current_dir))
+            config_path = os.path.join(project_root, 'data', 'file_filters.json')
+            
+            # JSONファイルを読み込む
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+            
+            # 設定を適用（listからsetに変換）
+            self.allowed_extensions = set(config.get('allowed_extensions', []))
+            self.important_files = set(config.get('important_files', []))
+            self.excluded_dirs = set(config.get('excluded_dirs', []))
+            
+            logger.info(f"File filters loaded from {config_path}")
+            
+        except FileNotFoundError:
+            logger.warning(f"File filters config not found, using default settings")
+            self._set_default_filters()
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON in file filters config: {e}")
+            self._set_default_filters()
+        except Exception as e:
+            logger.error(f"Error loading file filters config: {e}")
+            self._set_default_filters()
+    
+    def _set_default_filters(self):
+        """デフォルトのファイルフィルター設定を適用"""
+        # Programming languages
         self.allowed_extensions = {
-            # Programming languages
             '.py', '.cpp', '.c', '.h', '.hpp', '.cxx', '.hxx',
             '.cs', '.java', '.js', '.ts', '.jsx', '.tsx',
             '.go', '.rs', '.php', '.rb', '.swift', '.kt',

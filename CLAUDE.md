@@ -352,8 +352,9 @@ ClaudeCodeUI/
 │   ├── ui/                # User interface components
 │   └── widgets/           # Specialized UI widgets
 ├── data/                   # Application data (committed to version control)
-│   └── locales/           # Localization files
-│       └── strings.json   # UI strings for all supported languages
+│   ├── locales/           # Localization files
+│   │   └── strings.json   # UI strings for all supported languages
+│   └── file_filters.json  # File type filtering configuration
 ├── saved/                  # User-specific data (NOT committed to version control)
 │   ├── settings.json      # User preferences and application state
 │   ├── workspace.json     # User's workspace configuration
@@ -426,7 +427,7 @@ ClaudeCodeUI/
 
 - `PromptInputWidget` - Rich text editor with real-time file completion and thinking level integration
 - `FileTreeWidget` - Hierarchical workspace browser with file type filtering and async loading
-- `FileTreeWorker` - Background worker for asynchronous file tree operations
+- `FileTreeWorker` - Background worker for asynchronous file tree operations with external configuration support
 - `ThinkingSelectorWidget` - 14-level thinking system for Claude Code prompts
 - `TemplateSelector` - Pre/post prompt template selection and management interface
 - `PromptPreviewWidget` - Real-time final prompt preview with syntax highlighting
@@ -551,6 +552,13 @@ templates/
 
 ### File Discovery & Filtering System
 
+#### External Configuration Management
+File type filtering is now managed through external JSON configuration:
+- **Configuration File**: `data/file_filters.json`
+- **Configurable Settings**: Allowed extensions, important files, excluded directories
+- **Fallback Support**: Automatic fallback to hardcoded defaults if configuration is unavailable
+- **Runtime Loading**: Settings loaded during application startup with comprehensive error handling
+
 #### Supported File Types (40+ formats)
 **Programming Languages**: `.py`, `.cpp`, `.h`, `.hpp`, `.js`, `.ts`, `.jsx`, `.tsx`, `.cs`, `.java`, `.php`, `.go`, `.rs`, `.swift`, `.kt`
 
@@ -561,6 +569,8 @@ templates/
 **Game Development**: `.ue`, `.umap`, `.uasset` (Unreal Engine)
 
 **Web Development**: `.html`, `.css`, `.vue`, `.scss`, `.sass`
+
+**Note**: The complete list of supported file types is now maintained in `data/file_filters.json` for easy customization and maintenance.
 
 #### Performance Optimizations
 - **Lazy loading**: Files loaded on-demand with depth limits
@@ -722,6 +732,92 @@ pip3 install -r ClaudeCodeUI/requirements.txt
 2. **WSL environment**: Test with WSL Python installation
 3. **Path handling**: Verify correct path conversion between environments
 4. **Font rendering**: Check font selection and readability
+
+### Comprehensive GUI Testing Protocol
+
+#### Mandatory Test Execution Requirements
+For any task involving code changes, especially in GUI applications:
+
+1. **Frequent Testing During Development**
+   - Test added functionality after each implementation step
+   - Verify existing functionality hasn't been broken by changes
+   - Execute main.py startup test after every major modification
+   - Confirm clean startup without errors or warnings
+
+2. **Extensive Logging for GUI Monitoring**
+   - Inject comprehensive diagnostic logs throughout the application
+   - Monitor GUI behavior through log output since direct GUI testing is challenging
+   - Log all user interactions, state changes, and system events
+   - Use debug-level logging during development and testing phases
+
+3. **Automated GUI Operation Testing**
+   - When possible, implement virtual GUI operations for testing
+   - Simulate user interactions programmatically
+   - Test common workflows: workspace loading, file completion, theme switching
+   - Validate UI responsiveness and state consistency
+
+#### Testing Checklist for Each Development Cycle
+Before completing any task:
+
+- [ ] **Startup Test**: Application launches without errors
+- [ ] **Core Functionality**: All existing features work as expected  
+- [ ] **New Features**: Added functionality operates correctly
+- [ ] **Integration Test**: New and existing features work together seamlessly
+- [ ] **Performance Test**: No significant performance regression
+- [ ] **Error Handling**: Graceful error handling for edge cases
+- [ ] **Log Analysis**: Clean diagnostic logs with no unexpected warnings
+- [ ] **UI Consistency**: Interface remains consistent and professional
+
+#### Comprehensive Test Scenarios
+
+1. **Application Lifecycle Testing**
+   ```python
+   # Startup sequence validation
+   - Clean application startup
+   - Settings restoration
+   - Workspace loading
+   - Theme application
+   - UI component initialization
+   ```
+
+2. **Feature Integration Testing**  
+   ```python
+   # Cross-component functionality
+   - File completion with ignore manager
+   - Workspace switching with file tree updates
+   - Theme changes with UI refresh
+   - Language switching with string updates
+   ```
+
+3. **Error Recovery Testing**
+   ```python
+   # Graceful degradation scenarios
+   - Missing dependencies (watchdog)
+   - Corrupted configuration files
+   - Inaccessible workspace paths
+   - Invalid ignore patterns
+   ```
+
+#### GUI Testing Implementation Strategy
+
+Since direct GUI automation is challenging, use these approaches:
+
+1. **Logging-Based Validation**
+   - Log all GUI state changes and user interactions
+   - Monitor component initialization and updates
+   - Track signal-slot communications between widgets
+
+2. **Programmatic Testing**
+   - Create test methods that exercise GUI components programmatically
+   - Simulate user actions through Qt's signal emission
+   - Validate component state through property inspection
+
+3. **Manual Testing Guidance**
+   - Provide clear manual testing steps for complex GUI workflows
+   - Document expected behavior for visual verification
+   - Create test scenarios that cover edge cases and error conditions
+
+This testing protocol ensures robust, reliable GUI application development with comprehensive validation of both new and existing functionality.
 
 ## Contributing to the Project
 

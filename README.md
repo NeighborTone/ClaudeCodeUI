@@ -161,8 +161,9 @@ ClaudeCodeUI/
 │       ├── prompt_preview.py  # プロンプトプレビュー
 │       └── prompt_history.py  # プロンプト履歴
 ├── data/                       # アプリケーションデータ
-│   └── locales/               # 多言語対応
-│       └── strings.json       # UI文字列定義
+│   ├── locales/               # 多言語対応
+│   │   └── strings.json       # UI文字列定義
+│   └── file_filters.json      # ファイルタイプ設定
 ├── saved/                      # ユーザー固有データ
 │   ├── settings.json          # アプリケーション設定
 │   ├── workspace.json         # ワークスペース設定
@@ -198,7 +199,19 @@ Unreal Engine (.ue, .umap, .uasset)
 ### Web開発
 HTML, CSS, Vue, React (JSX/TSX)
 
+**注記**: ファイルタイプ設定は `data/file_filters.json` で管理されており、カスタマイズが可能です。
+
 ## 設定カスタマイズ
+
+### ファイルフィルター設定
+`data/file_filters.json` でファイルタイプ設定をカスタマイズ可能：
+```json
+{
+  "allowed_extensions": [".py", ".js", ".ts", ...],
+  "important_files": ["readme", "license", "makefile", ...],
+  "excluded_dirs": ["node_modules", "__pycache__", ".git", ...]
+}
+```
 
 ### テンプレート追加
 ```yaml
