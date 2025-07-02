@@ -6,7 +6,8 @@ import os
 from typing import Optional, List
 from PySide6.QtWidgets import (QTreeWidget, QTreeWidgetItem, QVBoxLayout, 
                               QWidget, QPushButton, QHBoxLayout, QFileDialog,
-                              QMenu, QMessageBox, QLineEdit, QComboBox, QLabel)
+                              QMenu, QMessageBox, QLineEdit, QComboBox, QLabel,
+                              QAbstractItemView, QHeaderView)
 from PySide6.QtCore import Signal, Qt, QUrl, QTimer
 from PySide6.QtGui import QAction, QIcon, QDragEnterEvent, QDropEvent, QBrush, QColor
 
@@ -142,6 +143,15 @@ class FileTreeWidget(QWidget):
         self.tree.itemDoubleClicked.connect(self.on_item_double_clicked)
         self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self.show_context_menu)
+        
+        # 水平スクロールバーの設定
+        self.tree.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.tree.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
+        
+        # ヘッダーのリサイズ設定
+        header = self.tree.header()
+        header.setStretchLastSection(True)  # 最後のセクションを伸縮可能に
+        header.setSectionResizeMode(0, QHeaderView.Stretch)  # ヘッダーを自動伸縮
         
         layout.addWidget(self.tree)
     

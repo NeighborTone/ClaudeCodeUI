@@ -13,6 +13,7 @@ from PySide6.QtGui import QAction, QCloseEvent, QIcon, QScreen, QKeySequence, QS
 
 from src.core.workspace_manager import WorkspaceManager
 from src.core.settings import SettingsManager
+from src.core.logger import logger
 from src.core.python_helper import PythonHelper
 from src.core.path_converter import PathConverter
 from src.core.language_manager import get_language_manager, set_language_manager
@@ -116,8 +117,19 @@ class MainWindow(QMainWindow):
         self.prompt_preview.setVisible(preview_visible)
         self.preview_action.setChecked(preview_visible)
         
-        # スプリッターサイズを復元
-        self.main_splitter.setSizes(splitter_sizes)
+        # スプリッターサイズを復元（デフォルト値を確保）
+        if splitter_sizes and len(splitter_sizes) == 3 and all(size > 50 for size in splitter_sizes):
+            logger.info(f"Restoring saved splitter sizes: {splitter_sizes}")
+            self.main_splitter.setSizes(splitter_sizes)
+        else:
+            # デフォルトサイズ: ファイルツリー350px, プレビュー400px, プロンプト入力450px
+            default_sizes = [350, 400, 450]
+            logger.info(f"Applying default splitter sizes: {default_sizes}")
+            self.main_splitter.setSizes(default_sizes)
+            
+        # 強制的に再設定（UIが完全に初期化された後）
+        # DISABLED: Force splitter resize that overrides user settings
+        # QTimer.singleShot(200, lambda: self._force_splitter_sizes())
         
         # テンプレート選択を復元
         if selected_pre_template:
@@ -142,6 +154,9 @@ class MainWindow(QMainWindow):
         # ファイルツリーとインデックスの状態管理
         self.is_tree_loaded = False
         self.is_index_ready = False
+        
+        # 初期状態のログ出力のみ
+        self.log_splitter_state("Initial setup")
     
     def setup_ui(self):
         """UIの初期化"""
@@ -178,8 +193,11 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(self.file_tree)
         
         
-        left_widget.setMinimumWidth(250)
-        left_widget.setMaximumWidth(400)
+        # 幅制限を完全に除去し、サイズポリシーで制御
+        from PySide6.QtWidgets import QSizePolicy
+        left_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        left_widget.setMinimumWidth(0)
+        left_widget.setMaximumWidth(16777215)
         self.main_splitter.addWidget(left_widget)
         
         # 中央：プロンプトプレビューエリア
@@ -205,16 +223,28 @@ class MainWindow(QMainWindow):
         
         self.main_splitter.addWidget(right_widget)
         
-        # スプリッターの初期比率を設定
-        self.main_splitter.setStretchFactor(0, 0)  # ファイルツリーは固定
-        self.main_splitter.setStretchFactor(1, 1)  # プレビューエリアは伸縮
-        self.main_splitter.setStretchFactor(2, 1)  # プロンプト入力エリアは伸縮
+        # スプリッターの初期比率を設定（PySide6対応）
+        try:
+            # 各ウィジェットのサイズポリシーで伸縮性を設定
+            left_widget.setSizePolicy(left_widget.sizePolicy().horizontalPolicy(), left_widget.sizePolicy().verticalPolicy())
+            left_widget.sizePolicy().setHorizontalStretch(1)
+            
+            self.prompt_preview.setSizePolicy(self.prompt_preview.sizePolicy().horizontalPolicy(), self.prompt_preview.sizePolicy().verticalPolicy())
+            self.prompt_preview.sizePolicy().setHorizontalStretch(2)
+            
+            right_widget.setSizePolicy(right_widget.sizePolicy().horizontalPolicy(), right_widget.sizePolicy().verticalPolicy())
+            right_widget.sizePolicy().setHorizontalStretch(2)
+            
+            logger.info("Set stretch factors via size policy")
+        except Exception as e:
+            logger.warning(f"Failed to set stretch factors: {e}")
         
         # イベント接続
         self.setup_connections()
         
         # キーボードショートカット
         self.setup_shortcuts()
+        
     
     def setup_connections(self):
         """イベント接続"""
@@ -755,6 +785,16 @@ class MainWindow(QMainWindow):
         """スプリッターが移動されたとき"""
         sizes = self.main_splitter.sizes()
         self.settings_manager.set_splitter_sizes(sizes)
+        
+        # 即座に設定を保存（スプリッター変更を確実に保存）
+        self.settings_manager.save_settings()
+        
+        # 詳細ログ出力
+        logger.info(f"Splitter moved - pos: {_pos}, index: {_index}")
+        self.log_splitter_state("User resize")
+        
+        # ファイルツリーとの同期
+        self.sync_file_tree_width()
     
     def center_on_primary_screen(self):
         """ウィンドウをプライマリーモニターの中心に配置"""
@@ -1061,3 +1101,121 @@ class MainWindow(QMainWindow):
         # シンプルなドットアニメーション
         text = f"{self.indexing_base_text}{dots}"
         self.progress_label.setText(text)
+    
+    def log_splitter_state(self, context: str):
+        """スプリッターとファイルツリーの状態をログ出力"""
+        try:
+            splitter_sizes = self.main_splitter.sizes()
+            file_tree_width = self.file_tree.width()
+            left_widget_width = self.file_tree.parent().width() if self.file_tree.parent() else 0
+            
+            logger.info(f"Splitter State [{context}]:")
+            logger.info(f"  - Splitter sizes: {splitter_sizes}")
+            logger.info(f"  - File tree actual width: {file_tree_width}px")
+            logger.info(f"  - Left widget width: {left_widget_width}px")
+            # PySide6にはstretchFactorメソッドが存在しないため、手動で取得
+            try:
+                stretch_factors = []
+                for i in range(3):
+                    # 代替方法：各ウィジェットのサイズポリシーを確認
+                    widget = self.main_splitter.widget(i)
+                    if widget:
+                        stretch_factors.append(widget.sizePolicy().horizontalStretch())
+                    else:
+                        stretch_factors.append(0)
+                logger.info(f"  - Widget stretch factors: {stretch_factors}")
+            except Exception as e:
+                logger.info(f"  - Stretch factors: Unable to get ({e})")
+            
+            # ファイルツリーの設定値も確認
+            if hasattr(self.file_tree.parent(), 'minimumWidth'):
+                min_width = self.file_tree.parent().minimumWidth()
+                max_width = self.file_tree.parent().maximumWidth()
+                logger.info(f"  - Left widget min/max width: {min_width}/{max_width}px")
+                
+        except Exception as e:
+            logger.error(f"Failed to log splitter state: {e}")
+    
+    
+    def sync_file_tree_width(self):
+        """ファイルツリーとスプリッターの横幅を完全に同期（setFixedWidth除去版）"""
+        try:
+            splitter_sizes = self.main_splitter.sizes()
+            if splitter_sizes and len(splitter_sizes) >= 1:
+                target_width = splitter_sizes[0]
+                
+                # setFixedWidth()を使わずにサイズポリシーで制御
+                left_widget = self.file_tree.parent()
+                if left_widget:
+                    # Expandingサイズポリシーを維持し、スプリッターに委ねる
+                    from PySide6.QtWidgets import QSizePolicy
+                    left_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+                    self.file_tree.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+                    
+                    # 最小・最大制限のみ調整
+                    left_widget.setMinimumWidth(0)
+                    left_widget.setMaximumWidth(16777215)
+                    self.file_tree.setMinimumWidth(0)
+                    self.file_tree.setMaximumWidth(16777215)
+                    
+                    logger.info(f"Sync via size policy - target: {target_width}px, actual widget: {left_widget.width()}px, tree: {self.file_tree.width()}px")
+                    
+        except Exception as e:
+            logger.error(f"Failed to sync file tree width: {e}")
+    
+    def _force_splitter_sizes(self):
+        """UIが完全に初期化された後にスプリッターサイズを強制設定"""
+        # DISABLED: This method was overriding user-saved splitter sizes
+        logger.info("[DISABLED] _force_splitter_sizes() - preserving user settings")
+        return
+    
+    def resizeEvent(self, event):
+        """ウィンドウリサイズ時にスプリッターサイズの比率を維持"""
+        super().resizeEvent(event)
+        
+        try:
+            # 新しいウィンドウサイズを取得
+            new_width = event.size().width()
+            old_width = event.oldSize().width() if event.oldSize().width() > 0 else new_width
+            
+            # サイズ変更がない場合は何もしない
+            if new_width == old_width:
+                return
+            
+            logger.info(f"Window resized: {old_width}px → {new_width}px")
+            
+            # 現在のスプリッターサイズを取得
+            current_sizes = self.main_splitter.sizes()
+            if len(current_sizes) != 3:
+                return
+            
+            # 現在の比率を計算
+            total_current = sum(current_sizes)
+            if total_current <= 0:
+                return
+                
+            ratios = [size / total_current for size in current_sizes]
+            
+            # スプリッターの利用可能幅を取得（スプリッターハンドルの幅を考慮）
+            available_width = self.main_splitter.width()
+            handle_width = self.main_splitter.handleWidth() * 2  # 2つのハンドル
+            usable_width = available_width - handle_width
+            
+            # 比率を維持して新しいサイズを計算
+            new_sizes = [int(usable_width * ratio) for ratio in ratios]
+            
+            # 最小サイズの確保
+            min_size = 50
+            for i in range(len(new_sizes)):
+                if new_sizes[i] < min_size:
+                    new_sizes[i] = min_size
+            
+            # スプリッターサイズを更新（比率維持）
+            self.main_splitter.setSizes(new_sizes)
+            
+            # ファイルツリーとの同期
+            self.sync_file_tree_width()
+            
+        except Exception as e:
+            logger.error(f"Failed to handle window resize: {e}")
+    
