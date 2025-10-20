@@ -334,20 +334,27 @@ class SQLiteIndexer:
                     # フォルダを追加
                     for dir_name in dirs:
                         dir_path = os.path.join(root, dir_name)
-                        relative_path = os.path.relpath(dir_path, workspace_path)
-                        
+
                         try:
+                            # パスの相対化を試行
+                            try:
+                                relative_path = os.path.relpath(dir_path, workspace_path)
+                            except (ValueError, OSError) as e:
+                                # 異なるドライブや特殊パスの場合はスキップ
+                                logger.debug(f"Skipping folder with invalid path: {dir_path} ({e})")
+                                continue
+
                             stat = os.stat(dir_path)
                             priority = 80  # フォルダの基本優先度（ファイルより高い優先度）
-                            
+
                             file_entries.append((
                                 hashlib.md5(dir_path.encode('utf-8')).hexdigest(),
                                 dir_name, dir_path, relative_path, workspace_name,
                                 'folder', 0, stat.st_mtime, '', priority
                             ))
-                            
+
                             folders_count += 1
-                            
+
                         except (OSError, PermissionError):
                             continue
                     
@@ -355,32 +362,40 @@ class SQLiteIndexer:
                     for file_name in files:
                         if file_name.startswith('.'):
                             continue
-                        
+
                         file_path = os.path.join(root, file_name)
-                        relative_path = os.path.relpath(file_path, workspace_path)
+
+                        # パスの相対化を試行
+                        try:
+                            relative_path = os.path.relpath(file_path, workspace_path)
+                        except (ValueError, OSError) as e:
+                            # 異なるドライブや特殊パスの場合はスキップ
+                            logger.debug(f"Skipping file with invalid path: {file_path} ({e})")
+                            continue
+
                         file_ext = os.path.splitext(file_name)[1].lower()
-                        
+
                         # 除外拡張子をスキップ
                         if file_ext in self.excluded_extensions:
                             continue
-                        
+
                         try:
                             stat = os.stat(file_path)
-                            
+
                             # 大きすぎるファイルをスキップ（100MB以上）
                             if stat.st_size > 100 * 1024 * 1024:
                                 continue
-                            
+
                             priority = self.extension_priorities.get(file_ext, 30)
-                            
+
                             file_entries.append((
                                 hashlib.md5(file_path.encode('utf-8')).hexdigest(),
                                 file_name, file_path, relative_path, workspace_name,
                                 'file', stat.st_size, stat.st_mtime, file_ext, priority
                             ))
-                            
+
                             files_count += 1
-                            
+
                         except (OSError, PermissionError):
                             continue
                         

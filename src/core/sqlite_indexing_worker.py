@@ -129,17 +129,18 @@ class SQLiteIndexingWorker(QThread):
 
 class SQLiteIndexingManager(QObject):
     """SQLite index management class"""
-    
+
     # Signal definitions
     indexing_started = Signal()
     indexing_progress = Signal(float, str)  # progress%, message
     indexing_completed = Signal(dict)  # stats
     indexing_failed = Signal(str)  # error_message
-    
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.worker = None
         self.indexer = SQLiteIndexer()  # メインスレッド用のインデックス
+        self.logger = get_logger(__name__)  # ロガーを初期化
     
     def is_indexing(self) -> bool:
         """インデックス中かどうか"""
