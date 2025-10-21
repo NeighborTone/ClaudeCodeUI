@@ -18,7 +18,11 @@ class TreeNode:
     path: str
     type: str  # 'workspace', 'folder', 'file'
     children: List['TreeNode'] = None
-    
+    # 遅延読み込み用フィールド
+    is_loaded: bool = False      # 子要素が読み込み済みか
+    has_children: bool = None    # 子要素の有無（None=未確認）
+    is_placeholder: bool = False # プレースホルダーノードか
+
     def __post_init__(self):
         if self.children is None:
             self.children = []
@@ -122,8 +126,8 @@ class FileTreeWorker(QObject):
                     type='workspace'
                 )
                 
-                # ワークスペースの内容を読み込む
-                self._populate_node(workspace_node, workspace_path, 0)
+                # ワークスペースの内容を読み込む（遅延読み込み版を使用）
+                self._populate_node_shallow(workspace_node, workspace_path)
                 
                 # ワークスペースの読み込み完了を通知
                 self.workspace_loaded.emit(workspace_path, workspace_node)
@@ -138,7 +142,98 @@ class FileTreeWorker(QObject):
         except Exception as e:
             logger.error(f"Error in FileTreeWorker: {e}")
             self.failed.emit(str(e))
-    
+
+    def _populate_node_shallow(self, parent_node: TreeNode, path: str):
+        """ノードに子要素を追加（1階層のみ、遅延読み込み用）
+
+        フォルダにはプレースホルダーノードを追加して展開可能にする。
+        ファイルは通常通り追加する。
+        """
+        if self.should_stop:
+            return
+
+        try:
+            if not os.path.exists(path):
+                logger.warning(f"Path does not exist: {path}")
+                return
+
+            items = os.listdir(path)
+            items.sort()
+
+            # フォルダとファイルを分離
+            folders = []
+            files = []
+
+            for item in items:
+                if self.should_stop:
+                    return
+
+                item_path = os.path.join(path, item)
+
+                # 隠しファイルと除外ディレクトリをスキップ（.claudeは許可）
+                if item.startswith('.') and item != '.claude':
+                    continue
+                if item in self.excluded_dirs:
+                    continue
+
+                if os.path.isdir(item_path):
+                    folders.append((item, item_path))
+                else:
+                    files.append((item, item_path))
+
+            # フォルダを追加（プレースホルダー付き）
+            for folder_name, folder_path in folders:
+                if self.should_stop:
+                    return
+
+                folder_node = TreeNode(
+                    name=folder_name,
+                    path=folder_path,
+                    type='folder',
+                    is_loaded=False,  # まだ読み込まれていない
+                    has_children=True  # フォルダなので子要素がある可能性がある
+                )
+
+                # プレースホルダーノードを追加（展開可能にするため）
+                placeholder = TreeNode(
+                    name="読み込み中...",
+                    path="",
+                    type='placeholder',
+                    is_placeholder=True
+                )
+                folder_node.children.append(placeholder)
+
+                parent_node.children.append(folder_node)
+
+            # ファイルを追加
+            for file_name, file_path in files:
+                if self.should_stop:
+                    return
+
+                file_ext = os.path.splitext(file_name)[1].lower()
+                file_name_lower = file_name.lower()
+
+                # 重要なファイルかチェック
+                is_important = any(important in file_name_lower for important in self.important_files)
+
+                # 許可された拡張子または重要なファイルのみ追加
+                if self.allowed_extensions is None or file_ext in self.allowed_extensions or is_important:
+                    file_node = TreeNode(
+                        name=file_name,
+                        path=file_path,
+                        type='file',
+                        is_loaded=True  # ファイルは子がないので読み込み済み
+                    )
+                    parent_node.children.append(file_node)
+
+            # 親ノードを読み込み済みとマーク
+            parent_node.is_loaded = True
+
+        except PermissionError as e:
+            logger.warning(f"Permission denied: {path} - {e}")
+        except Exception as e:
+            logger.error(f"Error loading folder: {path} - {e}")
+
     def _populate_node(self, parent_node: TreeNode, path: str, current_depth: int):
         """ノードに子要素を追加（再帰的）"""
         if self.should_stop:

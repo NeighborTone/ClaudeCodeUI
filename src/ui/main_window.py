@@ -78,10 +78,13 @@ class MainWindow(QMainWindow):
         
         # 設定とマネージャー
         self.settings_manager = SettingsManager()
-        self.workspace_manager = WorkspaceManager()
-        
-        # インデックス管理システム（新しい統合システム）
+
+        # インデックス管理システム（新しい統合システム）を先に初期化
         self.indexing_manager, self.fast_searcher = create_indexing_system(self)
+
+        # ワークスペースマネージャーにSQLiteIndexerへの参照を渡す
+        sqlite_indexer = self.indexing_manager.get_indexer()
+        self.workspace_manager = WorkspaceManager(sqlite_indexer=sqlite_indexer)
         
         
         # 言語マネージャーを初期化

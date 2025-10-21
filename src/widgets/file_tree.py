@@ -141,6 +141,7 @@ class FileTreeWidget(QWidget):
         self.tree.setHeaderLabel(tr("tree_header"))
         self.tree.itemClicked.connect(self.on_item_clicked)
         self.tree.itemDoubleClicked.connect(self.on_item_double_clicked)
+        self.tree.itemExpanded.connect(self._on_item_expanded)  # 遅延読み込み用
         self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self.show_context_menu)
         
@@ -276,13 +277,102 @@ class FileTreeWidget(QWidget):
         for node in nodes:
             item = QTreeWidgetItem(parent_item)
             item.setText(0, node.name)
-            item.setData(0, Qt.UserRole, {
+
+            # ノードのメタデータを保存
+            item_data = {
                 'type': node.type,
-                'path': node.path
-            })
-            
+                'path': node.path,
+                'is_loaded': node.is_loaded,
+                'has_children': node.has_children,
+                'is_placeholder': node.is_placeholder
+            }
+            item.setData(0, Qt.UserRole, item_data)
+
+            # プレースホルダーの場合はスタイルを設定
+            if node.is_placeholder:
+                font = item.font(0)
+                font.setItalic(True)
+                item.setFont(0, font)
+                item.setForeground(0, QBrush(QColor(Qt.gray)))
+
             if node.children:
                 self._add_tree_nodes(item, node.children)
+
+    def _on_item_expanded(self, item: QTreeWidgetItem):
+        """ツリーアイテムが展開されたときの処理（遅延読み込み）"""
+        data = item.data(0, Qt.UserRole)
+        if not data:
+            return
+
+        # フォルダ以外は無視
+        if data.get('type') != 'folder':
+            return
+
+        # すでに読み込み済みなら何もしない
+        if data.get('is_loaded', False):
+            return
+
+        # 子要素を動的に読み込む
+        self._load_children_on_demand(item)
+
+    def _load_children_on_demand(self, parent_item: QTreeWidgetItem):
+        """フォルダの子要素を動的に読み込む"""
+        data = parent_item.data(0, Qt.UserRole)
+        if not data:
+            return
+
+        folder_path = data.get('path')
+        if not folder_path or not os.path.exists(folder_path):
+            logger.warning(f"Invalid folder path for lazy loading: {folder_path}")
+            return
+
+        logger.debug(f"Lazy loading children for: {folder_path}")
+
+        # プレースホルダーを削除
+        self._remove_placeholder(parent_item)
+
+        # FileTreeWorkerを使用して子要素を読み込む
+        try:
+            # 一時的なTreeNodeを作成
+            temp_node = TreeNode(
+                name=os.path.basename(folder_path),
+                path=folder_path,
+                type='folder'
+            )
+
+            # ワーカーのメソッドを直接呼び出して子要素を読み込む
+            worker = FileTreeWorker()
+            worker._populate_node_shallow(temp_node, folder_path)
+
+            # 読み込んだ子要素をツリーに追加
+            self._add_tree_nodes(parent_item, temp_node.children)
+
+            # 読み込み済みフラグを更新
+            data['is_loaded'] = True
+            parent_item.setData(0, Qt.UserRole, data)
+
+            logger.debug(f"Loaded {len(temp_node.children)} children for: {folder_path}")
+
+        except Exception as e:
+            logger.error(f"Failed to load children for {folder_path}: {e}")
+            # エラー表示ノードを追加
+            error_item = QTreeWidgetItem(parent_item)
+            error_item.setText(0, f"読み込みエラー: {str(e)}")
+            error_item.setForeground(0, QBrush(QColor(Qt.red)))
+
+    def _remove_placeholder(self, parent_item: QTreeWidgetItem):
+        """プレースホルダーノードを削除"""
+        children_to_remove = []
+
+        for i in range(parent_item.childCount()):
+            child = parent_item.child(i)
+            data = child.data(0, Qt.UserRole)
+            if data and data.get('is_placeholder', False):
+                children_to_remove.append(child)
+
+        for child in children_to_remove:
+            parent_item.removeChild(child)
+            logger.debug(f"Removed placeholder from: {parent_item.text(0)}")
                 
     def on_loading_completed(self):
         """読み込み完了時の処理"""
