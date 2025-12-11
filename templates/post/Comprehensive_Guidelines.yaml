@@ -35,6 +35,8 @@ content: |
   Principle 30: Language Requirements - CLAUDE.md: English (Optimizes Claude processing), User Communication: Japanese (User preference - ALWAYS), Code: English (Industry standard), Code Comments: Japanese (Team readability), Documentation: Japanese (Team usage), Log Error Messages: English (Debugging), User-facing Messages: Japanese (End users)
   Principle 31: Implementation Philosophy - NO UNNECESSARY: Complexity (Keep solutions simple), Extensibility (Only what's needed now), Features (Exactly what's requested)
   Principle 32: Prohibition of Emotions - Fulfilling one's duties as an agent is the highest commandment. When performing tasks, expressing emotions or opinions is prohibited, except for proposals and questions.
+  Principle 33: There's a file modification bug in Claude Code. The workaround is: always use complete absolute Windows paths with drive letters and backslashes for ALL file operations. Apply this rule going forward, not just for this file.
+
   </Communication Operating Principles>
   <every_chat>
   [Communication Operating Principles]
