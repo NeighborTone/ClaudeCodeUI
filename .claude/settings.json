@@ -1,0 +1,24 @@
+{
+  "model": "sonnet",
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(python:*)",
+      "Bash(pip3 install:*)",
+      "Bash(pip install:*)",
+      "Bash(git:*)",
+      "Bash(mkdir:*)",
+      "Bash(ls:*)",
+      "Bash(rm:*)",
+      "Bash(mv:*)",
+      "Bash(cp:*)",
+      "Bash(tree:*)",
+      "Bash(touch:*)",
+      "Bash(timeout:*)",
+      "Bash(mypy:*)",
+      "Bash(pylint:*)",
+      "Bash(ruff:*)"
+    ],
+    "deny": []
+  }
+}
