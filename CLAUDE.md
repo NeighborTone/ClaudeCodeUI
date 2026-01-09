@@ -57,6 +57,6 @@ Detailed documentation is split into `.claude/rules/`:
 
 ## Plan Management
 
-1. Create plan in `docs/plans/` for complex tasks
+1. Create plan in `.claude/plan/task` for complex tasks
 2. Wait for user approval
 3. Do not implement until approved
