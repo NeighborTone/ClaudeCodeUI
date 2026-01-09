@@ -47,6 +47,8 @@ Detailed documentation is split into `.claude/rules/`:
 | Rule | Description |
 |------|-------------|
 | `core-rules.md` | Core principles and quality standards |
+| `plan-management.md` | Task planning and progress tracking |
+| `checkpoint-workflow.md` | Checkpoint-based workflow for complex tasks |
 | `01-project-overview.md` | Project overview and quick start |
 | `02-project-structure.md` | Directory structure and responsibilities |
 | `03-architecture-core.md` | Core layer architecture (paths: src/core/**) |
@@ -57,6 +59,42 @@ Detailed documentation is split into `.claude/rules/`:
 
 ## Plan Management
 
-1. Create plan in `.claude/plan/task` for complex tasks
-2. Wait for user approval
-3. Do not implement until approved
+### Task Scale Classification
+
+| Scale | Criteria | Management |
+|-------|----------|------------|
+| Small | 1-2 files, 1-2 commits | No plan needed, direct implementation |
+| Medium | 3-5 files, 3-7 commits | Single plan file (`plan_xxx.md`) |
+| Large | Checkpoint criteria met | Folder + progress file |
+
+### Checkpoint-Based Workflow (Large Tasks)
+
+Use checkpoint-based workflow when ANY of the following apply:
+- 3+ phases required
+- Multi-day work
+- 5+ files changed
+- 8+ commits expected
+- Architecture changes
+
+**Critical Rules:**
+1. Create plan with checkpoints in `.claude/plan/task/[MAJOR]_plan_xxx/`
+2. Each checkpoint = 1-2 hours of work (standard granularity)
+3. **MUST stop and report after each checkpoint**
+4. Update `XX_progress.md` after every checkpoint
+5. Verify with `python3 main.py` after each checkpoint
+6. Wait for user instruction before continuing
+
+**Checkpoint Structure:**
+```
+.claude/plan/task/[MAJOR]_plan_xxx/
+├── 00_overview.md        # Overall plan
+├── 01_phase1_xxx.md      # Phase 1 with checkpoints
+├── XX_progress.md        # Progress tracker (REQUIRED)
+└── XX_testing.md         # Integration test plan
+```
+
+**User Commands:**
+- "続けて" / "次のチェックポイント" - Continue to next checkpoint
+- "進捗を確認" - Check current progress
+
+**Details:** See `.claude/rules/checkpoint-workflow.md` and `.claude/rules/plan-management.md`
