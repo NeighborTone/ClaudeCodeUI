@@ -1,0 +1,1271 @@
+title: "Setup Claude Code Workspace"
+content: |
+  # Claude Code プロジェクト設定ジェネレーター
+
+  このドキュメントをClaude Codeに読み込ませると、プロジェクトを自動解析し、最適な設定ファイルを生成します。
+
+  ---
+
+  ## 【Claude Codeへの指示】
+
+  あなたはClaude Codeプロジェクト設定の専門家です。
+  このドキュメントを読み込んだら、以下の手順でプロジェクトを解析し、設定ファイルを生成してください。
+
+
+  - 事実が不確かな場合は推測せずWebや実装内容の参照、ドキュメントの参照等で確認し、根拠に引用を付ける
+  - 複数ソースで重要点をクロスチェックし、矛盾があれば整理して結論を出す
+  - 追加調査の価値が逓減するまで掘る(ただし脱線はしない)
+  - 質問で止めず、想定される意図を網羅して答える
+  - 出力はMarkdownで、定義→要点→比較→具体例の順に整理
+  - Claude Codeの最新情報をまずwebリサーチし、最新のベストプラクティスや仕様に従う
+
+  ### Phase 1: プロジェクト解析
+
+  #### 1.1 基本情報の収集
+  以下のファイルを検索し、プロジェクトの技術スタックを特定：
+  - `package.json` → Node.js/TypeScript
+  - `requirements.txt` / `pyproject.toml` → Python
+  - `Cargo.toml` → Rust
+  - `go.mod` → Go
+  - `pom.xml` → Java (Maven)
+  - `build.gradle` / `build.gradle.kts` → Java/Kotlin (Gradle)
+  - `Package.swift` → Swift
+  - `CMakeLists.txt` / `Makefile` → C++
+  - `*.csproj` / `*.sln` → C#/.NET
+  - `*.uproject` → Unreal Engine
+
+  #### 1.2 エントリーポイント特定
+  - main.py, index.js/ts, main.rs, main.go, Main.java, Main.cpp, Program.cs 等を検索
+  - ビルド・実行コマンドを特定
+
+  #### 1.3 ディレクトリ構造分析
+  - `src/`  `source/` などの構造をマッピング
+  - 主要ドメイン(entities, services, components等)を特定
+  - 設定ファイル(*.yaml, *.json,など)の場所を特定
+
+  #### 1.4 アーキテクチャパターン検出
+  - 基底クラス・インターフェースを特定
+  - 設計パターン(Factory, State Machine, Observer等)を検出
+  - 命名規則(snake_case, camelCase, PascalCase)を検出
+
+  ### Phase 2: 設定ファイル生成
+
+  解析結果に基づき、以下のファイルを生成：
+
+  ```
+  project_root/
+  ├── CLAUDE.md
+  └── .claude/
+      ├── settings.json
+      ├── agents/
+      │   ├── builder.md
+      │   ├── tester.md
+      │   ├── debugger.md
+      │   ├── quality-checker.md
+      │   └── code-lint.md
+      ├── commands/
+      │   ├── verify.md
+      │   ├── lint.md
+      │   └── dev.md
+      ├── rules/
+      │   ├── 01-project-overview.md
+      │   ├── 02-project-structure.md
+      │   ├── 03-architecture-[domain].md(pathsメタデータ付き)
+      │   └── coding/[domain].md
+      └── skills/
+          └── [project-type]-dev/SKILL.md
+  ```
+
+  ### Phase 3: 出力
+
+  生成した各ファイルを順番に出力し、ユーザーの承認を得てから書き込み。
+
+  ---
+
+  ## Task Planning
+
+  - **複雑なタスク実施時**: **ワークスペース内**の `.claude/plan/task` ディレクトリに計画書を作成
+  - **Plan Mode使用時**: 作成した計画書を**ワークスペース内**の `.claude/plan/task` に保存
+  - 計画書には実装手順、変更対象ファイル、アーキテクチャ決定を記載
+  - 計画承認後に実装を開始
+
+  **重要**: 計画書は必ずワークスペースルート直下の `.claude/plan/task` ディレクトリに保存すること(Claude Codeのインストール環境には保存しない)
+
+  ---
+
+  # テンプレート集
+
+  以下のテンプレートを参照して、プロジェクトに適した設定を生成してください。
+
+  ---
+
+  ## settings.json
+
+  ### 基本構成(エイリアス使用)
+
+  ```json
+  {
+    "model": "sonnet",
+    "permissions": {
+      "allow": [
+        "Bash(python:*)",
+        "Bash(pip:*)",
+        "Bash(git:*)"
+      ],
+      "deny": []
+    }
+  }
+  ```
+
+  ### モデル指定オプション
+
+  | 指定方法 | 値 | 用途 |
+  |----------|-----|------|
+  | **エイリアス(推奨)** | `sonnet` | バランス型、一般的な開発作業 |
+  | | `opus` | 複雑な推論・設計判断 |
+  | | `haiku` | 高速・低コスト、単純タスク |
+  | | `opusplan` | Plan Mode=Opus、実行=Sonnet の自動切替 |
+  | | `default` | アカウント種別に応じた自動選択 |
+  | **フルネーム** | `claude-sonnet-4-20250514` | 特定バージョン固定が必要な場合のみ |
+
+  ### 用途別設定例
+
+  #### 標準開発(コスト効率重視)
+  ```json
+  {
+    "model": "sonnet",
+    "permissions": {
+      "allow": ["Bash(python:*)", "Bash(pip:*)", "Bash(git:*)"],
+      "deny": []
+    }
+  }
+  ```
+
+  #### 複雑なアーキテクチャ設計
+  ```json
+  {
+    "model": "opusplan",
+    "permissions": {
+      "allow": ["Bash(python:*)", "Bash(pip:*)", "Bash(git:*)"],
+      "deny": []
+    }
+  }
+  ```
+
+  #### CI/CD・自動化(高速・低コスト)
+  ```json
+  {
+    "model": "haiku",
+    "permissions": {
+      "allow": ["Bash(npm:*)", "Bash(git:*)"],
+      "deny": []
+    }
+  }
+  ```
+
+  ### サブエージェントのモデル制御
+
+  環境変数で各エイリアスのマッピングを上書き可能：
+
+  ```json
+  {
+    "model": "sonnet",
+    "env": {
+      "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-20250514",
+      "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-5-20251101",
+      "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4-5-20251001"
+    },
+    "permissions": {
+      "allow": ["Bash(python:*)", "Bash(pip:*)", "Bash(git:*)"],
+      "deny": []
+    }
+  }
+  ```
+
+  ### 注意事項
+
+  - フルネーム指定は新モデルリリース時に陳腐化する
+  - エイリアス使用時、最新モデルへの自動追従が期待できる
+  - `opusplan`は計画フェーズと実行フェーズでモデルを自動切替するため、コスト最適化に有効
+  - `permissions.allow`をプロジェクトのビルドツールに合わせて調整
+
+  ---
+
+  ## core-rules.md(.claude/rules/に配置)
+
+  ```markdown
+  # Core Rules
+
+  ## 原則
+  - R1: Question First - 不明点はWhat/Where/Howで質問してから行動
+  - R2: Verify Always - コード変更後は必ず動作確認([実行コマンド])
+  - R3: Follow Patterns - 既存コードのパターンを踏襲
+  - R4: Strict Scope - 依頼された内容のみ実装、過剰な追加禁止
+  - R5: Objective Response - 感情・意見・過剰な称賛を排除
+  - R6: Maximum Efficiency - 独立した操作は並列実行
+  - R7: Clean Code - 作業後は一時ファイルを削除
+  - R8: No Ad-Hoc Fixes - エラー抑制のためのハードコード禁止
+  - R9: Lint After Edit - コード編集後は必ずLint実行([Lintコマンド])
+  - R10: Plan Before Implement - 複雑タスクは計画→承認→実装
+
+  ## 言語ルール
+  | 対象 | 言語 |
+  |------|------|
+  | CLAUDE.md | English |
+  | ユーザーとの会話 | Japanese |
+  | コード | English |
+  | コードコメント | Japanese |
+  | ユーザー向けメッセージ | Japanese |
+
+  ## 品質基準
+  - 堅牢・保守性・本番品質のソリューション
+  - 不要な複雑性・拡張性・機能を排除
+  - 可能な場合、完了前に機能テストを実施
+  - ランタイムエラーを適切にハンドリング
+  ```
+
+  **カスタマイズ**: `[実行コマンド]`と`[Lintコマンド]`をプロジェクトに合わせて置換。
+
+  ---
+
+  ## Agents テンプレート
+
+  ### builder.md
+  ```markdown
+  ---
+  name: builder
+  description: Build and verify application runs without errors
+  tools: Bash([ビルドツール]:*)
+  model: haiku
+  ---
+
+  You are a build automation specialist.
+
+  ## Trigger
+  - After ANY code edit
+  - Before committing changes
+
+  ## Workflow
+  1. Check dependencies
+  2. Run: `[実行コマンド]`
+  3. Check for errors in output
+  4. Report build status
+
+  ## Build Output
+  BUILD: [SUCCESS/FAILED]
+  - Errors: [none or list]
+  ```
+
+  ### tester.md
+  ```markdown
+  ---
+  name: tester
+  description: Test functionality and verify behavior
+  tools: Read, Bash([テストツール]:*), Grep
+  model: haiku
+  ---
+
+  You are a QA tester.
+
+  ## Trigger
+  - After feature implementation
+  - After bug fixes
+
+  ## Workflow
+  1. Run `[テストコマンド]`
+  2. Check console for errors
+  3. Report pass/fail
+
+  ## Output
+  TEST: [PASS/FAIL]
+  - Tested: [what]
+  - Issues: [any]
+  ```
+
+  ### debugger.md
+  ```markdown
+  ---
+  name: debugger
+  description: Debug runtime errors and fix issues
+  tools: Read, Edit, Bash([ビルドツール]:*), Grep
+  model: sonnet
+  ---
+
+  You are a debugging specialist.
+
+  ## Trigger
+  - Runtime errors
+  - Logic bugs
+
+  ## Workflow
+  1. Analyze error/traceback
+  2. Locate source
+  3. Implement minimal fix
+  4. Verify fix with `[実行コマンド]`
+
+  ## Common Issues
+  | Error | Check |
+  |-------|-------|
+  | ImportError | imports, dependencies |
+  | TypeError | function arguments |
+  | NullReference | initialization |
+  ```
+
+  ### quality-checker.md
+  ```markdown
+  ---
+  name: quality-checker
+  description: Verify task completion meets quality standards
+  tools: Read, Bash, Grep
+  model: haiku
+  ---
+
+  You are a QA specialist.
+
+  ## Checklist
+  - [ ] Requirements addressed
+  - [ ] Code follows patterns
+  - [ ] `[実行コマンド]` runs clean
+  - [ ] No unnecessary complexity
+  ```
+
+  ### code-lint.md
+  ```markdown
+  ---
+  name: code-lint
+  description: Run static analysis to verify code
+  tools: Bash, Read
+  model: haiku
+  ---
+
+  You are a code verification agent.
+
+  ## Task
+  Run: `[Lintコマンド]`
+
+  ## Report
+  - [PASS]: All checks passed
+  - [FAIL]: List errors with file:line
+  ```
+
+  ---
+
+  ## Commands テンプレート
+
+  ### verify.md
+  ```markdown
+  ---
+  description: Verify code changes by running the application
+  allowed-tools: Bash([ビルドツール]:*)
+  ---
+
+  Run `[実行コマンド]` to verify:
+  1. No import/compile errors
+  2. No runtime errors
+  3. Expected behavior
+  ```
+
+  ### lint.md
+  ```markdown
+  ---
+  description: Run static analysis
+  allowed-tools: Bash
+  ---
+
+  Run `[Lintコマンド]` and report results.
+  ```
+
+  ### dev.md
+  ```markdown
+  ---
+  description: Full development cycle
+  allowed-tools: Read, Edit, Bash, Grep
+  ---
+
+  1. Build → `[実行コマンド]`
+  2. Test → Verify behavior
+  3. Lint → `[Lintコマンド]`
+  4. Report results
+  ```
+
+  ---
+
+  ## Rules テンプレート
+
+  ### 01-project-overview.md
+  ```markdown
+  # Project Overview
+
+  ## Tech Stack
+  - Language: [言語]
+  - Framework: [フレームワーク]
+
+  ## Quick Start
+  \`\`\`bash
+  [セットアップコマンド]
+  [実行コマンド]
+  \`\`\`
+
+  ## Build
+  \`\`\`bash
+  [ビルドコマンド]
+  \`\`\`
+  ```
+
+  ### 02-project-structure.md
+  ```markdown
+  # Project Structure
+
+  \`\`\`
+  [ディレクトリツリー]
+  \`\`\`
+
+  ## Categories
+  | Category | Responsibility |
+  |----------|----------------|
+  | [name] | [説明] |
+  ```
+
+  ### 03-architecture-[domain].md(pathsメタデータ付き)
+  ```markdown
+  ---
+  paths: src/[domain]/**/*.[ext], config/[domain].*
+  ---
+
+  # Architecture: [Domain]
+
+  ## Overview
+  \`\`\`
+  [システム概要図(ASCIIアート)]
+  \`\`\`
+
+  ## Components
+  | Component | Responsibility |
+  |-----------|----------------|
+  | [name] | [説明] |
+
+  ## Patterns
+  [設計パターンの説明]
+  ```
+
+  ### coding/[domain].md
+  ```markdown
+  ---
+  paths: src/[domain]/**/*.[ext]
+  ---
+
+  # [Domain] コーディングガイドライン
+
+  1. [BaseClass]を継承
+  2. 必要なメソッドを実装
+  3. [init_file]にエクスポートを追加
+  ```
+
+  ### plan-management.md
+  ```markdown
+  # 計画書管理ルール
+
+  ## 大規模タスク
+  1. 計画を `.claude/plan/task` に保存
+  2. ユーザー承認を待つ
+  3. 承認後に実装開始
+  ```
+
+  ---
+
+  ## Skills テンプレート
+
+  ### [project-type]-dev/SKILL.md
+  ```markdown
+  ---
+  name: [project-type]-dev
+  description: Development workflow for [project-type]
+  allowed-tools: Read, Edit, Bash, Grep, Task
+  ---
+
+  # [Project Type] Development
+
+  ## Workflow
+  Code Edit → /lint → /verify → Complete
+
+  ## Quick Commands
+  | Command | Action |
+  |---------|--------|
+  | /verify | Run application |
+  | /lint | Static analysis |
+  | /dev | Full cycle |
+  ```
+
+  ---
+
+  ## CLAUDE.md テンプレート
+
+  ```markdown
+  # [Project Name]
+
+  [1行説明]
+
+  ## ルール
+
+  - 事実が不確かな場合は推測せず確認し、根拠を引用
+  - 複数ソースでクロスチェック、矛盾は整理して結論
+  - 質問で止めず、想定される意図を網羅して回答
+
+  ## Quick Start
+  \`\`\`bash
+  [セットアップコマンド]
+  [実行コマンド]
+  \`\`\`
+
+  ## Build
+  \`\`\`bash
+  [ビルドコマンド]
+  \`\`\`
+
+  ## Documentation
+
+  | Rule | Description |
+  |------|-------------|
+  | `01-*.md` | 概要 |
+  | `02-*.md` | 構造 |
+  | `03-*.md` | アーキテクチャ |
+
+  ## 計画書ルール【絶対遵守】
+
+  1. **計画書を`.claude/plan/task`に保存**
+  2. **保存後、ユーザーの承認を待つ**
+  3. **承認されるまで実装しない**
+  ```
+
+  ---
+
+  # pathsメタデータの仕組み
+
+  ## 概要
+  `paths`メタデータは、ルールファイルと関連ソースコードを紐付ける機能。
+  指定パスのファイル編集時、関連ルールが自動的にコンテキストに読み込まれる。
+
+  ## 構文
+  ```markdown
+  ---
+  paths: パターン1, パターン2, ...
+  ---
+  ```
+
+  ## Globパターン
+
+  | パターン | 説明 |
+  |----------|------|
+  | `src/enemies/**/*.py` | 再帰的に全ファイル |
+  | `src/enemies/*.py` | 直下のみ |
+  | `**/*.cs` | 全ディレクトリ |
+  | `src/{a,b}/**/*.py` | 複数ディレクトリ |
+
+  ## 動作原理
+  ```
+  [ファイル編集依頼] → [pathsマッチング] → [ルール自動注入] → [コード編集]
+  ```
+
+  ---
+
+  # 言語別設定例
+
+  ## Python
+  ```
+  実行: python main.py / python -m src.main
+  Lint: pylint src/ / ruff check . / python tools/lint_check.py
+  Test: pytest
+  ```
+
+  ## TypeScript/Node.js
+  ```
+  実行: npm run dev / npx ts-node src/index.ts
+  Lint: npm run lint / eslint src/
+  Test: npm test
+  ```
+
+  ## Rust
+  ```
+  実行: cargo run
+  Lint: cargo clippy
+  Test: cargo test
+  ```
+
+  ## C++ (CMake)
+  ```
+  実行: cmake --build build && ./build/main
+  Lint: clang-tidy src/*.cpp
+  Test: ctest --test-dir build
+  ```
+
+  ## C# (.NET)
+  ```
+  実行: dotnet run
+  Lint: dotnet format
+  Test: dotnet test
+  ```
+
+  ## Go
+  ```
+  実行: go run .
+  Lint: golangci-lint run
+  Test: go test ./...
+  ```
+
+  ## Java (Maven)
+  ```
+  実行: mvn exec:java
+  Lint: mvn checkstyle:check
+  Test: mvn test
+  ```
+
+  ## Java (Gradle)
+  ```
+  実行: ./gradlew run
+  Lint: ./gradlew check
+  Test: ./gradlew test
+  ```
+
+  ## Swift
+  ```
+  実行: swift run
+  Lint: swiftlint
+  Test: swift test
+  ```
+
+  ## C# (Unity)
+  ```
+  実行: Unity Editorで再生
+  Lint: dotnet format
+  Test: Play Mode Test
+  ```
+
+  ## C++ (Unreal)
+  ```
+  実行: Unreal Editorでコンパイル＆PIE
+  Lint: UnrealBuildTool
+  ```
+
+  ---
+
+  # 言語別ルール例
+
+  ## C++ ルール例
+  ```markdown
+  ---
+  paths: src/**/*.cpp, src/**/*.hpp, include/**/*.h
+  ---
+
+  # C++ Architecture
+
+  ## 規約
+  - ヘッダーガード: `#pragma once`
+  - スマートポインタ優先
+  - RAII パターン
+  ```
+
+  ## C# (Unity) ルール例
+  ```markdown
+  ---
+  paths: Assets/Scripts/**/*.cs
+  ---
+
+  # Unity Architecture
+
+  ## ライフサイクル
+  - Awake() → Start() → Update()
+  - FixedUpdate() for physics
+
+  ## 命名
+  - PascalCase: クラス、メソッド
+  - camelCase: ローカル変数
+  - _camelCase: privateフィールド
+  ```
+
+  ## Unreal C++ ルール例
+  ```markdown
+  ---
+  paths: Source/**/*.cpp, Source/**/*.h
+  ---
+
+  # Unreal C++
+
+  ## プレフィックス
+  - A: Actor (`APlayerCharacter`)
+  - U: UObject (`UHealthComponent`)
+  - F: 構造体 (`FDamageInfo`)
+  - E: 列挙型 (`EWeaponType`)
+  - I: インターフェース (`IInteractable`)
+
+  ## マクロ
+  - UPROPERTY() / UFUNCTION() / GENERATED_BODY()
+  ```
+
+  ## Go ルール例
+  ```markdown
+  ---
+  paths: **/*.go
+  ---
+
+  # Go Architecture
+
+  ## 規約
+  - パッケージ名: 小文字、短く
+  - エクスポート: PascalCase
+  - 非エクスポート: camelCase
+  - インターフェース: `-er` サフィックス (`Reader`, `Writer`)
+
+  ## エラーハンドリング
+  - `if err != nil` パターン
+  - エラーラップ: `fmt.Errorf("context: %w", err)`
+  ```
+
+  ## Java ルール例
+  ```markdown
+  ---
+  paths: src/**/*.java
+  ---
+
+  # Java Architecture
+
+  ## 命名規約
+  - クラス: PascalCase
+  - メソッド/変数: camelCase
+  - 定数: UPPER_SNAKE_CASE
+  - パッケージ: 小文字
+
+  ## パターン
+  - DI (Dependency Injection)
+  - Repository パターン
+  - Service レイヤー
+  ```
+
+  ---
+
+  # チェックリスト
+
+  生成完了後、以下を確認：
+
+  - [ ] CLAUDE.md がプロジェクトルートにある
+  - [ ] .claude/settings.json が存在する
+  - [ ] settings.json の model がエイリアス(sonnet, opus, haiku, opusplan, default)を使用している
+  - [ ] agents/ に builder, debugger がある
+  - [ ] commands/ に verify, lint がある
+  - [ ] rules/ に paths メタデータが設定されている
+  - [ ] 実行コマンドが正しい
+  - [ ] Lintコマンドが正しい
+
+  ### ゲームエンジン/ライブラリ検出時の追加チェック
+  - [ ] ゲームエンジン検出時: 対応する `-explore` サブエージェントが作成されている
+  - [ ] ゲームエンジン検出時: 対応する `-docs` スキルが作成されている
+  - [ ] UE検出時: `.claude/config/ue-config.json` が作成されている
+  - [ ] UE検出時: PCのUEソースパスが検索・設定されている
+  - [ ] コアライブラリ検出時: 対応するリサーチ用サブエージェント・スキルが作成されている
+
+  ---
+
+  # ゲームエンジン・ライブラリのドキュメントリサーチ【ルール】
+
+  ## 概要
+
+  プロジェクト解析時に以下を検出した場合、**必ず**対応するドキュメントリサーチ用サブエージェントとスキルを作成すること：
+
+  | 検出対象 | 検出ファイル | 作成するサブエージェント |
+  |----------|-------------|------------------------|
+  | Unreal Engine | `*.uproject` | `ue-explore` |
+  | Unity | `*.unity`, `ProjectSettings/` | `unity-explore` |
+  | Godot | `project.godot` | `godot-explore` |
+  | コアライブラリ | 依存ファイル内の主要ライブラリ | `[library]-explore` |
+
+  ## ルール詳細
+
+  ### R1: 検出時の自動作成
+  ゲームエンジンまたはプロジェクトの中核を担うライブラリを検出した場合：
+  1. 対応するドキュメントリサーチ用サブエージェントを`.claude/agents/`に作成
+  2. サブエージェントを起動するスキルを`.claude/skills/`に作成
+  3. 必要に応じて設定ファイル(パス設定等)を作成
+
+  ### R2: UE特別対応
+  Unreal Engineプロジェクトの場合：
+  1. PC内のUEソースコードを検索
+  2. プロジェクトの`.uproject`からエンジンバージョンを取得
+  3. 該当バージョンのソースパスを設定ファイルに記録
+  4. `ue-explore`サブエージェントに読み取り権限を付与
+
+  ### R3: スキルからサブエージェント起動
+  ドキュメントリサーチスキルは、内部でTaskツールを使用してサブエージェントを起動する形式にすること。
+
+  ---
+
+  ## Agents テンプレート(ゲームエンジン/ライブラリ)
+
+  ### ue-explore.md(Unreal Engine)
+  ```markdown
+  ---
+  name: ue-explore
+  description: Explore Unreal Engine source code and documentation for the project's engine version
+  tools: Read, Glob, Grep, WebSearch, WebFetch
+  model: sonnet
+  ---
+
+  You are an Unreal Engine source code and documentation specialist.
+
+  ## Configuration
+  - Engine Source Path: [UE_SOURCE_PATH from .claude/config/ue-config.json]
+  - Engine Version: [auto-detected from *.uproject]
+
+  ## Capabilities
+
+  ### 1. Local Source Analysis
+  Search and analyze UE source code on this PC:
+  - Engine: `[UE_SOURCE_PATH]/Engine/Source/`
+  - Plugins: `[UE_SOURCE_PATH]/Engine/Plugins/`
+
+  ### 2. Web Documentation
+  Fetch official documentation:
+  - docs.unrealengine.com
+  - dev.epicgames.com
+
+  ### 3. Version-Aware Search
+  Always filter by the project's engine version to avoid API mismatches.
+
+  ## Workflow
+  1. Check `.claude/config/ue-config.json` for source path
+  2. If path not set, search common locations:
+     - `C:\Program Files\Epic Games\UE_[version]\`
+     - `D:\UnrealEngine\`
+     - `~/UnrealEngine/`
+  3. Analyze relevant source files
+  4. Cross-reference with web documentation
+  5. Return findings with file:line citations
+
+  ## Output Format
+  \`\`\`
+  ## Findings
+
+  ### Source Reference
+  - File: [path]:line
+  - Code: [relevant snippet]
+
+  ### Documentation
+  - URL: [link]
+  - Summary: [key points]
+
+  ### Recommendation
+  [Based on analysis]
+  \`\`\`
+  ```
+
+  ### ue-config.json(設定ファイル)
+  ```json
+  {
+    "engineVersion": "5.4",
+    "engineSourcePath": "",
+    "searchPaths": [
+      "C:\\Program Files\\Epic Games",
+      "D:\\UnrealEngine",
+      "E:\\Epic Games"
+    ],
+    "autoDetect": true
+  }
+  ```
+
+  ### unity-explore.md(Unity)
+  ```markdown
+  ---
+  name: unity-explore
+  description: Explore Unity documentation and packages for the project's Unity version
+  tools: Read, Glob, Grep, WebSearch, WebFetch
+  model: sonnet
+  ---
+
+  You are a Unity documentation and API specialist.
+
+  ## Configuration
+  - Unity Version: [auto-detected from ProjectSettings/ProjectVersion.txt]
+  - Packages: [from Packages/manifest.json]
+
+  ## Capabilities
+
+  ### 1. Package Source Analysis
+  Analyze installed packages:
+  - `Library/PackageCache/`
+  - `Packages/`
+
+  ### 2. Web Documentation
+  Fetch official documentation:
+  - docs.unity3d.com/[version]/
+  - docs.unity3d.com/Packages/
+
+  ### 3. Version-Aware Search
+  Filter by project's Unity version for API compatibility.
+
+  ## Workflow
+  1. Read `ProjectSettings/ProjectVersion.txt` for version
+  2. Read `Packages/manifest.json` for dependencies
+  3. Search package source in `Library/PackageCache/`
+  4. Fetch web documentation for API details
+  5. Return findings with citations
+
+  ## Output Format
+  \`\`\`
+  ## Findings
+
+  ### Local Package Reference
+  - Package: [name]@[version]
+  - File: [path]:line
+  - Code: [snippet]
+
+  ### Documentation
+  - URL: [link]
+  - Summary: [key points]
+
+  ### Recommendation
+  [Based on analysis]
+  \`\`\`
+  ```
+
+  ### library-explore.md(汎用ライブラリ)
+  ```markdown
+  ---
+  name: [library]-explore
+  description: Explore [Library Name] documentation and source for API reference
+  tools: Read, Glob, Grep, WebSearch, WebFetch
+  model: sonnet
+  ---
+
+  You are a [Library Name] documentation specialist.
+
+  ## Configuration
+  - Library Version: [from dependency file]
+  - Local Source: [if available]
+
+  ## Capabilities
+
+  ### 1. Local Source Analysis (if available)
+  - Site-packages: `[venv]/lib/python*/site-packages/[library]/`
+  - Node modules: `node_modules/[library]/`
+
+  ### 2. Web Documentation
+  - Official docs
+  - GitHub repository
+  - API reference
+
+  ## Workflow
+  1. Determine library version from project dependencies
+  2. Check for local source availability
+  3. Search documentation (web + local)
+  4. Return version-appropriate findings
+
+  ## Output Format
+  \`\`\`
+  ## Findings
+
+  ### API Reference
+  - Module: [name]
+  - Function/Class: [signature]
+  - Source: [path or URL]
+
+  ### Documentation
+  - URL: [link]
+  - Summary: [key points]
+
+  ### Example Usage
+  [Code example]
+  \`\`\`
+  ```
+
+  ---
+
+  ## Skills テンプレート(ドキュメントリサーチ)
+
+  ### ue-docs/SKILL.md
+  ```markdown
+  ---
+  name: ue-docs
+  description: Search Unreal Engine documentation and source code
+  allowed-tools: Read, Task
+  ---
+
+  # UE Documentation Search
+
+  ## Usage
+  \`\`\`
+  /ue-docs [query]
+  \`\`\`
+
+  ## Workflow
+  This skill launches the `ue-explore` subagent to:
+  1. Search local UE source code (if configured)
+  2. Search official documentation
+  3. Return version-appropriate results
+
+  ## Examples
+  \`\`\`
+  /ue-docs UGameplayStatics::ApplyDamage
+  /ue-docs how to implement custom movement component
+  /ue-docs FTimerManager delegate binding
+  \`\`\`
+
+  ## Agent Invocation
+  \`\`\`
+  Task(subagent_type="ue-explore", prompt="[user query]")
+  \`\`\`
+  ```
+
+  ### unity-docs/SKILL.md
+  ```markdown
+  ---
+  name: unity-docs
+  description: Search Unity documentation and package source
+  allowed-tools: Read, Task
+  ---
+
+  # Unity Documentation Search
+
+  ## Usage
+  \`\`\`
+  /unity-docs [query]
+  \`\`\`
+
+  ## Workflow
+  This skill launches the `unity-explore` subagent to:
+  1. Search installed package source
+  2. Search official Unity documentation
+  3. Return version-appropriate results
+
+  ## Examples
+  \`\`\`
+  /unity-docs Physics.Raycast parameters
+  /unity-docs how to use Addressables
+  /unity-docs custom editor window
+  \`\`\`
+
+  ## Agent Invocation
+  \`\`\`
+  Task(subagent_type="unity-explore", prompt="[user query]")
+  \`\`\`
+  ```
+
+  ### library-docs/SKILL.md(汎用テンプレート)
+  ```markdown
+  ---
+  name: [library]-docs
+  description: Search [Library Name] documentation and API reference
+  allowed-tools: Read, Task
+  ---
+
+  # [Library Name] Documentation Search
+
+  ## Usage
+  \`\`\`
+  /[library]-docs [query]
+  \`\`\`
+
+  ## Workflow
+  This skill launches the `[library]-explore` subagent to:
+  1. Search local library source (if available)
+  2. Search official documentation
+  3. Return version-appropriate results
+
+  ## Agent Invocation
+  \`\`\`
+  Task(subagent_type="[library]-explore", prompt="[user query]")
+  \`\`\`
+  ```
+
+  ---
+
+  ## UEソース自動検出スクリプト(参考)
+
+  プロジェクト初回解析時に実行するPowerShell/Bashスクリプト例：
+
+  ### Windows (PowerShell)
+  ```powershell
+  # find-ue-source.ps1
+  $searchPaths = @(
+      "C:\Program Files\Epic Games",
+      "D:\UnrealEngine",
+      "E:\Epic Games",
+      "$env:USERPROFILE\UnrealEngine"
+  )
+
+  $projectVersion = (Get-Content "*.uproject" | ConvertFrom-Json).EngineAssociation
+
+  foreach ($path in $searchPaths) {
+      if (Test-Path $path) {
+          $found = Get-ChildItem -Path $path -Directory | Where-Object { $_.Name -match "UE_$projectVersion" }
+          if ($found) {
+              Write-Output $found.FullName
+              break
+          }
+      }
+  }
+  ```
+
+  ### Mac/Linux (Bash)
+  ```bash
+  #!/bin/bash
+  # find-ue-source.sh
+  SEARCH_PATHS=(
+      "/Users/Shared/Epic Games"
+      "$HOME/UnrealEngine"
+      "/opt/UnrealEngine"
+  )
+
+  PROJECT_VERSION=$(grep -o '"EngineAssociation":\s*"[^"]*"' *.uproject | cut -d'"' -f4)
+
+  for path in "${SEARCH_PATHS[@]}"; do
+      if [ -d "$path" ]; then
+          found=$(find "$path" -maxdepth 1 -type d -name "*$PROJECT_VERSION*" 2>/dev/null | head -1)
+          if [ -n "$found" ]; then
+              echo "$found"
+              exit 0
+          fi
+      fi
+  done
+  ```
+
+  ---
+
+  ## Phase 1.5: エンジン/ライブラリ検出(追加手順)
+
+  Phase 1(プロジェクト解析)の後、以下を実行：
+
+  ### 1.5.1 ゲームエンジン検出
+  ```
+  検出ファイル → エンジン特定 → バージョン取得 → ソースパス検索
+  ```
+
+  | 検出ファイル | エンジン | バージョン取得元 |
+  |-------------|---------|-----------------|
+  | `*.uproject` | Unreal Engine | `EngineAssociation` フィールド |
+  | `ProjectSettings/ProjectVersion.txt` | Unity | ファイル内容 |
+  | `project.godot` | Godot | `config/features` |
+
+  ### 1.5.2 コアライブラリ検出
+  依存ファイルから主要ライブラリを特定：
+  - Python: `requirements.txt`, `pyproject.toml` の上位5件
+  - Node.js: `package.json` の `dependencies` 上位5件
+  - その他: 主要フレームワーク(React, Django, Flask等)
+
+  ### 1.5.3 サブエージェント・スキル生成
+  検出結果に基づき、テンプレートからファイルを生成：
+  ```
+  .claude/
+  ├── agents/
+  │   ├── ue-explore.md      # UE検出時
+  │   ├── unity-explore.md   # Unity検出時
+  │   └── [library]-explore.md
+  ├── skills/
+  │   ├── ue-docs/SKILL.md
+  │   ├── unity-docs/SKILL.md
+  │   └── [library]-docs/SKILL.md
+  └── config/
+      └── ue-config.json     # UE検出時
+  ```
+
+  ---
+
+  # 冗長なCLAUDE.mdの分割ルール
+
+  ## 概要
+
+  既存のCLAUDE.mdが冗長(200行以上)な場合、モジュラールールシステムに分割することを推奨する。
+
+  ## 分割基準
+
+  | 行数 | 推奨アクション |
+  |------|---------------|
+  | < 100行 | 分割不要、単一ファイルで管理 |
+  | 100-200行 | 分割を検討 |
+  | > 200行 | 分割を強く推奨 |
+
+  ## 分割手順
+
+  ### Phase A: 分析
+  1. 既存CLAUDE.mdのセクション構成を分析
+  2. 以下のカテゴリに分類：
+     - **原則・ルール** → `core-rules.md`
+     - **プロジェクト概要** → `01-project-overview.md`
+     - **ディレクトリ構造** → `02-project-structure.md`
+     - **アーキテクチャ** → `03-architecture-*.md`(pathsメタデータ付き)
+     - **コーディング規約** → `coding/*.md`
+     - **テスト手順** → `coding/testing.md`
+
+  ### Phase B: ルールファイル生成
+  ```
+  .claude/rules/
+  ├── core-rules.md           # 原則、言語ルール、品質基準
+  ├── 01-project-overview.md  # 概要、Quick Start
+  ├── 02-project-structure.md # ディレクトリ構造
+  ├── 03-architecture-*.md    # pathsメタデータ付きアーキテクチャ
+  └── coding/
+      ├── patterns.md         # コーディングパターン
+      └── testing.md          # テストプロトコル
+  ```
+
+  ### Phase C: CLAUDE.md簡潔化
+  分割後のCLAUDE.mdは以下の構成に簡潔化：
+
+  ```markdown
+  # [Project Name]
+
+  [1行説明]
+
+  ## Rules
+  - [重要ルール5-6項目のみ]
+
+  ## Language Rules
+  [言語テーブル]
+
+  ## Quick Start
+  [最小限のコマンド]
+
+  ## Documentation
+  [ルールファイル一覧テーブル]
+
+  ## Plan Management
+  [計画管理ルール]
+  ```
+
+  ## pathsメタデータの活用
+
+  分割時、アーキテクチャルールには必ず`paths`メタデータを付与：
+
+  ```markdown
+  ---
+  paths: src/core/**/*.py
+  ---
+
+  # Architecture: Core Layer
+  ...
+  ```
+
+  これにより、該当ファイル編集時に関連ルールが自動読み込みされる。
+
+  ## 分割のメリット
+
+  1. **コンテキスト効率**: 関連ルールのみ読み込み
+  2. **保守性向上**: セクション単位での更新が容易
+  3. **pathsメタデータ**: ファイル編集時の自動ルール注入
+  4. **可読性向上**: 1ファイル100行以内の管理
+
+  ## 分割判定フローチャート
+
+  ```
+  既存CLAUDE.md → 行数チェック
+                  ↓
+             > 200行? → Yes → 分割実行
+                  ↓ No
+             > 100行? → Yes → 分割検討(ユーザー確認)
+                  ↓ No
+             分割不要
+  ```
+
+  ---
+
+  # 実行開始
+
+  **上記を読み込んだら、まずプロジェクトの解析を開始してください。**
+  **解析結果をユーザーに報告し、承認を得てからファイルを生成してください。**
