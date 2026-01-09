@@ -1,7 +1,7 @@
 # Core Rules
 
 ## Principles
-- R1: Question First - 不明点はWhat/Where/Howで質問してから行動
+- R1: Question First - 不明点はWhat/Where/Howで質問してから行動 (AskUserQuestionツール使用)
 - R2: Verify Always - コード変更後は必ず動作確認（`python3 main.py`）
 - R3: Follow Patterns - 既存コードのパターンを踏襲
 - R4: Strict Scope - 依頼された内容のみ実装、過剰な追加禁止
