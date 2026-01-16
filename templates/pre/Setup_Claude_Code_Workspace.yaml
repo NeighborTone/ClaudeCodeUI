@@ -92,6 +92,18 @@ content: |
 
   **重要**: 計画書は必ずワークスペースルート直下の `.claude/plan/task` ディレクトリに保存すること(Claude Codeのインストール環境には保存しない)
 
+  ### 計画書保存先のカスタマイズ
+
+  `settings.json`に`plansDirectory`を設定することで、計画書の保存先を明示的に指定できます：
+
+  ```json
+  {
+    "plansDirectory": ".claude/plan/task"
+  }
+  ```
+
+  未指定の場合もデフォルトで`.claude/plan/task`が使用されます。
+
   ---
 
   # テンプレート集
@@ -107,6 +119,7 @@ content: |
   ```json
   {
     "model": "sonnet",
+    "plansDirectory": ".claude/plan/task",
     "permissions": {
       "allow": [
         "Bash(python:*)",
@@ -117,6 +130,8 @@ content: |
     }
   }
   ```
+
+  **plansDirectory**: Plan Modeで生成される計画書の保存先ディレクトリを指定します（オプション）。未指定の場合もデフォルトで`.claude/plan/task`が使用されます。
 
   ### モデル指定オプション
 
