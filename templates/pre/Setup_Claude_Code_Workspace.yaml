@@ -94,15 +94,15 @@ content: |
 
   ### 計画書保存先のカスタマイズ
 
-  `settings.json`に`plansDirectory`を設定することで、計画書の保存先を明示的に指定できます：
+  `settings.json`に`plansDir`を設定することで、計画書の保存先を明示的に指定できます：
 
   ```json
   {
-    "plansDirectory": ".claude/plan/task"
+    "plansDir": ".claude/plan/task"
   }
   ```
 
-  未指定の場合もデフォルトで`.claude/plan/task`が使用されます。
+  未指定の場合は、グローバルディレクトリ`~/.claude/plans/`が使用されます。プロジェクト内に計画書を保存することで、チームでの共有やバージョン管理が可能になります。
 
   ---
 
@@ -119,7 +119,7 @@ content: |
   ```json
   {
     "model": "sonnet",
-    "plansDirectory": ".claude/plan/task",
+    "plansDir": ".claude/plan/task",
     "permissions": {
       "allow": [
         "Bash(python:*)",
@@ -131,7 +131,7 @@ content: |
   }
   ```
 
-  **plansDirectory**: Plan Modeで生成される計画書の保存先ディレクトリを指定します（オプション）。未指定の場合もデフォルトで`.claude/plan/task`が使用されます。
+  **plansDir**: Plan Modeで生成される計画書の保存先ディレクトリを指定します（オプション）。未指定の場合は`~/.claude/plans/`（グローバルディレクトリ）が使用されます。ワークスペースルートからの相対パスで指定します。
 
   ### モデル指定オプション
 
