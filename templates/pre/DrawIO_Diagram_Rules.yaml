@@ -1,0 +1,28 @@
+title: "DrawIO Diagram Rules"
+content: |
+  When creating diagrams with draw.io, follow these rules:
+
+  ## mxGraphModel Settings
+  - Set defaultFontFamily="FontName" in mxGraphModel
+  - Add fontFamily=FontName; to style of all text elements
+  - Use font size 1.5x standard (around 18px)
+
+  ## Layout Rules
+  - Place arrows at the beginning of XML (backmost layer)
+  - Keep arrows and labels at least 20px apart
+  - Allocate sufficient width for Japanese text (30-40px per character)
+  - Do not set background color (keep transparent)
+  - Set page="0"
+
+  ## Post-Creation Checklist
+  - [ ] All text elements have fontFamily explicitly set
+  - [ ] Font size is sufficient (18px or larger recommended)
+  - [ ] Arrows are placed at backmost layer
+  - [ ] Arrows and labels do not overlap
+  - [ ] Japanese text has no unintended line breaks
+  - [ ] Visually verified with PNG export
+
+  ## Key Points (CRITICAL)
+  1. **fontFamily must be explicit** on each text element
+  2. **Arrows at backmost layer** - avoid overlap with labels
+  3. **Always verify visually with PNG export**
