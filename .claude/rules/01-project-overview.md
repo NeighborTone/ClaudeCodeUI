@@ -31,7 +31,6 @@ LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 python3 main.py
 ## Key Features
 - SQLite-based high-performance indexing (90% faster startup)
 - Smart file completion (@filename, !files, #folders)
-- 14-level thinking system for Claude Code
 - Multi-theme support (8 themes)
 - Pre/post prompt templates
 - Real-time token counting

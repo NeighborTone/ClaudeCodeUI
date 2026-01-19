@@ -21,7 +21,7 @@ self.my_widget.value_changed.connect(self.handle_change)
 ```python
 # Dot-notation for settings
 settings.get('window.width', 1200)
-settings.set('ui.thinking_level', 'think harder')
+settings.set('ui.theme', 'cyberpunk')
 
 # Workspace management
 workspace.add_folder('/path/to/project')
@@ -32,7 +32,7 @@ workspace.get_recent_files()
 ```python
 # Always use tr() for UI strings
 from src.core.ui_strings import tr
-label.setText(tr("label.thinking_level"))
+label.setText(tr("label_workspace"))
 
 # Add strings to data/locales/strings.json
 ```

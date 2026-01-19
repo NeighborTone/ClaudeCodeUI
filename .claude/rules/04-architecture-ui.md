@@ -39,7 +39,6 @@ Located in `src/ui/themes/`:
 
 ## Signal Flow
 ```
-ThinkingSelectorWidget → MainWindow → PromptInputWidget
 TemplateSelector → MainWindow → PromptPreviewWidget
 FileTreeWidget → MainWindow → PromptInputWidget
 ```

@@ -9,7 +9,6 @@ Claude Codeによって開発されたプロジェクトです。
 - Enter改行、Shift+Enter生成&コピー機能
 - 最終プロンプトのリアルタイムプレビュー
 - 日本語・英語対応のトークン推定
-- 14段階の思考レベル選択（think ～ ultrathink）
 
 ### テンプレート管理システム
 - プリプロンプトテンプレートの自動適用
@@ -65,10 +64,9 @@ pip3 install -r requirements.txt
 ### 基本ワークフロー
 1. **ワークスペース追加**: 「フォルダ追加」でプロジェクトを登録
 2. **テンプレート選択**: プリ・ポストプロンプトを選択
-3. **思考レベル設定**: 目的に応じた思考レベルを選択
-4. **プロンプト作成**: 本文を入力し、`@` `!` `#`でスマートファイル指定
-5. **プレビュー確認**: 右パネルで最終プロンプトを確認
-6. **生成&コピー**: Shift+Enterでクリップボードに出力
+3. **プロンプト作成**: 本文を入力し、`@` `!` `#`でスマートファイル指定
+4. **プレビュー確認**: 右パネルで最終プロンプトを確認
+5. **生成&コピー**: Shift+Enterでクリップボードに出力
 
 ### 高度な機能
 
@@ -100,25 +98,6 @@ pip3 install -r requirements.txt
 | `Shift+Enter` | 生成&コピー |
 | `Ctrl+Q` | アプリケーション終了 |
 | `Escape` | ファイル補完キャンセル (すべてのモード) |
-
-## 思考レベル一覧
-
-| レベル | 説明 | 用途 |
-|--------|------|------|
-| think | 通常思考 | 一般的なタスク |
-| think harder | やや深い思考 | 複雑な問題 |
-| think deeply | 深い思考 | 詳細な分析 |
-| think intensely | 集中的思考 | 重要な判断 |
-| think longer | 長時間思考 | 時間をかけた検討 |
-| think really hard | 非常に深い思考 | 困難な課題 |
-| think super hard | 超深い思考 | 専門的な問題 |
-| think very hard | とても深い思考 | 慎重な判断 |
-| ultrathink | 極限思考 | 最高レベルの分析 |
-| think about it | 熟考 | 多角的検討 |
-| think a lot | 大量思考 | 網羅的な検討 |
-| think hard | 一生懸命思考 | 集中的な作業 |
-| think more | 追加思考 | さらなる検討 |
-| megathink | メガ思考 | 最大級の思考力 |
 
 ## プロジェクト構造
 
@@ -153,9 +132,8 @@ ClaudeCodeUI/
 │   │       ├── material_theme.py # マテリアルテーマ
 │   │       ├── retro_theme.py # レトロテーマ
 │   │       └── scifi_theme.py # サイファイテーマ
-│   └── widgets/               # ウィジェット層（8ファイル）
+│   └── widgets/               # ウィジェット層
 │       ├── prompt_input.py    # プロンプト入力
-│       ├── thinking_selector.py # 思考レベル選択
 │       ├── file_tree.py       # ファイルツリー
 │       ├── template_selector.py # テンプレート選択
 │       ├── prompt_preview.py  # プロンプトプレビュー

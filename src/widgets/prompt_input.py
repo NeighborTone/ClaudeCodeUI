@@ -169,8 +169,8 @@ class SimpleCompletionWidget(QWidget):
 
 class PromptInputWidget(QWidget):
     """プロンプト入力ウィジェット"""
-    
-    generate_and_copy = Signal(str, str)
+
+    generate_and_copy = Signal(str)
     text_changed = Signal(str)  # テキスト変更シグナル（リアルタイム更新用）
     
     def __init__(self, workspace_manager: WorkspaceManager, fast_searcher = None, parent=None):
@@ -178,8 +178,7 @@ class PromptInputWidget(QWidget):
         
         self.workspace_manager = workspace_manager
         self.file_searcher = fast_searcher
-        self.thinking_level = "think"
-        
+
         # 状態管理
         self.current_match = None  # {'symbol': '@'/'$'/'#', 'match': regex_match, 'query': str}
         self.completion_active = False
@@ -373,10 +372,10 @@ class PromptInputWidget(QWidget):
         # プレビュー内容を基準にした生成可能性を判定
         if not self.is_generation_possible():
             return
-        
+
         # テンプレート統合は親ウィンドウで処理するため、生のテキストを渡す
         text = self.text_edit.toPlainText().strip()
-        self.generate_and_copy.emit(text, self.thinking_level)
+        self.generate_and_copy.emit(text)
     
     def clear_all(self):
         """クリア"""
@@ -384,16 +383,10 @@ class PromptInputWidget(QWidget):
         self.hide_completion()
         self.update_token_count()
     
-    def set_thinking_level(self, level: str):
-        """思考レベル設定"""
-        self.thinking_level = level
-        self.update_token_count()
-    
-    
     def update_token_count(self, full_prompt_text: str = None):
         """
         トークン数更新
-        
+
         Args:
             full_prompt_text: フルプロンプトテキスト（プレビューから）
                             Noneの場合は従来通りメインテキストのみでカウント
@@ -402,11 +395,9 @@ class PromptInputWidget(QWidget):
             # プレビューからのフルプロンプトでトークンカウント
             text = full_prompt_text
         else:
-            # 従来通りのメインテキスト + 思考レベルでカウント
+            # メインテキストでカウント
             text = self.text_edit.toPlainText()
-            if self.thinking_level and self.thinking_level != "think":
-                text = f"{self.thinking_level}\n{text}"
-        
+
         token_count = TokenCounter.count_tokens(text)
         formatted_count = TokenCounter.format_token_count(token_count)
         # Update token count with localized text

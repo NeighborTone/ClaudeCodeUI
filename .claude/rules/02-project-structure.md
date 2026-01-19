@@ -19,7 +19,6 @@ ClaudeCodeUI/
 │   └── widgets/           # Specialized UI widgets
 │       ├── prompt_input_widget.py
 │       ├── file_tree_widget.py
-│       ├── thinking_selector_widget.py
 │       └── template_selector.py
 ├── data/                   # Application data (version controlled)
 │   ├── locales/strings.json

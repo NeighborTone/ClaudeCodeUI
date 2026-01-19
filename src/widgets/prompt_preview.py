@@ -29,7 +29,6 @@ class PromptPreviewWidget(QWidget):
         self.update_timer.setInterval(100)  # 100ms遅延
         
         # 現在の値を保持
-        self.current_thinking_level = ""
         self.current_pre_template = ""
         self.current_main_content = ""
         self.current_post_template = ""
@@ -61,20 +60,18 @@ class PromptPreviewWidget(QWidget):
         self.preview_text.setPlaceholderText(tr("template_placeholder_content"))
         layout.addWidget(self.preview_text)
     
-    def update_preview(self, thinking_level: str = "", pre_template: str = "", 
+    def update_preview(self, pre_template: str = "",
                       main_content: str = "", post_template: str = ""):
         """プレビューを更新（リアルタイム対応）"""
         # 値が変更された場合のみ更新
-        if (self.current_thinking_level != thinking_level or
-            self.current_pre_template != pre_template or
+        if (self.current_pre_template != pre_template or
             self.current_main_content != main_content or
             self.current_post_template != post_template):
-            
-            self.current_thinking_level = thinking_level
+
             self.current_pre_template = pre_template
             self.current_main_content = main_content
             self.current_post_template = post_template
-            
+
             # タイマーを再開（連続更新を防ぐ）
             self.update_timer.start()
     
@@ -85,10 +82,9 @@ class PromptPreviewWidget(QWidget):
         if not main_content.strip():
             # プレースホルダーテキストの代わりに空文字を使用（実際のプロンプトでは不要）
             main_content = ""
-        
+
         # 最終プロンプトを構築
         final_prompt = self.template_manager.build_final_prompt(
-            self.current_thinking_level,
             self.current_pre_template,
             main_content,
             self.current_post_template
@@ -115,7 +111,6 @@ class PromptPreviewWidget(QWidget):
     
     def clear_preview(self):
         """プレビューをクリア"""
-        self.current_thinking_level = ""
         self.current_pre_template = ""
         self.current_main_content = ""
         self.current_post_template = ""
@@ -145,7 +140,6 @@ if __name__ == "__main__":
     
     # テストデータ
     widget.update_preview(
-        thinking_level="think step by step",
         pre_template="Code Review",
         main_content="def hello():\n    print('Hello World')",
         post_template="Explanation Request"

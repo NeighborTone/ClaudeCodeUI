@@ -189,12 +189,10 @@ class PromptHistoryWidget(QWidget):
         
         # メタ情報を表示
         timestamp = entry.get('timestamp', '')
-        thinking_level = entry.get('thinking_level', '')
         pre_template = entry.get('pre_template', 'None')
         post_template = entry.get('post_template', 'None')
-        
+
         meta_text = f"Time: {timestamp}\n"
-        meta_text += f"Thinking Level: {thinking_level}\n"
         meta_text += f"Pre-template: {pre_template}\n"
         meta_text += f"Post-template: {post_template}"
         self.meta_info_label.setText(meta_text)

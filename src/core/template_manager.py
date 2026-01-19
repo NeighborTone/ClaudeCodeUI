@@ -226,26 +226,21 @@ class TemplateManager:
         
         return deleted
     
-    def build_final_prompt(self, thinking_level: str, pre_template: Optional[str], 
+    def build_final_prompt(self, pre_template: Optional[str],
                           main_content: str, post_template: Optional[str]) -> str:
         """
         最終的なプロンプトを構築
-        
+
         Args:
-            thinking_level: 思考レベル（"none"の場合は追加しない）
             pre_template: プリプロンプトテンプレート名（Noneの場合は追加しない）
             main_content: メインコンテンツ
             post_template: ポストプロンプトテンプレート名（Noneの場合は追加しない）
-            
+
         Returns:
             構築されたプロンプト
         """
         parts = []
-        
-        # 思考レベルを追加
-        if thinking_level and thinking_level.lower() != "none":
-            parts.append(thinking_level)
-        
+
         # プリプロンプトを追加
         if pre_template:
             pre_content = self.get_pre_template_content(pre_template)
@@ -305,7 +300,6 @@ if __name__ == "__main__":
     # プロンプト構築テスト
     print("\n=== Prompt Building Test ===")
     final_prompt = manager.build_final_prompt(
-        thinking_level="think step by step",
         pre_template="Code Review",
         main_content="def hello_world():\n    print('Hello, World!')",
         post_template="Explanation Request"

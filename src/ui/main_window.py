@@ -22,7 +22,6 @@ from src.core.prompt_history_manager import get_prompt_history_manager
 from src.core.indexing_adapter import create_indexing_system
 from src.widgets.file_tree import FileTreeWidget
 from src.widgets.prompt_input import PromptInputWidget
-from src.widgets.thinking_selector import ThinkingSelectorWidget
 from src.widgets.prompt_preview import PromptPreviewWidget
 from src.widgets.template_selector import TemplateSelector
 from src.widgets.prompt_history import PromptHistoryWidget
@@ -94,8 +93,7 @@ class MainWindow(QMainWindow):
         # 言語変更時のコールバックを登録
         self.language_manager.register_language_change_callback("main_window", self._on_language_changed)
         
-        # 設定から思考レベル、テーマ、プレビュー表示、スプリッターサイズ、テンプレート選択を復元
-        thinking_level = self.settings_manager.get_thinking_level()
+        # 設定からテーマ、プレビュー表示、スプリッターサイズ、テンプレート選択を復元
         theme_name = self.settings_manager.get_theme()
         preview_visible = self.settings_manager.get_preview_visible()
         splitter_sizes = self.settings_manager.get_splitter_sizes()
@@ -111,11 +109,7 @@ class MainWindow(QMainWindow):
         
         # 保存されたテーマを適用
         apply_theme(self, theme_name)
-        
-        # 思考レベルを設定
-        self.thinking_selector.set_thinking_level(thinking_level)
-        self.prompt_input.set_thinking_level(thinking_level)
-        
+
         # プレビュー表示状態を復元
         self.prompt_preview.setVisible(preview_visible)
         self.preview_action.setChecked(preview_visible)
@@ -211,11 +205,7 @@ class MainWindow(QMainWindow):
         # 右側：プロンプト入力エリア
         right_widget = QWidget()
         right_layout = QVBoxLayout(right_widget)
-        
-        # 思考レベル選択
-        self.thinking_selector = ThinkingSelectorWidget()
-        right_layout.addWidget(self.thinking_selector)
-        
+
         # テンプレート選択
         self.template_selector = TemplateSelector()
         right_layout.addWidget(self.template_selector)
@@ -253,10 +243,7 @@ class MainWindow(QMainWindow):
         """イベント接続"""
         # プロンプト入力にプレビューへの参照を設定
         self.prompt_input.set_prompt_preview_reference(self.prompt_preview)
-        
-        # 思考レベル変更
-        self.thinking_selector.thinking_level_changed.connect(self.on_thinking_level_changed)
-        
+
         # テンプレート変更
         self.template_selector.template_changed.connect(self.on_template_changed)
         
@@ -288,16 +275,7 @@ class MainWindow(QMainWindow):
         # Ctrl+L: プロンプト入力にフォーカス
         focus_prompt_shortcut = QShortcut(QKeySequence("Ctrl+L"), self)
         focus_prompt_shortcut.activated.connect(self.focus_prompt_input)
-        
-        # Ctrl+T: 思考レベル切り替え
-        cycle_thinking_shortcut = QShortcut(QKeySequence("Ctrl+T"), self)
-        cycle_thinking_shortcut.activated.connect(self.cycle_thinking_level)
-        
-        # Ctrl+1-9: 思考レベル直接選択
-        for i in range(1, 10):
-            shortcut = QShortcut(QKeySequence(f"Ctrl+{i}"), self)
-            shortcut.activated.connect(lambda checked, level=i-1: self.set_thinking_level_by_index(level))
-        
+
         # Shift+Return: プロンプト生成（既存機能だが念のため）
         generate_shortcut = QShortcut(QKeySequence("Shift+Return"), self)
         generate_shortcut.activated.connect(self.prompt_input.generate_prompt)
@@ -305,19 +283,7 @@ class MainWindow(QMainWindow):
     def focus_prompt_input(self):
         """プロンプト入力にフォーカス"""
         self.prompt_input.text_edit.setFocus()
-    
-    def cycle_thinking_level(self):
-        """思考レベルを循環切り替え"""
-        current_index = self.thinking_selector.combo.currentIndex()
-        total_items = self.thinking_selector.combo.count()
-        next_index = (current_index + 1) % total_items
-        self.thinking_selector.combo.setCurrentIndex(next_index)
-    
-    def set_thinking_level_by_index(self, index: int):
-        """インデックスで思考レベルを設定"""
-        if 0 <= index < self.thinking_selector.combo.count():
-            self.thinking_selector.combo.setCurrentIndex(index)
-    
+
     def setup_menu(self):
         """メニューバーの設定"""
         menubar = self.menuBar()
@@ -477,11 +443,7 @@ class MainWindow(QMainWindow):
         # インデックス状態表示
         self.index_status_label = QLabel(tr("index_status_not_built"))
         self.statusBar().addPermanentWidget(self.index_status_label)
-        
-        # 思考レベル表示
-        self.thinking_level_label = QLabel(f"{tr('label_thinking_level')} think")
-        self.statusBar().addPermanentWidget(self.thinking_level_label)
-        
+
         # インデックス統計を更新
         self.update_index_status()
     
@@ -524,38 +486,26 @@ class MainWindow(QMainWindow):
         self.save_window_geometry()
         self.settings_manager.save_settings()
     
-    def on_thinking_level_changed(self, level: str):
-        """思考レベルが変更されたとき"""
-        self.prompt_input.set_thinking_level(level)
-        self.settings_manager.set_thinking_level(level)
-        self.thinking_level_label.setText(f"{tr('label_thinking_level')} {level}")
-        self.statusBar().showMessage(tr("status_thinking_level_changed", level=level), 2000)
-        
-        # プロンプトプレビューを更新
-        self.update_prompt_preview()
-    
-    
-    def on_prompt_generated(self, main_content: str, thinking_level: str):
+    def on_prompt_generated(self, main_content: str):
         """プロンプトが生成されたとき"""
         # テンプレートセレクターから選択された内容を取得
         pre_template = self.template_selector.get_selected_pre_template()
         post_template = self.template_selector.get_selected_post_template()
-        
+
         # テンプレートマネージャーで最終プロンプトを構築
         template_manager = get_template_manager()
         final_prompt = template_manager.build_final_prompt(
-            thinking_level, pre_template, main_content, post_template
+            pre_template, main_content, post_template
         )
-        
+
         # クリップボードにコピー
         clipboard = QApplication.clipboard()
         clipboard.setText(final_prompt)
-        
+
         # プロンプト履歴に保存
         history_manager = get_prompt_history_manager()
         history_manager.add_prompt(
             prompt=final_prompt,
-            thinking_level=thinking_level,
             pre_template=pre_template,
             post_template=post_template
         )
@@ -618,17 +568,15 @@ class MainWindow(QMainWindow):
     def update_prompt_preview(self, text: str = None):
         """プロンプトプレビューを更新"""
         # 現在の値を取得
-        thinking_level = self.thinking_selector.get_current_thinking_level()
         pre_template = self.template_selector.get_selected_pre_template()
         post_template = self.template_selector.get_selected_post_template()
-        
+
         # テキストが指定されていない場合は現在の内容を取得
         if text is None:
             text = self.prompt_input.get_prompt_text()
-        
+
         # プレビューを更新
         self.prompt_preview.update_preview(
-            thinking_level=thinking_level,
             pre_template=pre_template,
             main_content=text,
             post_template=post_template
@@ -654,7 +602,6 @@ class MainWindow(QMainWindow):
         # 子ウィジェットの言語を更新
         self.file_tree.update_language()
         self.prompt_input.update_language()
-        self.thinking_selector.update_language()
         self.template_selector.update_language()
         self.prompt_preview.update_language()
         
@@ -717,37 +664,31 @@ class MainWindow(QMainWindow):
         def on_prompt_selected(entry):
             # 選択されたプロンプトの内容を抽出
             prompt = entry.get('prompt', '')
-            thinking_level = entry.get('thinking_level', '')
             pre_template = entry.get('pre_template', '')
             post_template = entry.get('post_template', '')
-            
-            # メインのプロンプトテキストを抽出（thinking levelとテンプレートを除く）
+
+            # メインのプロンプトテキストを抽出（テンプレートを除く）
             main_content = prompt
-            
-            # thinking levelを削除
-            if thinking_level and main_content.startswith(thinking_level):
-                main_content = main_content[len(thinking_level):].strip()
-            
+
             # pre templateを削除
             if pre_template and pre_template != 'None':
                 template_manager = get_template_manager()
                 pre_content = template_manager.get_pre_template_content(pre_template)
                 if pre_content and main_content.startswith(pre_content):
                     main_content = main_content[len(pre_content):].strip()
-            
+
             # post templateを削除
             if post_template and post_template != 'None':
                 template_manager = get_template_manager()
                 post_content = template_manager.get_post_template_content(post_template)
                 if post_content and main_content.endswith(post_content):
                     main_content = main_content[:-len(post_content)].strip()
-            
+
             # UI要素に設定
             self.prompt_input.set_text_without_completion(main_content)
-            self.thinking_selector.set_thinking_level(thinking_level)
             self.template_selector.set_selected_pre_template(pre_template if pre_template != 'None' else '')
             self.template_selector.set_selected_post_template(post_template if post_template != 'None' else '')
-            
+
             # ダイアログを閉じる
             dialog.accept()
         

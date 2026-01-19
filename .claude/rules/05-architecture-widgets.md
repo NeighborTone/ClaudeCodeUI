@@ -11,9 +11,8 @@ paths: src/widgets/**/*.py
 ├──────────────────┬──────────────────┬──────────────────┤
 │   Input/Edit     │   Navigation     │    Selection     │
 ├──────────────────┼──────────────────┼──────────────────┤
-│ PromptInput      │ FileTree         │ ThinkingSelector │
-│ PromptPreview    │ FileTreeWorker   │ TemplateSelector │
-│                  │                  │ PromptHistory    │
+│ PromptInput      │ FileTree         │ TemplateSelector │
+│ PromptPreview    │ FileTreeWorker   │ PromptHistory    │
 └──────────────────┴──────────────────┴──────────────────┘
 ```
 
@@ -34,7 +33,6 @@ paths: src/widgets/**/*.py
 ### Selection Widgets
 | Widget | Responsibility |
 |--------|----------------|
-| `ThinkingSelectorWidget` | 14-level thinking system |
 | `TemplateSelector` | Pre/post template selection |
 | `PromptHistory` | History management and search |
 

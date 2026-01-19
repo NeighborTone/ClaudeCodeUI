@@ -26,7 +26,6 @@ class SettingsManager:
                 "y": 100
             },
             "ui": {
-                "thinking_level": "think",
                 "font_size": 10,
                 "font_family": "Consolas",
                 "theme": "cyberpunk",
@@ -125,14 +124,6 @@ class SettingsManager:
         self.set('window.y', y)
         self.set('window.width', width)
         self.set('window.height', height)
-    
-    def get_thinking_level(self) -> str:
-        """思考レベルを取得"""
-        return self.get('ui.thinking_level', 'think')
-    
-    def set_thinking_level(self, level: str) -> None:
-        """思考レベルを設定"""
-        self.set('ui.thinking_level', level)
     
     def get_font_settings(self) -> Dict[str, Any]:
         """フォント設定を取得"""

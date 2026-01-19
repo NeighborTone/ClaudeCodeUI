@@ -10,26 +10,20 @@ from src.core.localization_manager import get_localization_manager
 
 class UIStrings:
     """UI文字列管理クラス（外部ファイルベース）"""
-    
+
     @classmethod
     def get(cls, key: str, **kwargs) -> str:
         """
         文字列を取得（LocalizationManagerに委譲）
-        
+
         Args:
             key: 文字列キー
             **kwargs: プレースホルダー置換用パラメータ
-            
+
         Returns:
             翻訳された文字列
         """
         return get_localization_manager().get_string(key, **kwargs)
-    
-    @classmethod
-    def get_thinking_level_display(cls, level: str) -> str:
-        """思考レベルの表示名を取得"""
-        # すべての言語で純粋なレベル名のみを表示（説明なし）
-        return level
 
 
 # 便利関数

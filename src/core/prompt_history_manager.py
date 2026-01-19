@@ -66,28 +66,26 @@ class PromptHistoryManager(QObject):
         except Exception as e:
             print(f"Failed to save prompt history: {e}")
     
-    def add_prompt(self, prompt: str, thinking_level: str = "", 
+    def add_prompt(self, prompt: str,
                    pre_template: str = "", post_template: str = ""):
         """
         プロンプトを履歴に追加
-        
+
         Args:
             prompt: プロンプト本文
-            thinking_level: 思考レベル
             pre_template: 事前テンプレート
             post_template: 事後テンプレート
         """
         # プロンプトの最初の行をタイトルとして使用（最大50文字）
         lines = prompt.strip().split('\n')
         title = lines[0][:50] + ('...' if len(lines[0]) > 50 else '')
-        
+
         # 履歴エントリを作成
         entry = {
             'id': datetime.now().isoformat(),
             'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'title': title,
             'prompt': prompt,
-            'thinking_level': thinking_level,
             'pre_template': pre_template,
             'post_template': post_template
         }
