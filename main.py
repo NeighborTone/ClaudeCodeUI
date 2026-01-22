@@ -6,6 +6,15 @@ Claude Code prompt input improvement tool
 import sys
 import os
 
+# Windowsでコンソールウィンドウを非表示にする
+if sys.platform == 'win32':
+    import ctypes
+    kernel32 = ctypes.WinDLL('kernel32')
+    user32 = ctypes.WinDLL('user32')
+    hwnd = kernel32.GetConsoleWindow()
+    if hwnd:
+        user32.ShowWindow(hwnd, 0)  # SW_HIDE = 0
+
 # Add path for module imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
