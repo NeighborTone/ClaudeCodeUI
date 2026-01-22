@@ -96,5 +96,10 @@ Use checkpoint-based workflow when ANY of the following apply:
 **User Commands:**
 - "続けて" / "次のチェックポイント" - Continue to next checkpoint
 - "進捗を確認" - Check current progress
+- "pushして" - Push to remote (only when explicitly requested)
+
+**Task Completion:**
+- Archive completed plan folder to `.claude/plan/task/done/`
+- Commit the archive move
 
 **Details:** See `.claude/rules/checkpoint-workflow.md` and `.claude/rules/plan-management.md`

@@ -28,12 +28,14 @@ paths: .claude/plan/task/**, docs/plans/**
 
 ```
 .claude/plan/task/
-├── [MAJOR]_plan_機能名/        # 大規模タスク
+├── [MAJOR]_plan_機能名/        # 大規模タスク（進行中）
 │   ├── 00_overview.md
 │   ├── 01_phase1_xxx.md
 │   ├── XX_progress.md
 │   └── XX_testing.md
-└── plan_機能名.md              # 中規模タスク
+├── plan_機能名.md              # 中規模タスク
+└── done/                       # 完了タスクのアーカイブ
+    └── [MAJOR]_plan_完了機能名/
 ```
 
 ### 代替（オプション）
@@ -100,6 +102,23 @@ docs/plans/
 5. **ユーザー報告＋次の指示を待つ**
    - 完了内容、検証結果、次のチェックポイントを報告
    - **自動で次に進まない**
+
+## タスク完了時の動作【必須】
+
+すべてのチェックポイントが完了したら：
+
+1. **最終検証を実施**
+2. **進捗ファイルに「完了」を記録**
+3. **最終コミット**（ユーザー許可後）
+4. **計画書フォルダを `done/` に移動**
+
+```bash
+# 移動コマンド例
+mkdir -p .claude/plan/task/done/
+mv .claude/plan/task/[MAJOR]_plan_xxx/ .claude/plan/task/done/
+git add .claude/plan/task/
+git commit -m "Archive completed plan: [MAJOR]_plan_xxx"
+```
 
 ## 計画書作成の判断フロー
 
