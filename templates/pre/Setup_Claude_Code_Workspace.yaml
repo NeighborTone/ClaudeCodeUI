@@ -1284,6 +1284,225 @@ content: |
 
   ---
 
+  # 並列ヘッドレスモードによるサブエージェント活用
+
+  ## 概要
+
+  大規模な情報収集や並列処理が必要なタスクでは、**ヘッドレスモード(`claude -p`)を使用してサブエージェントを並列起動**することを強く推奨する。
+
+  ## 適用対象タスク
+
+  | タスク種別 | 例 |
+  |-----------|-----|
+  | コードベース検索 | 特定パターンのファイル検索、関数一覧の抽出 |
+  | ウェブリサーチ | ベストプラクティス調査、API仕様確認 |
+  | ドキュメント探索 | プロジェクト内ドキュメントの要約 |
+  | 単純な並列作業 | リネーム、フォーマット変換、一括置換 |
+
+  ## ヘッドレスモードの特徴
+
+  ### コンテキスト分離
+  - 各ヘッドレスインスタンスは**独立したコンテキスト**を持つ
+  - メインのコンテキストは**自動共有されない**
+  - 必要な情報は**プロンプトで明示的に渡す**
+
+  ### 結果の統合
+  - `--json`オプションで構造化された出力を取得
+  - 結果ファイルを統合してメインClaudeに渡す
+
+  ### エラーハンドリング
+  - 各プロセスの終了ステータスを確認
+  - 失敗時の代替処理をスクリプトで定義
+
+  ## 並列実行スクリプトテンプレート
+
+  **重要**: 以下はテンプレートです。**ワークスペースに合わせてカスタマイズしてください。**
+
+  ### Bash版(Linux/macOS/WSL)
+
+  ```bash
+  #!/bin/bash
+  # parallel_research.sh
+  # 用途: 大規模タスクの並列調査
+
+  OUTPUT_DIR="/tmp/claude_research"
+  mkdir -p "$OUTPUT_DIR"
+
+  echo "=== 並列調査開始 ==="
+
+  # 並列でヘッドレス実行
+  claude -p "src/ディレクトリで[対象パターン]関連のファイルを検索し、主要な関数を列挙" \
+    --json > "$OUTPUT_DIR/code_search.json" &
+  PID1=$!
+
+  claude -p "[フレームワーク名]での[機能名]実装のベストプラクティスを調査" \
+    --json > "$OUTPUT_DIR/web_research.json" &
+  PID2=$!
+
+  claude -p "docs/内の[対象]関連ドキュメントを要約" \
+    --json > "$OUTPUT_DIR/doc_summary.json" &
+  PID3=$!
+
+  # 全完了を待機
+  echo "調査中..."
+  wait $PID1
+  STATUS1=$?
+  wait $PID2
+  STATUS2=$?
+  wait $PID3
+  STATUS3=$?
+
+  # エラーチェック
+  if [ $STATUS1 -ne 0 ] || [ $STATUS2 -ne 0 ] || [ $STATUS3 -ne 0 ]; then
+    echo "警告: 一部の調査が失敗しました"
+    [ $STATUS1 -ne 0 ] && echo "  - コード検索: 失敗"
+    [ $STATUS2 -ne 0 ] && echo "  - ウェブリサーチ: 失敗"
+    [ $STATUS3 -ne 0 ] && echo "  - ドキュメント要約: 失敗"
+  fi
+
+  # 結果を統合
+  COMBINED="$OUTPUT_DIR/combined_research.md"
+  echo "# 調査結果" > "$COMBINED"
+  echo "" >> "$COMBINED"
+  echo "## コード検索結果" >> "$COMBINED"
+  cat "$OUTPUT_DIR/code_search.json" >> "$COMBINED"
+  echo "" >> "$COMBINED"
+  echo "## ウェブリサーチ結果" >> "$COMBINED"
+  cat "$OUTPUT_DIR/web_research.json" >> "$COMBINED"
+  echo "" >> "$COMBINED"
+  echo "## ドキュメント要約" >> "$COMBINED"
+  cat "$OUTPUT_DIR/doc_summary.json" >> "$COMBINED"
+
+  echo "=== 調査完了 ==="
+  echo "結果ファイル: $COMBINED"
+  ```
+
+  ### PowerShell版(Windows)
+
+  ```powershell
+  # parallel_research.ps1
+  # 用途: 大規模タスクの並列調査
+
+  $OutputDir = "$env:TEMP\claude_research"
+  New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
+
+  Write-Host "=== 並列調査開始 ===" -ForegroundColor Cyan
+
+  # 並列でヘッドレス実行
+  $jobs = @()
+
+  $jobs += Start-Job -ScriptBlock {
+      param($out)
+      claude -p "src/ディレクトリで[対象パターン]関連のファイルを検索し、主要な関数を列挙" --json > "$out\code_search.json"
+  } -ArgumentList $OutputDir
+
+  $jobs += Start-Job -ScriptBlock {
+      param($out)
+      claude -p "[フレームワーク名]での[機能名]実装のベストプラクティスを調査" --json > "$out\web_research.json"
+  } -ArgumentList $OutputDir
+
+  $jobs += Start-Job -ScriptBlock {
+      param($out)
+      claude -p "docs/内の[対象]関連ドキュメントを要約" --json > "$out\doc_summary.json"
+  } -ArgumentList $OutputDir
+
+  # 全完了を待機
+  Write-Host "調査中..."
+  $jobs | Wait-Job | Out-Null
+
+  # エラーチェック
+  $failed = $jobs | Where-Object { $_.State -eq 'Failed' }
+  if ($failed) {
+      Write-Host "警告: 一部の調査が失敗しました" -ForegroundColor Yellow
+      $failed | ForEach-Object { Write-Host "  - Job $($_.Id): 失敗" }
+  }
+
+  $jobs | Remove-Job
+
+  # 結果を統合
+  $Combined = "$OutputDir\combined_research.md"
+  @"
+  # 調査結果
+
+  ## コード検索結果
+  $(Get-Content "$OutputDir\code_search.json" -Raw -ErrorAction SilentlyContinue)
+
+  ## ウェブリサーチ結果
+  $(Get-Content "$OutputDir\web_research.json" -Raw -ErrorAction SilentlyContinue)
+
+  ## ドキュメント要約
+  $(Get-Content "$OutputDir\doc_summary.json" -Raw -ErrorAction SilentlyContinue)
+  "@ | Set-Content $Combined -Encoding UTF8
+
+  Write-Host "=== 調査完了 ===" -ForegroundColor Cyan
+  Write-Host "結果ファイル: $Combined"
+  ```
+
+  ## プロンプト設計のベストプラクティス
+
+  ヘッドレスモードのプロンプトは、以下を意識して設計する：
+
+  ### 1. 具体的な指示
+  ```
+  ❌ 悪い例: "認証関連を調べて"
+  ✅ 良い例: "src/auth/ディレクトリ内で、JWTトークンの検証を行う関数を列挙し、各関数の引数と戻り値を記載"
+  ```
+
+  ### 2. 出力形式の明示
+  ```
+  ❌ 悪い例: "結果を教えて"
+  ✅ 良い例: "結果をJSON形式で出力。形式: {files: [{path, functions: [{name, params, returns}]}]}"
+  ```
+
+  ### 3. スコープの限定
+  ```
+  ❌ 悪い例: "プロジェクト全体を分析"
+  ✅ 良い例: "src/services/ディレクトリのみを対象に、外部API呼び出しを行うファイルを特定"
+  ```
+
+  ## 実行例
+
+  ### シナリオ: 新機能の実装調査
+
+  ```bash
+  # 1. 並列調査スクリプトを作成
+  cat > /tmp/feature_research.sh << 'EOF'
+  #!/bin/bash
+  OUTPUT_DIR="/tmp/feature_research"
+  mkdir -p "$OUTPUT_DIR"
+
+  # 既存実装の調査
+  claude -p "src/内で類似機能の実装パターンを検索し、使用されているデザインパターンを特定" \
+    --json > "$OUTPUT_DIR/existing_patterns.json" &
+
+  # 依存関係の調査
+  claude -p "package.json/requirements.txtから、新機能に必要な依存ライブラリの候補を提案" \
+    --json > "$OUTPUT_DIR/dependencies.json" &
+
+  # ベストプラクティスの調査
+  claude -p "[対象技術]での[機能名]実装について、2024-2025年のベストプラクティスをWeb検索して要約" \
+    --json > "$OUTPUT_DIR/best_practices.json" &
+
+  wait
+  echo "調査完了: $OUTPUT_DIR"
+  EOF
+
+  # 2. スクリプト実行
+  bash /tmp/feature_research.sh
+
+  # 3. 結果をメインClaudeに渡す
+  cat /tmp/feature_research/*.json
+  ```
+
+  ## 注意事項
+
+  1. **APIレート制限**: 並列実行数が多すぎるとレート制限に達する可能性あり
+  2. **コスト管理**: 各ヘッドレス呼び出しはAPIコストが発生
+  3. **タイムアウト**: 長時間実行タスクにはタイムアウト設定を追加
+  4. **結果の検証**: 統合前に各出力ファイルの内容を検証
+
+  ---
+
   # 実行開始
 
   **上記を読み込んだら、まずプロジェクトの解析を開始してください。**
