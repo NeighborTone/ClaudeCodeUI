@@ -253,7 +253,7 @@ content: |
   ---
   name: builder
   description: Build and verify application runs without errors
-  tools: Bash([ビルドツール]:*)
+  tools: Bash
   model: haiku
   ---
 
@@ -279,7 +279,7 @@ content: |
   ---
   name: tester
   description: Test functionality and verify behavior
-  tools: Read, Bash([テストツール]:*), Grep
+  tools: Read, Bash, Grep
   model: haiku
   ---
 
@@ -374,7 +374,7 @@ content: |
   ```markdown
   ---
   description: Verify code changes by running the application
-  allowed-tools: Bash([ビルドツール]:*)
+  allowed-tools: Bash
   ---
 
   Run `[実行コマンド]` to verify:
@@ -1003,32 +1003,25 @@ content: |
   ---
   name: ue-docs
   description: Search Unreal Engine documentation and source code
-  allowed-tools: Read, Task
+  argument-hint: [query]
+  context: fork
+  agent: ue-explore
   ---
 
   # UE Documentation Search
 
-  ## Usage
-  \`\`\`
-  /ue-docs [query]
-  \`\`\`
+  Search Unreal Engine documentation and source code for: $ARGUMENTS
 
-  ## Workflow
-  This skill launches the `ue-explore` subagent to:
-  1. Search local UE source code (if configured)
-  2. Search official documentation
-  3. Return version-appropriate results
+  ## Search Scope
+  1. Local UE source code (if configured)
+  2. Official documentation
+  3. Version-appropriate results
 
   ## Examples
   \`\`\`
   /ue-docs UGameplayStatics::ApplyDamage
   /ue-docs how to implement custom movement component
   /ue-docs FTimerManager delegate binding
-  \`\`\`
-
-  ## Agent Invocation
-  \`\`\`
-  Task(subagent_type="ue-explore", prompt="[user query]")
   \`\`\`
   ```
 
@@ -1037,32 +1030,25 @@ content: |
   ---
   name: unity-docs
   description: Search Unity documentation and package source
-  allowed-tools: Read, Task
+  argument-hint: [query]
+  context: fork
+  agent: unity-explore
   ---
 
   # Unity Documentation Search
 
-  ## Usage
-  \`\`\`
-  /unity-docs [query]
-  \`\`\`
+  Search Unity documentation and package source for: $ARGUMENTS
 
-  ## Workflow
-  This skill launches the `unity-explore` subagent to:
-  1. Search installed package source
-  2. Search official Unity documentation
-  3. Return version-appropriate results
+  ## Search Scope
+  1. Installed package source
+  2. Official Unity documentation
+  3. Version-appropriate results
 
   ## Examples
   \`\`\`
   /unity-docs Physics.Raycast parameters
   /unity-docs how to use Addressables
   /unity-docs custom editor window
-  \`\`\`
-
-  ## Agent Invocation
-  \`\`\`
-  Task(subagent_type="unity-explore", prompt="[user query]")
   \`\`\`
   ```
 
@@ -1071,25 +1057,24 @@ content: |
   ---
   name: [library]-docs
   description: Search [Library Name] documentation and API reference
-  allowed-tools: Read, Task
+  argument-hint: [query]
+  context: fork
+  agent: [library]-explore
   ---
 
   # [Library Name] Documentation Search
 
-  ## Usage
-  \`\`\`
-  /[library]-docs [query]
-  \`\`\`
+  Search [Library Name] documentation and API reference for: $ARGUMENTS
 
-  ## Workflow
-  This skill launches the `[library]-explore` subagent to:
-  1. Search local library source (if available)
-  2. Search official documentation
-  3. Return version-appropriate results
+  ## Search Scope
+  1. Local library source (if available)
+  2. Official documentation
+  3. Version-appropriate results
 
-  ## Agent Invocation
+  ## Examples
   \`\`\`
-  Task(subagent_type="[library]-explore", prompt="[user query]")
+  /[library]-docs [API name]
+  /[library]-docs how to [task]
   \`\`\`
   ```
 
