@@ -4,10 +4,10 @@ Main Window - Main application window
 """
 import os
 from typing import List, Dict
-from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
+from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                               QSplitter, QStatusBar, QMenuBar, QMenu, QMessageBox,
                               QApplication, QLabel, QDialog, QScrollArea, QTextEdit,
-                              QPushButton, QDialogButtonBox)
+                              QPushButton, QDialogButtonBox, QTabWidget)
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QCloseEvent, QIcon, QScreen, QKeySequence, QShortcut
 
@@ -25,6 +25,7 @@ from src.widgets.prompt_input import PromptInputWidget
 from src.widgets.prompt_preview import PromptPreviewWidget
 from src.widgets.template_selector import TemplateSelector
 from src.widgets.prompt_history import PromptHistoryWidget
+from src.widgets.content_search_panel import ContentSearchPanel
 from src.core.template_manager import get_template_manager
 from src.ui.style_themes import apply_theme, theme_manager, get_main_font
 
@@ -147,7 +148,13 @@ class MainWindow(QMainWindow):
         
         # Initialize indexing system (遅延を削除)
         self.check_indexing_needed()
-        
+
+        # 検索パネルにワークスペースの検索パスを設定
+        workspaces = self.workspace_manager.get_workspaces()
+        if workspaces:
+            workspace_paths = [ws['path'] for ws in workspaces]
+            self.content_search_panel.set_search_paths(workspace_paths)
+
         # ファイルツリーとインデックスの状態管理
         self.is_tree_loaded = False
         self.is_index_ready = False
@@ -180,22 +187,23 @@ class MainWindow(QMainWindow):
         self.main_splitter = QSplitter(Qt.Horizontal)
         main_layout.addWidget(self.main_splitter)
         
-        # 左側：ファイルツリーエリア
-        left_widget = QWidget()
-        left_layout = QVBoxLayout(left_widget)
-        left_layout.setContentsMargins(0, 0, 0, 0)
-        
-        # ファイルツリー
+        # 左側：タブウィジェット（ファイルツリー + コンテンツ検索）
+        self.left_tab_widget = QTabWidget()
+
+        # ファイルツリータブ
         self.file_tree = FileTreeWidget(self.workspace_manager)
-        left_layout.addWidget(self.file_tree)
-        
-        
+        self.left_tab_widget.addTab(self.file_tree, tr("tab_file_tree"))
+
+        # コンテンツ検索タブ
+        self.content_search_panel = ContentSearchPanel()
+        self.left_tab_widget.addTab(self.content_search_panel, tr("tab_content_search"))
+
         # 幅制限を完全に除去し、サイズポリシーで制御
         from PySide6.QtWidgets import QSizePolicy
-        left_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        left_widget.setMinimumWidth(0)
-        left_widget.setMaximumWidth(16777215)
-        self.main_splitter.addWidget(left_widget)
+        self.left_tab_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.left_tab_widget.setMinimumWidth(0)
+        self.left_tab_widget.setMaximumWidth(16777215)
+        self.main_splitter.addWidget(self.left_tab_widget)
         
         # 中央：プロンプトプレビューエリア
         self.prompt_preview = PromptPreviewWidget()
@@ -219,15 +227,15 @@ class MainWindow(QMainWindow):
         # スプリッターの初期比率を設定（PySide6対応）
         try:
             # 各ウィジェットのサイズポリシーで伸縮性を設定
-            left_widget.setSizePolicy(left_widget.sizePolicy().horizontalPolicy(), left_widget.sizePolicy().verticalPolicy())
-            left_widget.sizePolicy().setHorizontalStretch(1)
-            
+            self.left_tab_widget.setSizePolicy(self.left_tab_widget.sizePolicy().horizontalPolicy(), self.left_tab_widget.sizePolicy().verticalPolicy())
+            self.left_tab_widget.sizePolicy().setHorizontalStretch(1)
+
             self.prompt_preview.setSizePolicy(self.prompt_preview.sizePolicy().horizontalPolicy(), self.prompt_preview.sizePolicy().verticalPolicy())
             self.prompt_preview.sizePolicy().setHorizontalStretch(2)
-            
+
             right_widget.setSizePolicy(right_widget.sizePolicy().horizontalPolicy(), right_widget.sizePolicy().verticalPolicy())
             right_widget.sizePolicy().setHorizontalStretch(2)
-            
+
             logger.info("Set stretch factors via size policy")
         except Exception as e:
             logger.warning(f"Failed to set stretch factors: {e}")
@@ -269,7 +277,11 @@ class MainWindow(QMainWindow):
         self.indexing_manager.indexing_progress.connect(self.on_indexing_progress)
         self.indexing_manager.indexing_completed.connect(self.on_indexing_completed)
         self.indexing_manager.indexing_failed.connect(self.on_indexing_failed)
-    
+
+        # コンテンツ検索
+        self.content_search_panel.file_selected.connect(self.on_content_search_file_selected)
+        self.content_search_panel.search_completed.connect(self.on_content_search_completed)
+
     def setup_shortcuts(self):
         """キーボードショートカットの設定"""
         # Ctrl+L: プロンプト入力にフォーカス
@@ -279,10 +291,19 @@ class MainWindow(QMainWindow):
         # Shift+Return: プロンプト生成（既存機能だが念のため）
         generate_shortcut = QShortcut(QKeySequence("Shift+Return"), self)
         generate_shortcut.activated.connect(self.prompt_input.generate_prompt)
-    
+
+        # Ctrl+Shift+F: コンテンツ検索にフォーカス
+        content_search_shortcut = QShortcut(QKeySequence("Ctrl+Shift+F"), self)
+        content_search_shortcut.activated.connect(self.focus_content_search)
+
     def focus_prompt_input(self):
         """プロンプト入力にフォーカス"""
         self.prompt_input.text_edit.setFocus()
+
+    def focus_content_search(self):
+        """コンテンツ検索にフォーカス"""
+        self.left_tab_widget.setCurrentWidget(self.content_search_panel)
+        self.content_search_panel.focus_search_input()
 
     def setup_menu(self):
         """メニューバーの設定"""
@@ -518,7 +539,21 @@ class MainWindow(QMainWindow):
     def on_file_selected(self, file_path: str):
         """ファイルが選択されたとき"""
         self.statusBar().showMessage(tr("status_file_selected", filename=os.path.basename(file_path)), 2000)
-    
+
+    def on_content_search_file_selected(self, file_path: str, line_number: int):
+        """コンテンツ検索でファイルが選択されたとき"""
+        self.statusBar().showMessage(
+            tr("status_content_search_selected", filename=os.path.basename(file_path), line=line_number),
+            2000
+        )
+
+    def on_content_search_completed(self, matches: int, files: int, time: float):
+        """コンテンツ検索完了時"""
+        self.statusBar().showMessage(
+            tr("content_search_result_summary", matches=matches, files=files, time=f"{time:.2f}"),
+            3000
+        )
+
     def on_file_double_clicked(self, file_path: str):
         """ファイルがダブルクリックされたとき"""
         # ワークスペース相対パスを取得
@@ -604,7 +639,12 @@ class MainWindow(QMainWindow):
         self.prompt_input.update_language()
         self.template_selector.update_language()
         self.prompt_preview.update_language()
-        
+        self.content_search_panel.update_language()
+
+        # タブテキストを更新
+        self.left_tab_widget.setTabText(0, tr("tab_file_tree"))
+        self.left_tab_widget.setTabText(1, tr("tab_content_search"))
+
         # 状態メッセージを更新
         self.statusBar().showMessage(tr("status_language_changed", language=language), 3000)
     
@@ -899,11 +939,17 @@ class MainWindow(QMainWindow):
         workspaces = self.workspace_manager.get_workspaces()
         if not workspaces:
             self.update_index_status()
+            # 検索パネルの検索パスもクリア
+            self.content_search_panel.set_search_paths([])
             return
-        
+
+        # 検索パネルの検索パスを更新
+        workspace_paths = [ws['path'] for ws in workspaces]
+        self.content_search_panel.set_search_paths(workspace_paths)
+
         # ステータスメッセージを表示
         self.statusBar().showMessage(tr("workspace_changed_message"), 3000)
-        
+
         # インデックスを再構築
         self.indexing_manager.start_indexing(workspaces, rebuild_all=True)
     
@@ -1051,8 +1097,8 @@ class MainWindow(QMainWindow):
         try:
             splitter_sizes = self.main_splitter.sizes()
             file_tree_width = self.file_tree.width()
-            left_widget_width = self.file_tree.parent().width() if self.file_tree.parent() else 0
-            
+            left_widget_width = self.left_tab_widget.width() if self.left_tab_widget else 0
+
             logger.info(f"Splitter State [{context}]:")
             logger.info(f"  - Splitter sizes: {splitter_sizes}")
             logger.info(f"  - File tree actual width: {file_tree_width}px")
@@ -1072,9 +1118,9 @@ class MainWindow(QMainWindow):
                 logger.info(f"  - Stretch factors: Unable to get ({e})")
             
             # ファイルツリーの設定値も確認
-            if hasattr(self.file_tree.parent(), 'minimumWidth'):
-                min_width = self.file_tree.parent().minimumWidth()
-                max_width = self.file_tree.parent().maximumWidth()
+            if hasattr(self.left_tab_widget, 'minimumWidth'):
+                min_width = self.left_tab_widget.minimumWidth()
+                max_width = self.left_tab_widget.maximumWidth()
                 logger.info(f"  - Left widget min/max width: {min_width}/{max_width}px")
                 
         except Exception as e:
@@ -1087,23 +1133,22 @@ class MainWindow(QMainWindow):
             splitter_sizes = self.main_splitter.sizes()
             if splitter_sizes and len(splitter_sizes) >= 1:
                 target_width = splitter_sizes[0]
-                
+
                 # setFixedWidth()を使わずにサイズポリシーで制御
-                left_widget = self.file_tree.parent()
-                if left_widget:
+                if self.left_tab_widget:
                     # Expandingサイズポリシーを維持し、スプリッターに委ねる
                     from PySide6.QtWidgets import QSizePolicy
-                    left_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+                    self.left_tab_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
                     self.file_tree.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-                    
+
                     # 最小・最大制限のみ調整
-                    left_widget.setMinimumWidth(0)
-                    left_widget.setMaximumWidth(16777215)
+                    self.left_tab_widget.setMinimumWidth(0)
+                    self.left_tab_widget.setMaximumWidth(16777215)
                     self.file_tree.setMinimumWidth(0)
                     self.file_tree.setMaximumWidth(16777215)
-                    
-                    logger.info(f"Sync via size policy - target: {target_width}px, actual widget: {left_widget.width()}px, tree: {self.file_tree.width()}px")
-                    
+
+                    logger.info(f"Sync via size policy - target: {target_width}px, actual widget: {self.left_tab_widget.width()}px, tree: {self.file_tree.width()}px")
+
         except Exception as e:
             logger.error(f"Failed to sync file tree width: {e}")
     
