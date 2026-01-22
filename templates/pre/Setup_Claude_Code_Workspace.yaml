@@ -96,11 +96,11 @@ content: |
 
   ### 計画書保存先の設定
 
-  `settings.json`に`plansDir`を設定し、計画書を**必ずワークスペース内**に保存してください：
+  `settings.json`に`plansDirectory`を設定し、計画書を**必ずワークスペース内**に保存してください：
 
   ```json
   {
-    "plansDir": ".claude/plan/task"
+    "plansDirectory": ".claude/plan/task"
   }
   ```
 
@@ -120,8 +120,8 @@ content: |
 
   ```json
   {
-    "model": "sonnet",
-    "plansDir": ".claude/plan/task",
+    "model": "opus",
+    "plansDirectory": ".claude/plan/task",
     "permissions": {
       "allow": [
         "Bash(python:*)",
@@ -133,14 +133,14 @@ content: |
   }
   ```
 
-  **plansDir**: Plan Modeで生成される計画書の保存先ディレクトリを指定します（推奨設定）。ワークスペースルートからの相対パスで指定し、計画書をプロジェクト内で管理します。
+  **plansDirectory**: Plan Modeで生成される計画書の保存先ディレクトリを指定します（推奨設定）。ワークスペースルートからの相対パスで指定し、計画書をプロジェクト内で管理します。
 
   ### モデル指定オプション
 
   | 指定方法 | 値 | 用途 |
   |----------|-----|------|
-  | **エイリアス(推奨)** | `sonnet` | バランス型、一般的な開発作業 |
-  | | `opus` | 複雑な推論・設計判断 |
+  | **エイリアス(推奨)** | `opus` | 最高性能、複雑な推論・設計判断 |
+  | | `sonnet` | バランス型、一般的な開発作業 |
   | | `haiku` | 高速・低コスト、単純タスク |
   | | `opusplan` | Plan Mode=Opus、実行=Sonnet の自動切替 |
   | | `default` | アカウント種別に応じた自動選択 |
@@ -187,7 +187,7 @@ content: |
 
   ```json
   {
-    "model": "sonnet",
+    "model": "opus",
     "env": {
       "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-20250514",
       "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-5-20251101",
