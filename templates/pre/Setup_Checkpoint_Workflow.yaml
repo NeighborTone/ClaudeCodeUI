@@ -120,6 +120,13 @@ content: |
   .claude/plan/task/plan_機能名.md
   ```
 
+  ### 完了タスク（アーカイブ）
+  ```
+  ワークスペース内:
+  .claude/plan/task/done/
+  └── [MAJOR]_plan_機能名/  # 完了した計画書フォルダをそのまま移動
+  ```
+
   ## チェックポイント記述フォーマット
 
   各フェーズファイル内で以下の形式を使用：
@@ -222,6 +229,24 @@ content: |
   2. XX_progress.md を読み込み
   3. 「次のタスク」を実行
   4. チェックポイント実行フローに従う
+
+  ### タスク完了時【必須】
+
+  すべてのチェックポイントが完了したら：
+
+  1. 最終検証を実施
+  2. XX_progress.md に「タスク完了」を記録
+  3. 最終コミット（ユーザー許可後）
+  4. **計画書フォルダを `.claude/plan/task/done/` に移動【必須】**
+  5. 移動をGitコミット
+
+  ```bash
+  # 移動コマンド
+  mkdir -p .claude/plan/task/done/
+  mv .claude/plan/task/[MAJOR]_plan_xxx/ .claude/plan/task/done/
+  git add .claude/plan/task/
+  git commit -m "Archive completed plan: [MAJOR]_plan_xxx"
+  ```
 
   ## 中断ポイントの明示
 
@@ -357,6 +382,28 @@ content: |
   **注意**:
   - commit時に進捗ファイルの更新を必ず行うこと
   - pushは自動実行しない（ユーザーの明示的指示が必要）
+
+  ## タスク完了時の動作【必須】
+
+  すべてのチェックポイントが完了したら：
+
+  1. 最終検証を実施
+  2. 進捗ファイルに「完了」を記録
+  3. 最終コミット
+  4. **計画書フォルダを `done/` に移動**
+
+  ```bash
+  # 移動コマンド例
+  mv .claude/plan/task/[MAJOR]_plan_xxx/ .claude/plan/task/done/
+  ```
+
+  **フォルダ構成（タスク完了後）:**
+  ```
+  .claude/plan/task/
+  ├── done/                           # 完了タスクのアーカイブ
+  │   └── [MAJOR]_plan_完了機能名/    # 移動された計画書
+  └── [MAJOR]_plan_進行中機能名/      # 進行中タスク
+  ```
   ```
 
   #### 3.3 CLAUDE.md (更新)
@@ -383,6 +430,7 @@ content: |
   - **pushは自動実行しない（ユーザーの明示的指示が必要）**
   - チェックポイント完了時は**必ず中断**
   - ユーザーが「続けて」と指示するまで次に進まない
+  - **タスク完了時は計画書フォルダを `.claude/plan/task/done/` に移動**
 
   詳細: `.claude/rules/checkpoint-workflow.md`
   ```
@@ -625,6 +673,7 @@ content: |
   - [ ] 進捗ファイルテンプレートが定義されている
   - [ ] チェックポイント分割基準が明確
   - [ ] 中断・再開プロトコルが記述されている
+  - [ ] **完了タスクのアーカイブ先（`.claude/plan/task/done/`）が明記されている**
   - [ ] （オプション）スキル・コマンドが作成されている
 
   ---
