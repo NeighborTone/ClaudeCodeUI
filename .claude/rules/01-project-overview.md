@@ -17,10 +17,10 @@ pip3 install -r requirements.txt
 python3 main.py
 ```
 
-### Windows Environment
+### Windows Environment (MUST use batch file)
 ```bash
 pip install -r requirements.txt
-python main.py
+run_claudeui.bat
 ```
 
 ### WSL Testing (English mode for font compatibility)

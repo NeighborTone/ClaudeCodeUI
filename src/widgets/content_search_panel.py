@@ -106,9 +106,9 @@ class ContentSearchPanel(QWidget):
 
         # ファイルパターン
         include_layout = QHBoxLayout()
-        include_label = QLabel(tr("content_search_include_files"))
-        include_label.setFixedWidth(60)
-        include_layout.addWidget(include_label)
+        self.include_label = QLabel(tr("content_search_include_files"))
+        self.include_label.setFixedWidth(60)
+        include_layout.addWidget(self.include_label)
 
         self.include_combo = QComboBox()
         self.include_combo.setEditable(True)
@@ -119,9 +119,9 @@ class ContentSearchPanel(QWidget):
 
         # 除外パターン
         exclude_layout = QHBoxLayout()
-        exclude_label = QLabel(tr("content_search_exclude_files"))
-        exclude_label.setFixedWidth(60)
-        exclude_layout.addWidget(exclude_label)
+        self.exclude_label = QLabel(tr("content_search_exclude_files"))
+        self.exclude_label.setFixedWidth(60)
+        exclude_layout.addWidget(self.exclude_label)
 
         self.exclude_combo = QComboBox()
         self.exclude_combo.setEditable(True)
@@ -406,7 +406,9 @@ class ContentSearchPanel(QWidget):
         self.regex_cb.setToolTip(tr("content_search_regex_tooltip"))
         self.word_match_cb.setText(tr("content_search_word_match"))
         self.word_match_cb.setToolTip(tr("content_search_word_match_tooltip"))
+        self.include_label.setText(tr("content_search_include_files"))
         self.include_combo.setToolTip(tr("content_search_include_tooltip"))
+        self.exclude_label.setText(tr("content_search_exclude_files"))
         self.exclude_combo.setToolTip(tr("content_search_exclude_tooltip"))
         self.preview_text.setPlaceholderText(tr("content_search_preview_placeholder"))
 

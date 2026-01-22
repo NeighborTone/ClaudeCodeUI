@@ -5,7 +5,7 @@ PySide6-based desktop application for enhancing Claude Code's prompt input funct
 ## Rules
 
 - 不明点はWhat/Where/Howで質問してから行動
-- コード変更後は必ず動作確認（`python3 main.py`）
+- コード変更後は必ず動作確認（Windows: `run_claudeui.bat` / WSL: `python3 main.py`）
 - 既存コードのパターンを踏襲
 - 依頼された内容のみ実装、過剰な追加禁止
 - 感情・意見・過剰な称賛を排除
@@ -28,9 +28,9 @@ PySide6-based desktop application for enhancing Claude Code's prompt input funct
 pip3 install -r requirements.txt
 python3 main.py
 
-# Windows
+# Windows (use batch file)
 pip install -r requirements.txt
-python main.py
+run_claudeui.bat
 ```
 
 ## Build & Verify
@@ -38,6 +38,9 @@ python main.py
 ```bash
 # WSL testing (English mode for font compatibility)
 LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 python3 main.py
+
+# Windows verification (MUST use batch file)
+run_claudeui.bat
 ```
 
 ## Documentation
@@ -81,7 +84,7 @@ Use checkpoint-based workflow when ANY of the following apply:
 2. Each checkpoint = 1-2 hours of work (standard granularity)
 3. **MUST stop and report after each checkpoint**
 4. Update `XX_progress.md` after every checkpoint
-5. Verify with `python3 main.py` after each checkpoint
+5. Verify after each checkpoint (Windows: `run_claudeui.bat` / WSL: `python3 main.py`)
 6. Wait for user instruction before continuing
 
 **Checkpoint Structure:**
