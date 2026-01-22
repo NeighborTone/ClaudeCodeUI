@@ -19,6 +19,8 @@ content: |
   - **複数の提案や選択肢がある場合は、AskUserQuestionツールを使用してユーザーに選択してもらう**
   - 出力はMarkdownで、定義→要点→比較→具体例の順に整理
   - Claude Codeの最新情報をまずwebリサーチし、最新のベストプラクティスや仕様に従う
+  - **【必須】以下の公式ドキュメントを必ず全て確認し、ベストプラクティスに従うこと**:
+    - https://code.claude.com/docs/en/best-practices
 
   ### Phase 1: プロジェクト解析
 
