@@ -201,8 +201,31 @@ python3 main.py
 3. ユーザーに報告し、計画の修正を提案
 4. ユーザー承認後、計画ファイルを更新
 
+## 並列ヘッドレスモード
+
+大規模な情報収集が必要な場合、並列ヘッドレスモードを活用できます。
+
+### スクリプト実行
+
+```powershell
+# Windows
+.\.claude\scripts\parallel_research.ps1
+
+# WSL/Linux/macOS
+bash .claude/scripts/parallel_research.sh
+```
+
+### 使用シナリオ
+
+- 新機能実装前のコードベース調査
+- リファクタリング影響範囲の特定
+- 複数観点からのコードレビュー
+
+詳細: `.claude/rules/parallel-headless-mode.md`
+
 ## 参考資料
 
 - `.claude/rules/checkpoint-workflow.md` - チェックポイントワークフローの詳細
 - `.claude/rules/plan-management.md` - 計画書管理ルール
+- `.claude/rules/parallel-headless-mode.md` - 並列ヘッドレスモードの使い方
 - `CLAUDE.md` - プロジェクト全体のルール
