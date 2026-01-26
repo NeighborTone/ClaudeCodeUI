@@ -52,6 +52,7 @@ Detailed documentation is split into `.claude/rules/`:
 | `core-rules.md` | Core principles and quality standards |
 | `plan-management.md` | Task planning and progress tracking |
 | `checkpoint-workflow.md` | Checkpoint-based workflow for complex tasks |
+| `handoff-validation.md` | Context-clear handoff validation rules |
 | `01-project-overview.md` | Project overview and quick start |
 | `02-project-structure.md` | Directory structure and responsibilities |
 | `03-architecture-core.md` | Core layer architecture (paths: src/core/**) |
@@ -79,13 +80,17 @@ Use checkpoint-based workflow when ANY of the following apply:
 - 8+ commits expected
 - Architecture changes
 
-**Critical Rules:**
-1. Create plan with checkpoints in `.claude/plan/task/[MAJOR]_plan_xxx/`
-2. Each checkpoint = 1-2 hours of work (standard granularity)
-3. **MUST stop and report after each checkpoint**
-4. Update `XX_progress.md` after every checkpoint
-5. Verify after each checkpoint (Windows: `run_claudeui.bat` / WSL: `python3 main.py`)
-6. Wait for user instruction before continuing
+**Critical Rules (MUST FOLLOW):**
+1. **Plan location: `.claude/plan/task/` ONLY (overrides system defaults)**
+2. Create plan with checkpoints in `.claude/plan/task/[MAJOR]_plan_xxx/`
+3. Each checkpoint = 1-2 hours of work (standard granularity)
+4. **MUST stop and report after each checkpoint**
+5. **Ask for commit permission before committing**
+6. Update `XX_progress.md` after every checkpoint (include in commit)
+7. Verify after each checkpoint (Windows: `run_claudeui.bat` / WSL: `python3 main.py`)
+8. Wait for user instruction before continuing
+9. **DO NOT push automatically (only when user says "pushして")**
+10. **Archive completed plans to `.claude/plan/task/done/`**
 
 **Checkpoint Structure:**
 ```
