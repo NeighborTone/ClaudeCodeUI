@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QTextEdit, QPushButton,
                               QHBoxLayout, QListWidget, QListWidgetItem, 
                               QLabel, QApplication)
 from PySide6.QtCore import Signal, Qt, QTimer
-from PySide6.QtGui import QKeyEvent, QTextCursor, QFont
+from PySide6.QtGui import QKeyEvent, QTextCursor, QFont, QDropEvent
 
 from src.core.indexing_adapter import AdaptiveFileSearcher
 from src.core.workspace_manager import WorkspaceManager
@@ -21,21 +21,50 @@ from src.ui.style_themes import get_completion_widget_style, get_main_font
 
 class SimpleTextEdit(QTextEdit):
     """シンプルなテキストエディット（カスタムキーハンドリング付き）"""
-    
+
     special_key_pressed = Signal(QKeyEvent)
-    
+
     def __init__(self, parent=None):
         super().__init__(parent)
-    
+
     def keyPressEvent(self, event: QKeyEvent):
         # 特殊キーは親に委譲
         if (event.key() in [Qt.Key_Up, Qt.Key_Down, Qt.Key_Return, Qt.Key_Escape] or
             (event.key() == Qt.Key_Return and event.modifiers() & Qt.ShiftModifier)):
             self.special_key_pressed.emit(event)
             return
-        
+
         # 通常のキー処理
         super().keyPressEvent(event)
+
+    def insertFromMimeData(self, source):
+        """
+        D&Dやペーストされたデータを処理する。
+        file:// URIをOS標準のローカルパスに変換する。
+        """
+        if source.hasUrls():
+            # URLがある場合、ローカルパスに変換して挿入
+            paths = []
+            for url in source.urls():
+                local_path = url.toLocalFile()
+                if local_path:
+                    # OS標準のパス形式に変換
+                    paths.append(PathConverter.to_os_native_path(local_path))
+            if paths:
+                # 複数パスは改行で区切って挿入
+                self.insertPlainText('\n'.join(paths))
+                return
+
+        if source.hasText():
+            text = source.text()
+            # file:// URI形式の場合は変換
+            if text.startswith('file://'):
+                converted_path = PathConverter.from_file_uri(text)
+                self.insertPlainText(converted_path)
+                return
+
+        # その他の場合はデフォルト処理
+        super().insertFromMimeData(source)
 
 
 class SimpleCompletionWidget(QWidget):
