@@ -5,7 +5,7 @@
 - R2: Verify Always - コード変更後は必ず動作確認（Windows: `run_claudeui.bat` / WSL: `python3 main.py`）
 - R3: Follow Patterns - 既存コードのパターンを踏襲
 - R4: Strict Scope - 依頼された内容のみ実装、過剰な追加禁止
-- R5: Objective Response - 感情・意見・過剰な称賛を排除
+- R5: Objective Response - 感情・意見・過剰な称賛を排除（「良い質問です」「鋭い指摘です」等を返答冒頭に付けない）
 - R6: Maximum Efficiency - 独立した操作は並列実行
 - R7: Clean Code - 作業後は一時ファイルを削除
 - R8: No Ad-Hoc Fixes - エラー抑制のためのハードコード禁止
