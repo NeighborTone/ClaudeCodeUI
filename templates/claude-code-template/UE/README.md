@@ -63,7 +63,6 @@ See `.claude-plugin/plugin.json` for the plugin manifest.
 | | `verify/` | Build verification only |
 | | `checkin/` | VCS check-in + build verification |
 | | `vcs-status/` | Show VCS pending changes |
-| | `daily-report/` | Generate daily report from VCS commits |
 | | `read-excel/` | Excel file reader |
 | | `drawio-verify/` | draw.io PNG export & verification |
 | **Commands** | `check-progress.md` | Progress status report |
@@ -86,8 +85,6 @@ See `.claude-plugin/plugin.json` for the plugin manifest.
 | **Skills** | `ue-docs/` | UE documentation search |
 | | `ue-log/` | UE log viewer/filter |
 | | `bp-analyze/` | Blueprint .uasset analyzer |
-| | `profile/` | UE Standalone profiling |
-| | `build-upload/` | Build all targets + upload binaries |
 | **Config** | `ue-config.json` | UE engine/project paths |
 
 ## Template Variables
@@ -140,9 +137,6 @@ claude-code-template/UE/
 | `/ue-docs [query]` | Search UE documentation |
 | `/ue-log [filter]` | View UE log files (Standalone/Editor) |
 | `/bp-analyze [args]` | Analyze Blueprint .uasset files |
-| `/profile [min]` | UE Standalone profiling |
-| `/daily-report` | Generate daily report from VCS commits |
-| `/build-upload` | Build all targets and upload binaries |
 | `/check-plan [path]` | Verify plan self-containment |
 | `/check-progress` | Check current checkpoint progress |
 | `/checkpoint-plan [name]` | Generate checkpoint-based plan |

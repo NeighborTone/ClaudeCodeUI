@@ -129,9 +129,6 @@ Use checkpoint-based workflow when ANY of the following apply:
 | `/ue-docs [query]` | Search UE documentation |
 | `/ue-log [filter]` | View UE log files (Standalone/Editor) |
 | `/bp-analyze [args]` | Analyze Blueprint .uasset files |
-| `/profile [min]` | UE Standalone profiling (default: 5 min) |
-| `/daily-report` | Generate daily report from VCS commits |
-| `/build-upload` | Build all targets and upload binaries |
 | `/check-plan [path]` | Verify plan self-containment for context handoff |
 | `/check-progress` | Check current checkpoint progress status |
 | `/checkpoint-plan [name]` | Generate checkpoint-based implementation plan |
