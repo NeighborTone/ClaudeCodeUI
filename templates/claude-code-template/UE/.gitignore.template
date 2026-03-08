@@ -1,0 +1,30 @@
+# UE Build Artifacts
+Binaries/
+Intermediate/
+DerivedDataCache/
+Build/
+
+# UE Saved Data
+Saved/
+
+# Visual Studio
+.vs/
+*.sln
+*.suo
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# JetBrains
+.idea/
+
+# VS Code
+.vscode/
+
+# OS Files
+Thumbs.db
+.DS_Store
+
+# Secrets
+.env
+secrets/

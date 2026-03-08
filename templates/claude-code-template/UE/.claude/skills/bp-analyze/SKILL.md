@@ -25,7 +25,10 @@ Uses Python scripts for asset parsing.
 
 ## Requirements
 - Python 3.x
-- `unreal_asset_parser` or direct binary parsing
+- `unreal_asset_parser` (`pip install unreal-asset-parser`) or equivalent .uasset parser
+
+> **Note**: This skill requires an external Python package for .uasset binary parsing.
+> If no parser is available, the skill will attempt text-based analysis of asset metadata.
 
 ## Examples
 ```

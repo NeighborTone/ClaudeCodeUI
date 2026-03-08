@@ -66,9 +66,9 @@ See `.claude-plugin/plugin.json` for the plugin manifest.
 | | `read-excel/` | Excel file reader |
 | | `drawio-verify/` | draw.io PNG export & verification |
 | **Commands** | `check-progress.md` | Progress status report |
-| **Hooks** | `cleanup-nul.ps1` | Auto-delete Windows NUL files (PostToolUse) |
-| | `notify-complete.ps1` | Beep on task completion (Stop) |
-| | `notify-question.ps1` | Beep on question/notification |
+| **Hooks** | `cleanup-nul.ps1/.sh` | Auto-delete Windows NUL files (PostToolUse) |
+| | `notify-complete.ps1/.sh` | Beep on task completion (Stop) |
+| | `notify-question.ps1/.sh` | Beep on question/notification |
 | **Refs** | `drawio-rules.md` | draw.io authoring rules |
 
 ### UE-Specific
@@ -85,7 +85,7 @@ See `.claude-plugin/plugin.json` for the plugin manifest.
 | **Skills** | `ue-docs/` | UE documentation search |
 | | `ue-log/` | UE log viewer/filter |
 | | `bp-analyze/` | Blueprint .uasset analyzer |
-| **Config** | `ue-config.json` | UE engine/project paths |
+| **Config** | `ue-config.json.template` | UE engine/project paths |
 
 ## Template Variables
 
@@ -115,10 +115,10 @@ claude-code-template/UE/
 │   ├── settings.json            # Settings with hooks, permissions, env
 │   ├── agents/                  # 6 agents (builder, debugger, tester, etc.)
 │   ├── commands/                # 1 command (check-progress)
-│   ├── hooks/                   # 3 hooks (cleanup, notify)
+│   ├── hooks/                   # 3 hooks (cleanup, notify) with .ps1/.sh variants
 │   ├── rules/                   # 9 rules + coding/ subdirectory
 │   │   └── coding/             # 3 coding rules (ue-cpp, no-tick, debug-output)
-│   ├── skills/                  # 14 skills
+│   ├── skills/                  # 11 skills
 │   ├── config/                  # UE config template
 │   ├── refs/                    # Reference docs
 │   └── plan/task/done/          # Plan archive directory
@@ -159,10 +159,12 @@ Large tasks (3+ phases, 5+ files, 8+ commits) use checkpoint-based workflow:
 Plans are written to be self-contained, so work can resume after context is cleared.
 Use `/check-plan` to verify handoff viability.
 
-### Hooks (Windows)
-- **cleanup-nul.ps1**: Prevents Windows NUL file accumulation (PostToolUse: Write|Edit)
-- **notify-complete.ps1**: Audio notification on task completion (Stop)
-- **notify-question.ps1**: Audio notification when Claude asks a question (Notification)
+### Hooks
+- **cleanup-nul.ps1/.sh**: Prevents Windows NUL file accumulation (PostToolUse: Write|Edit)
+- **notify-complete.ps1/.sh**: Audio notification on task completion (Stop)
+- **notify-question.ps1/.sh**: Audio notification when Claude asks a question (Notification)
+
+Setup scripts automatically configure the appropriate hook scripts for the target platform (PowerShell on Windows, bash on Linux/macOS).
 
 ### Plugin System
 This template can be distributed as a Claude Code plugin. The plugin manifest (`.claude-plugin/plugin.json`) declares all skills, agents, and hooks. Users can install it via `/plugin install` for automatic updates.

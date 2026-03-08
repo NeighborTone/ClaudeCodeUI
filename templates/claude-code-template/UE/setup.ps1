@@ -150,7 +150,7 @@ Write-Host "  Available Addons" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 
 $addonsDir = $TemplateDir
-$addonDirs = Get-ChildItem $addonsDir -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne ".claude" }
+$addonDirs = Get-ChildItem $addonsDir -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne ".claude" -and $_.Name -ne ".claude-plugin" }
 
 if ($addonDirs) {
     foreach ($addon in $addonDirs) {
@@ -231,6 +231,31 @@ if ($addonDirs) {
             Write-Host "  Addon '$addonName' installed." -ForegroundColor Green
         }
     }
+}
+
+# --- Step 4.5: Final global variable replacement (covers addon files) ---
+Write-Host "Applying final template variables..." -ForegroundColor Yellow
+$allFinalFiles = Get-ChildItem $targetClaude -Recurse -File -Include *.md, *.json
+foreach ($f in $allFinalFiles) {
+    $content = Get-Content $f.FullName -Raw -Encoding UTF8
+    if ($content -match '\{\{') {
+        $content = $content `
+            -replace '\{\{PROJECT_NAME\}\}', $ProjectName `
+            -replace '\{\{PROJECT_DESCRIPTION\}\}', $ProjectDesc `
+            -replace '\{\{BUILD_COMMAND\}\}', $BuildCommand `
+            -replace '\{\{SOURCE_DIR\}\}', 'Source' `
+            -replace '\{\{USER_LANGUAGE\}\}', $UserLang `
+            -replace '\{\{COMMENT_LANGUAGE\}\}', $CommentLang
+        $content | Set-Content $f.FullName -Encoding UTF8
+    }
+}
+
+# Copy .gitignore template if not present
+$gitignoreTemplate = Join-Path $TemplateDir ".gitignore.template"
+$gitignoreTarget = Join-Path $TargetDir ".gitignore"
+if ((Test-Path $gitignoreTemplate) -and -not (Test-Path $gitignoreTarget)) {
+    Copy-Item $gitignoreTemplate $gitignoreTarget
+    Write-Host ".gitignore installed from template." -ForegroundColor Green
 }
 
 # --- Step 5: Summary ---

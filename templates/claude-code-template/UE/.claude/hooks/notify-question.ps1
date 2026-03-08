@@ -1,4 +1,4 @@
-# Notification sound when Claude asks a question (low->high 3-tone)
-[console]::Beep(600, 150)
-[console]::Beep(900, 150)
+# Notification sound when Claude asks a question (high->low pattern to distinguish from completion)
+[console]::Beep(1200, 150)
+[console]::Beep(800, 150)
 [console]::Beep(1200, 200)

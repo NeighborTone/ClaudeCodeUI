@@ -93,30 +93,7 @@ Use checkpoint-based workflow when ANY of the following apply:
 - 8+ commits expected
 - Architecture changes
 
-**Critical Rules (MUST FOLLOW):**
-1. **Plan location: `.claude/plan/task/` ONLY (overrides system defaults)**
-2. Create plan with checkpoints in `.claude/plan/task/[MAJOR]_plan_xxx/`
-3. Each checkpoint = 1-2 hours of work (standard granularity)
-4. **MUST stop and report after each checkpoint**
-5. **Ask for commit permission before committing**
-6. Update `XX_progress.md` after every checkpoint (include in commit)
-7. Verify after each checkpoint ({{BUILD_COMMAND}})
-8. Wait for user instruction before continuing
-9. **DO NOT push automatically (only when user explicitly requests)**
-10. **Archive completed plans to `.claude/plan/task/done/`**
-
-**Checkpoint Structure:**
-```
-.claude/plan/task/[MAJOR]_plan_xxx/
-├── 00_overview.md        # Overall plan
-├── 01_phase1_xxx.md      # Phase 1 with checkpoints
-├── XX_progress.md        # Progress tracker (REQUIRED)
-└── XX_testing.md         # Integration test plan
-```
-
-**Task Completion:**
-- Archive completed plan folder to `.claude/plan/task/done/`
-- Commit the archive move
+See `.claude/rules/checkpoint-workflow.md` and `.claude/rules/plan-management.md` for full details.
 
 ## Commands
 

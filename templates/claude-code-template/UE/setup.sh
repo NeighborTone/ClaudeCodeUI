@@ -113,6 +113,13 @@ if [ "$USER_LANG" = "English" ]; then
     sed -i 's/"language": "japanese"/"language": "english"/' "$TARGET_CLAUDE/settings.json"
 fi
 
+# Replace PowerShell hooks with bash equivalents for non-Windows
+sed -i \
+    -e 's|powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/cleanup-nul.ps1|bash .claude/hooks/cleanup-nul.sh|g' \
+    -e 's|powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/notify-complete.ps1|bash .claude/hooks/notify-complete.sh|g' \
+    -e 's|powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/notify-question.ps1|bash .claude/hooks/notify-question.sh|g' \
+    "$TARGET_CLAUDE/settings.json"
+
 # Global template variable replacement across all .md and .json files in .claude
 echo "Applying template variables..."
 find "$TARGET_CLAUDE" -type f \( -name "*.md" -o -name "*.json" \) | while read -r f; do
@@ -142,6 +149,7 @@ if [ -d "$ADDONS_DIR" ]; then
     for addon_dir in "$ADDONS_DIR"/*/; do
         addon_name=$(basename "$addon_dir")
         [ "$addon_name" = ".claude" ] && continue
+        [ "$addon_name" = ".claude-plugin" ] && continue
         echo ""
         echo "  [$addon_name]"
         for sub_dir in "$addon_dir"*/; do
@@ -212,6 +220,27 @@ if [ -d "$ADDONS_DIR" ]; then
             echo "  Addon '$addon_name' installed."
         done
     fi
+fi
+
+# --- Step 4.5: Final global variable replacement (covers addon files) ---
+echo "Applying final template variables..."
+find "$TARGET_CLAUDE" -type f \( -name "*.md" -o -name "*.json" \) | while read -r f; do
+    if grep -q '{{' "$f" 2>/dev/null; then
+        sed -i \
+            -e "s|{{PROJECT_NAME}}|$PROJECT_NAME|g" \
+            -e "s|{{PROJECT_DESCRIPTION}}|$PROJECT_DESC|g" \
+            -e "s|{{BUILD_COMMAND}}|$BUILD_CMD|g" \
+            -e "s|{{SOURCE_DIR}}|Source|g" \
+            -e "s|{{USER_LANGUAGE}}|$USER_LANG|g" \
+            -e "s|{{COMMENT_LANGUAGE}}|$COMMENT_LANG|g" \
+            "$f"
+    fi
+done
+
+# Copy .gitignore template if not present
+if [ -f "$TEMPLATE_DIR/.gitignore.template" ] && [ ! -f "$TARGET_DIR/.gitignore" ]; then
+    cp "$TEMPLATE_DIR/.gitignore.template" "$TARGET_DIR/.gitignore"
+    echo ".gitignore installed from template."
 fi
 
 # --- Step 5: Summary ---
