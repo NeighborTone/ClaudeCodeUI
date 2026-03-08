@@ -56,7 +56,13 @@ When user gives short confirmations like 'y', 'ok', 'yes':
 - Use Write/Edit tools to directly manipulate files
 - Manage plans through normal file operations without entering Plan Mode
 
+## Diagrams
+- When creating/editing draw.io diagrams, follow rules in `.claude/refs/drawio-rules.md`
+
 ## Version Control
 - Use git for version control
 - Verify build success before committing
 - Do not commit build artifacts, temporary files, or secrets
+- After commit, always verify with `git status` to check for missed files
+- Stage files explicitly (do not use `git add -A`)
+- Do not commit `.env`, `secrets/`, `Saved/`, `Intermediate/`

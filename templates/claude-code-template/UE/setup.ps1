@@ -124,6 +124,23 @@ if ($UserLang -eq "English") {
 }
 $settings | Set-Content $settingsPath -Encoding UTF8
 
+# Global template variable replacement across all .md and .json files in .claude
+Write-Host "Applying template variables..." -ForegroundColor Yellow
+$allTemplateFiles = Get-ChildItem $targetClaude -Recurse -File -Include *.md, *.json
+foreach ($f in $allTemplateFiles) {
+    $content = Get-Content $f.FullName -Raw -Encoding UTF8
+    if ($content -match '\{\{') {
+        $content = $content `
+            -replace '\{\{PROJECT_NAME\}\}', $ProjectName `
+            -replace '\{\{PROJECT_DESCRIPTION\}\}', $ProjectDesc `
+            -replace '\{\{BUILD_COMMAND\}\}', $BuildCommand `
+            -replace '\{\{SOURCE_DIR\}\}', 'Source' `
+            -replace '\{\{USER_LANGUAGE\}\}', $UserLang `
+            -replace '\{\{COMMENT_LANGUAGE\}\}', $CommentLang
+        $content | Set-Content $f.FullName -Encoding UTF8
+    }
+}
+
 Write-Host "Base template installed." -ForegroundColor Green
 
 # --- Step 4: Addons ---
@@ -244,4 +261,8 @@ Write-Host "  2. Edit .claude/rules/01-project-overview.md" -ForegroundColor Whi
 Write-Host "  3. Edit .claude/rules/02-project-structure.md" -ForegroundColor White
 Write-Host "  4. Configure build commands in skills/dev/ and skills/verify/" -ForegroundColor White
 Write-Host "  5. Start Claude Code in your project: cd $TargetDir && claude" -ForegroundColor White
+Write-Host ""
+Write-Host "Plugin installation (alternative):" -ForegroundColor Yellow
+Write-Host "  The template also supports Claude Code plugin format." -ForegroundColor White
+Write-Host "  See .claude-plugin/plugin.json for details." -ForegroundColor White
 Write-Host ""

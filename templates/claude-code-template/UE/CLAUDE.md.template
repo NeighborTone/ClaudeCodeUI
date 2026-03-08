@@ -2,6 +2,16 @@
 
 {{PROJECT_DESCRIPTION}}
 
+## Architectural Guard Rails
+
+- BEFORE writing any code for a checkpoint or feature request, state in a concise bullet list:
+  - Which class/subsystem OWNS this responsibility
+  - What is explicitly OUT OF SCOPE for this change
+  - The user's stated design approach (not your preferred approach)
+- Wait for user confirmation before proceeding with code
+- If user describes a simple approach, implement that approach first — never substitute your preferred architecture silently
+- When implementing from a plan file, treat the plan as the spec — do not add features, parameters, or systems not mentioned in the current checkpoint. If something seems missing, ASK rather than infer
+
 ## Rules
 
 - Ask What/Where/How before acting on unclear points
@@ -33,6 +43,20 @@
 {{BUILD_COMMAND}}
 ```
 
+## Version Control / Checkin Rules
+
+- When committing, ALWAYS run `git status` to capture ALL modified, added, and deleted files before committing
+- Never assume only newly added files need staging. Verify the commit list includes all changed files
+- When user says to commit ONLY specific files, do NOT commit other files. Respect explicit scope constraints
+- After commit, run `git status` again to verify nothing was missed
+- Use `/checkin` and `/vcs-status` commands for VCS operations
+
+## No Tick/Polling Rule
+
+- Tick, Timer, polling are prohibited. Use event-driven patterns (delegates, callbacks, message handlers)
+- Exception: Physics simulation, animation interpolation where Tick is unavoidable
+- See `.claude/rules/coding/no-tick-polling.md` for details
+
 ## Documentation
 
 Detailed documentation is split into `.claude/rules/`:
@@ -43,8 +67,12 @@ Detailed documentation is split into `.claude/rules/`:
 | `plan-management.md` | Task planning and progress tracking |
 | `checkpoint-workflow.md` | Checkpoint-based workflow for complex tasks |
 | `handoff-validation.md` | Context-clear handoff validation rules |
+| `ue-editor-operations.md` | UE Editor manual operation documentation rules |
 | `01-project-overview.md` | Project overview and quick start |
 | `02-project-structure.md` | Directory structure and responsibilities |
+| `coding/ue-cpp.md` | UE C++ coding conventions |
+| `coding/no-tick-polling.md` | No Tick/Timer/polling rule |
+| `coding/debug-output.md` | Debug output guidelines for Standalone mode |
 
 ## Plan Management
 
@@ -89,3 +117,23 @@ Use checkpoint-based workflow when ANY of the following apply:
 **Task Completion:**
 - Archive completed plan folder to `.claude/plan/task/done/`
 - Commit the archive move
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `/verify` | Build verification |
+| `/dev` | Full development cycle |
+| `/checkin [message]` | VCS check-in + build verification |
+| `/vcs-status` | Show pending VCS changes |
+| `/ue-docs [query]` | Search UE documentation |
+| `/ue-log [filter]` | View UE log files (Standalone/Editor) |
+| `/bp-analyze [args]` | Analyze Blueprint .uasset files |
+| `/profile [min]` | UE Standalone profiling (default: 5 min) |
+| `/daily-report` | Generate daily report from VCS commits |
+| `/build-upload` | Build all targets and upload binaries |
+| `/check-plan [path]` | Verify plan self-containment for context handoff |
+| `/check-progress` | Check current checkpoint progress status |
+| `/checkpoint-plan [name]` | Generate checkpoint-based implementation plan |
+| `/drawio-verify [path]` | Export draw.io to PNG and visual verification |
+| `/read-excel [path]` | Read Excel files |

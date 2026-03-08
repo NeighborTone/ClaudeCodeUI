@@ -1,0 +1,69 @@
+{
+  "name": "ue-claude-code-template",
+  "description": "Comprehensive Claude Code configuration for Unreal Engine projects. Includes skills, agents, hooks, rules, and workflow management.",
+  "version": "1.0.0",
+  "author": {
+    "name": "ClaudeCodeUI"
+  },
+  "license": "MIT",
+  "commands": [
+    "./skills/verify/SKILL.md",
+    "./skills/dev/SKILL.md",
+    "./skills/checkin/SKILL.md",
+    "./skills/vcs-status/SKILL.md",
+    "./skills/ue-docs/SKILL.md",
+    "./skills/ue-log/SKILL.md",
+    "./skills/bp-analyze/SKILL.md",
+    "./skills/profile/SKILL.md",
+    "./skills/daily-report/SKILL.md",
+    "./skills/build-upload/SKILL.md",
+    "./skills/check-plan/SKILL.md",
+    "./skills/checkpoint-plan/SKILL.md",
+    "./skills/drawio-verify/SKILL.md",
+    "./skills/read-excel/SKILL.md"
+  ],
+  "agents": [
+    "./agents/builder.md",
+    "./agents/debugger.md",
+    "./agents/tester.md",
+    "./agents/quality-checker.md",
+    "./agents/ue-explore.md",
+    "./agents/plan-continuity-checker.md"
+  ],
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File ${CLAUDE_PLUGIN_ROOT}/hooks/cleanup-nul.ps1",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File ${CLAUDE_PLUGIN_ROOT}/hooks/notify-complete.ps1",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File ${CLAUDE_PLUGIN_ROOT}/hooks/notify-question.ps1",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

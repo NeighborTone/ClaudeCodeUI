@@ -13,6 +13,7 @@ paths: .claude/plan/task/**, docs/plans/**
 - R14: Write plans assuming context will be cleared
 - R15: Verify build at each checkpoint completion
 - **R16: Get user permission before committing**
+- R17: When UE Editor manual operations are required, document them in checkpoint completion report
 
 ## Checkpoint Split Criteria
 
@@ -135,6 +136,12 @@ Checkpoint X-Y Complete
 **Verification Results:**
 - Build: Success
 - [Verification 2: OK]
+
+**UE Editor Operations (if applicable):**
+
+| Operation | Steps | Target/Save Path |
+|-----------|-------|-----------------|
+| [Operation] | [Specific steps] | [Path] |
 
 ---
 

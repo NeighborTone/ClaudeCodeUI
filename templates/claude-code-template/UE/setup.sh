@@ -113,6 +113,21 @@ if [ "$USER_LANG" = "English" ]; then
     sed -i 's/"language": "japanese"/"language": "english"/' "$TARGET_CLAUDE/settings.json"
 fi
 
+# Global template variable replacement across all .md and .json files in .claude
+echo "Applying template variables..."
+find "$TARGET_CLAUDE" -type f \( -name "*.md" -o -name "*.json" \) | while read -r f; do
+    if grep -q '{{' "$f" 2>/dev/null; then
+        sed -i \
+            -e "s|{{PROJECT_NAME}}|$PROJECT_NAME|g" \
+            -e "s|{{PROJECT_DESCRIPTION}}|$PROJECT_DESC|g" \
+            -e "s|{{BUILD_COMMAND}}|$BUILD_CMD|g" \
+            -e "s|{{SOURCE_DIR}}|Source|g" \
+            -e "s|{{USER_LANGUAGE}}|$USER_LANG|g" \
+            -e "s|{{COMMENT_LANGUAGE}}|$COMMENT_LANG|g" \
+            "$f"
+    fi
+done
+
 echo "Base template installed."
 
 # --- Step 4: Addons ---
@@ -222,4 +237,8 @@ echo "  2. Edit .claude/rules/01-project-overview.md"
 echo "  3. Edit .claude/rules/02-project-structure.md"
 echo "  4. Configure build commands in skills/dev/ and skills/verify/"
 echo "  5. Start Claude Code in your project: cd $TARGET_DIR && claude"
+echo ""
+echo "Plugin installation (alternative):"
+echo "  The template also supports Claude Code plugin format."
+echo "  See .claude-plugin/plugin.json for details."
 echo ""
