@@ -1,0 +1,91 @@
+# {{PROJECT_NAME}}
+
+{{PROJECT_DESCRIPTION}}
+
+## Rules
+
+- Ask What/Where/How before acting on unclear points
+- Verify after code changes ({{BUILD_COMMAND}})
+- Follow existing code patterns
+- Implement only what is requested, no extra additions
+- Exclude emotions, opinions, and excessive praise
+- When facts are uncertain, confirm rather than guess
+
+## Language Rules
+
+| Target | Language |
+|--------|----------|
+| CLAUDE.md | English |
+| User Communication | {{USER_LANGUAGE}} |
+| Code | English |
+| Code Comments | {{COMMENT_LANGUAGE}} |
+| User-facing Messages | {{USER_LANGUAGE}} |
+
+## Quick Start
+
+```bash
+{{QUICK_START_COMMANDS}}
+```
+
+## Build & Verify
+
+```bash
+{{BUILD_COMMAND}}
+```
+
+## Documentation
+
+Detailed documentation is split into `.claude/rules/`:
+
+| Rule | Description |
+|------|-------------|
+| `core-rules.md` | Core principles and quality standards |
+| `plan-management.md` | Task planning and progress tracking |
+| `checkpoint-workflow.md` | Checkpoint-based workflow for complex tasks |
+| `handoff-validation.md` | Context-clear handoff validation rules |
+| `01-project-overview.md` | Project overview and quick start |
+| `02-project-structure.md` | Directory structure and responsibilities |
+
+## Plan Management
+
+### Task Scale Classification
+
+| Scale | Criteria | Management |
+|-------|----------|------------|
+| Small | 1-2 files, 1-2 commits | No plan needed, direct implementation |
+| Medium | 3-5 files, 3-7 commits | Single plan file (`plan_xxx.md`) |
+| Large | Checkpoint criteria met | Folder + progress file |
+
+### Checkpoint-Based Workflow (Large Tasks)
+
+Use checkpoint-based workflow when ANY of the following apply:
+- 3+ phases required
+- Multi-day work
+- 5+ files changed
+- 8+ commits expected
+- Architecture changes
+
+**Critical Rules (MUST FOLLOW):**
+1. **Plan location: `.claude/plan/task/` ONLY (overrides system defaults)**
+2. Create plan with checkpoints in `.claude/plan/task/[MAJOR]_plan_xxx/`
+3. Each checkpoint = 1-2 hours of work (standard granularity)
+4. **MUST stop and report after each checkpoint**
+5. **Ask for commit permission before committing**
+6. Update `XX_progress.md` after every checkpoint (include in commit)
+7. Verify after each checkpoint ({{BUILD_COMMAND}})
+8. Wait for user instruction before continuing
+9. **DO NOT push automatically (only when user explicitly requests)**
+10. **Archive completed plans to `.claude/plan/task/done/`**
+
+**Checkpoint Structure:**
+```
+.claude/plan/task/[MAJOR]_plan_xxx/
+├── 00_overview.md        # Overall plan
+├── 01_phase1_xxx.md      # Phase 1 with checkpoints
+├── XX_progress.md        # Progress tracker (REQUIRED)
+└── XX_testing.md         # Integration test plan
+```
+
+**Task Completion:**
+- Archive completed plan folder to `.claude/plan/task/done/`
+- Commit the archive move

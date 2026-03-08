@@ -1,0 +1,25 @@
+# Project Overview
+
+## Description
+{{PROJECT_DESCRIPTION}}
+
+## Tech Stack
+- Language: {{LANGUAGE}}
+- Framework: {{FRAMEWORK}}
+
+## Quick Start
+
+```bash
+{{QUICK_START_COMMANDS}}
+```
+
+## Build & Verify
+
+```bash
+{{BUILD_COMMAND}}
+```
+
+## Key Features
+- {{FEATURE_1}}
+- {{FEATURE_2}}
+- {{FEATURE_3}}

@@ -1,0 +1,17 @@
+# Project Structure
+
+```
+{{PROJECT_NAME}}/
+├── {{SOURCE_DIR}}/          # Source code
+├── {{CONFIG_DIR}}/          # Configuration
+├── {{TEST_DIR}}/            # Tests
+└── {{DOC_DIR}}/             # Documentation
+```
+
+## Directory Responsibilities
+| Directory | Responsibility |
+|-----------|----------------|
+| `{{SOURCE_DIR}}/` | Main source code |
+| `{{CONFIG_DIR}}/` | Configuration files |
+| `{{TEST_DIR}}/` | Test files |
+| `{{DOC_DIR}}/` | Documentation |

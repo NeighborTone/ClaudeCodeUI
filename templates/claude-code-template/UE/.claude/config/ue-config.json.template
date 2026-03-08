@@ -1,0 +1,16 @@
+{
+  "engine": {
+    "version": "{{UE_VERSION}}",
+    "path": "{{UE_ENGINE_PATH}}"
+  },
+  "project": {
+    "name": "{{PROJECT_NAME}}",
+    "path": "{{PROJECT_PATH}}",
+    "uproject": "{{PROJECT_PATH}}/{{PROJECT_NAME}}.uproject"
+  },
+  "build": {
+    "targets": ["{{PROJECT_NAME}}", "{{PROJECT_NAME}}Editor"],
+    "platform": "Win64",
+    "config": "Development"
+  }
+}
