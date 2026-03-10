@@ -211,11 +211,14 @@ git commit -m "Archive completed plan: [MAJOR]_plan_xxx"
 
 ## Checkpoint Granularity
 
+Target **max 2 hours per checkpoint**. Adjust within range based on risk:
+
 | Granularity | Guideline | Use Case |
 |-------------|-----------|----------|
 | Fine | 30min-1hr | New territory, high risk, complex chains |
-| Standard | 1-2hrs | Normal dev tasks |
-| Coarse | 2-4hrs | Routine work, low risk |
+| Standard | 1-2hrs | Normal dev tasks (default) |
+
+If a checkpoint exceeds 2 hours, split it further.
 
 ## Commit Message Convention
 

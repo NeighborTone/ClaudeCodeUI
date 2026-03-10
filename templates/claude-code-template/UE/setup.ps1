@@ -108,10 +108,10 @@ Remove-Item (Join-Path $targetClaude "rules\01-project-overview.md.template") -E
 $structTemplate = Get-Content (Join-Path $targetClaude "rules\02-project-structure.md.template") -Raw -Encoding UTF8
 $struct = $structTemplate `
     -replace '\{\{PROJECT_NAME\}\}', $ProjectName `
-    -replace '\{\{SOURCE_DIR\}\}', 'src' `
-    -replace '\{\{CONFIG_DIR\}\}', 'config' `
-    -replace '\{\{TEST_DIR\}\}', 'tests' `
-    -replace '\{\{DOC_DIR\}\}', 'docs'
+    -replace '\{\{SOURCE_DIR\}\}', 'Source' `
+    -replace '\{\{CONFIG_DIR\}\}', 'Config' `
+    -replace '\{\{TEST_DIR\}\}', 'Tests' `
+    -replace '\{\{DOC_DIR\}\}', 'Docs'
 
 $struct | Set-Content (Join-Path $targetClaude "rules\02-project-structure.md") -Encoding UTF8
 Remove-Item (Join-Path $targetClaude "rules\02-project-structure.md.template") -ErrorAction SilentlyContinue

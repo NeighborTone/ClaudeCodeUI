@@ -6,6 +6,15 @@ set -e
 
 TEMPLATE_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# Cross-platform sed -i (macOS BSD sed requires backup extension, GNU sed does not)
+sedi() {
+    if sed --version 2>/dev/null | grep -q GNU; then
+        sed -i "$@"
+    else
+        sed -i '' "$@"
+    fi
+}
+
 echo "========================================"
 echo "  Claude Code Template Setup"
 echo "========================================"
@@ -101,20 +110,20 @@ rm -f "$TARGET_CLAUDE/rules/01-project-overview.md.template"
 
 # Process project structure
 sed -e "s|{{PROJECT_NAME}}|$PROJECT_NAME|g" \
-    -e "s|{{SOURCE_DIR}}|src|g" \
-    -e "s|{{CONFIG_DIR}}|config|g" \
-    -e "s|{{TEST_DIR}}|tests|g" \
-    -e "s|{{DOC_DIR}}|docs|g" \
+    -e "s|{{SOURCE_DIR}}|Source|g" \
+    -e "s|{{CONFIG_DIR}}|Config|g" \
+    -e "s|{{TEST_DIR}}|Tests|g" \
+    -e "s|{{DOC_DIR}}|Docs|g" \
     "$TARGET_CLAUDE/rules/02-project-structure.md.template" > "$TARGET_CLAUDE/rules/02-project-structure.md"
 rm -f "$TARGET_CLAUDE/rules/02-project-structure.md.template"
 
 # Update settings.json language
 if [ "$USER_LANG" = "English" ]; then
-    sed -i 's/"language": "japanese"/"language": "english"/' "$TARGET_CLAUDE/settings.json"
+    sedi 's/"language": "japanese"/"language": "english"/' "$TARGET_CLAUDE/settings.json"
 fi
 
 # Replace PowerShell hooks with bash equivalents for non-Windows
-sed -i \
+sedi \
     -e 's|powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/cleanup-nul.ps1|bash .claude/hooks/cleanup-nul.sh|g' \
     -e 's|powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/notify-complete.ps1|bash .claude/hooks/notify-complete.sh|g' \
     -e 's|powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/notify-question.ps1|bash .claude/hooks/notify-question.sh|g' \
@@ -124,7 +133,7 @@ sed -i \
 echo "Applying template variables..."
 find "$TARGET_CLAUDE" -type f \( -name "*.md" -o -name "*.json" \) | while read -r f; do
     if grep -q '{{' "$f" 2>/dev/null; then
-        sed -i \
+        sedi \
             -e "s|{{PROJECT_NAME}}|$PROJECT_NAME|g" \
             -e "s|{{PROJECT_DESCRIPTION}}|$PROJECT_DESC|g" \
             -e "s|{{BUILD_COMMAND}}|$BUILD_CMD|g" \
@@ -226,7 +235,7 @@ fi
 echo "Applying final template variables..."
 find "$TARGET_CLAUDE" -type f \( -name "*.md" -o -name "*.json" \) | while read -r f; do
     if grep -q '{{' "$f" 2>/dev/null; then
-        sed -i \
+        sedi \
             -e "s|{{PROJECT_NAME}}|$PROJECT_NAME|g" \
             -e "s|{{PROJECT_DESCRIPTION}}|$PROJECT_DESC|g" \
             -e "s|{{BUILD_COMMAND}}|$BUILD_CMD|g" \
