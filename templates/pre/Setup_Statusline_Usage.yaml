@@ -11,16 +11,16 @@ content: |
   ### 3行構成
 
   ```
-  [Opus] | 23%
-  [5h] ====------ 38% reset 8m 23s
-  [7d] ======---- 57% reset 1d 14h
+  [Opus] │ 42%                          ← モデル名 | コンテキスト使用率
+  [5h] ▰▱▱▱▱▱▱▱▱▱ 10% reset: 23:00 (3h 22m)  ← 5h使用率 + リセット時刻 (残り時間)
+  [7d] ▰▰▰▰▰▱▱▱▱▱ 53% reset: 03/13 19:00 (2d 23h)  ← 7d使用率 + リセット日時 (残り時間)
   ```
 
   | 行 | 内容 |
   |----|------|
-  | Line 1 | モデル名（Opus/Sonnet/Haiku） `|` コンテキスト使用率% |
-  | Line 2 | 5時間レートリミット使用率 + プログレスバー + リセットまでの残り時間 |
-  | Line 3 | 7日間レートリミット使用率 + プログレスバー + リセットまでの残り時間 |
+  | Line 1 | モデル名（Opus/Sonnet/Haiku） `│` コンテキスト使用率% `+add/-del branch`（gitリポジトリ時） |
+  | Line 2 | 5時間レートリミット: プログレスバー + 使用率% + リセット時刻(HH:MM) + 残り時間 |
+  | Line 3 | 7日間レートリミット: プログレスバー + 使用率% + リセット日時(MM/DD HH:MM) + 残り時間 |
 
   ### カラーリング（24bit ANSI）
 
@@ -33,17 +33,16 @@ content: |
 
   ### プログレスバー
 
-  - 10セグメント（`=` = 使用済み、`-` = 残り）ASCII文字のみ使用
-  - 例: 38% → `====------`
+  - 10セグメント（`▰` = 使用済み、`▱` = 残り）
+  - 例: 38% → `▰▰▰▰▱▱▱▱▱▱`
 
   ### リセット残り時間フォーマット
 
   | 条件 | 表示形式 | 例 |
   |------|----------|-----|
-  | 1日以上 | `Xd Xh` | `1d 14h` |
-  | 1時間以上 | `Xh Xm` | `2h 30m` |
-  | 1分以上 | `Xm Xs` | `45m 12s` |
-  | 1分未満 | `Xs` | `30s` |
+  | 1日以上 | `Xd Xh` | `2d 23h` |
+  | 1時間以上 | `Xh Xm` | `3h 22m` |
+  | 1時間未満 | `Xm` | `45m` |
   | リセット済み | `now` | `now` |
 
   ---
@@ -52,14 +51,24 @@ content: |
 
   ### Step 1: スクリプト作成
 
-  以下の仕様でステータスラインスクリプトを作成する。
+  #### スクリプト言語
 
-  #### OS判定と言語選択
-
-  | OS | スクリプト言語 | ファイル名 | 理由 |
+  | OS | スクリプト言語 | ファイル名 | 備考 |
   |----|---------------|-----------|------|
-  | **Windows** | PowerShell | `~/.claude/statusline.ps1` | jq不要、JSON/API/ANSIがネイティブ対応 |
-  | **macOS/Linux** | Bash | `~/.claude/statusline.sh` | jq必須、事前にインストール確認すること |
+  | **Windows** | Bash (Git Bash) | `~/.claude/statusline.sh` | Claude CodeがGit Bash経由で実行する。jq必須 |
+  | **macOS/Linux** | Bash | `~/.claude/statusline.sh` | jq必須 |
+
+  **【重要】Windows環境でもBashスクリプトを使用する。** Claude CodeはWindows上でもGit Bash経由でstatusLineコマンドを実行するため、Bashスクリプトが動作する。PowerShellは不要。
+
+  #### jqのインストール（Windows）
+
+  Windowsにjqが入っていない場合、`~/bin/` にダウンロードしてスクリプト冒頭で `export PATH="$HOME/bin:$PATH"` する:
+
+  ```bash
+  mkdir -p ~/bin
+  curl -sL -o ~/bin/jq.exe "https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-windows-amd64.exe"
+  chmod +x ~/bin/jq.exe
+  ```
 
   #### 入力（stdin）
 
@@ -75,7 +84,7 @@ content: |
 
   #### OAuthトークン取得
 
-  **認証情報ファイルの場所**: `~/.claude/.credentials.json`
+  **認証情報ファイル**: `~/.claude/.credentials.json`
 
   ```json
   {
@@ -87,9 +96,15 @@ content: |
   }
   ```
 
-  トークンの読み取り方法:
-  - **Windows (PowerShell)**: `(Get-Content ~/.claude/.credentials.json | ConvertFrom-Json).claudeAiOauth.accessToken`
-  - **macOS/Linux (Bash)**: macOSキーチェーンから取得、またはファイルがあればファイルから取得
+  トークンの読み取り方法（全OS共通）:
+
+  ```bash
+  jq -r '.claudeAiOauth.accessToken // empty' "$HOME/.claude/.credentials.json"
+  ```
+
+  **【重要】Windows Credential Manager（cmdkey/CredRead）には認証情報は保存されていない。** ファイルから直接読み取ること。
+
+  macOSではキーチェーンにも保存される場合がある（`security find-generic-password -s "Claude Code-credentials" -w`）が、`.credentials.json` ファイルが存在すればそちらを優先する。
 
   #### Usage API呼び出し
 
@@ -103,117 +118,98 @@ content: |
   |----------|-----|
   | `Authorization` | `Bearer <accessToken>` |
   | `anthropic-beta` | `oauth-2025-04-20` |
-  | `Content-Type` | `application/json` |
 
-  **【重要】`anthropic-beta: oauth-2025-04-20` ヘッダーがないと `401 Unauthorized` になる。**
+  **【重要】`anthropic-beta: oauth-2025-04-20` ヘッダーがないとAPIが応答しない。**
 
   #### APIレスポンス形式
 
   ```json
   {
     "five_hour": {
-      "utilization": 38.0,
-      "resets_at": "2026-03-04T14:00:00.765393+00:00"
+      "utilization": 10.0,
+      "resets_at": "2026-03-10T14:00:01.021457+00:00"
     },
     "seven_day": {
-      "utilization": 57.0,
-      "resets_at": "2026-03-06T03:59:59.765423+00:00"
+      "utilization": 53.0,
+      "resets_at": "2026-03-13T10:00:01.021476+00:00"
+    },
+    "seven_day_oauth_apps": null,
+    "seven_day_opus": null,
+    "seven_day_sonnet": {
+      "utilization": 2.0,
+      "resets_at": "2026-03-14T09:00:01.021484+00:00"
+    },
+    "seven_day_cowork": null,
+    "extra_usage": {
+      "is_enabled": true,
+      "monthly_limit": 5000,
+      "used_credits": 0.0,
+      "utilization": null
     }
   }
   ```
 
-  - `utilization`: 0〜100のパーセント値（0.0〜1.0ではない）
-  - `resets_at`: ISO 8601形式のUTCタイムスタンプ
+  - `utilization`: **0〜100のパーセント値**（0.0〜1.0ではない。37.0 = 37%）
+  - `resets_at`: ISO 8601形式のタイムスタンプ（タイムゾーン付き）
+  - `five_hour` / `seven_day` を使用する
 
-  #### キャッシュ（ウェブ同期方式）
+  #### キャッシュ
 
-  console.anthropic.comの表示と完全同期するため、**同期的にAPI取得**する:
-  - **Windows**: `$env:TEMP\claude_usage_cache.json`
+  - **Windows**: `$TEMP/claude_usage_cache.json`（TEMP環境変数）
   - **macOS/Linux**: `/tmp/claude_usage_cache.json`
-  - キャッシュTTL: **30秒**（ウェブとの同期精度を優先）
-  - キャッシュはAPI失敗時の**フォールバック専用**
-
-  #### 取得戦略（ウェブ同期優先）
-
-  ウェブダッシュボードと同じデータを表示するため、同期取得を基本とする:
-
-  | 項目 | 方針 |
-  |------|------|
-  | 取得方式 | **同期的**（バックグラウンドジョブ禁止） |
-  | キャッシュTTL | 30秒（短いTTLでウェブと同期） |
-  | タイムアウト | 10秒 |
-  | フォールバック | API失敗時のみ古いキャッシュを返す |
+  - キャッシュTTL: **60秒**
+  - ステータスラインは頻繁に呼ばれるため、毎回APIを叩かないようにする
 
   ```
   処理フロー:
-  1. キャッシュが存在する → まずキャッシュデータを読み込んで保持
-  2. キャッシュが30秒以内 → キャッシュデータを返す（API呼び出しスキップ）
-  3. キャッシュが30秒超 → API呼び出しを同期的に試行（タイムアウト10秒）
-     - 成功 → 新データをキャッシュに保存して返す
-     - 失敗 → 古いキャッシュデータをフォールバックとして返す
-  4. トークン取得失敗時も、キャッシュがあればキャッシュを返す
-  5. キャッシュもトークンも無い場合のみ「token unavailable」を表示
+  1. キャッシュファイルが存在し、60秒以内 → キャッシュを返す
+  2. キャッシュが古い or 存在しない → API呼び出し（タイムアウト5秒）
+     - 成功 → キャッシュに保存して返す
+     - 失敗 → 空を返す（token unavailable表示）
+  3. トークン取得失敗 → 「token unavailable - run: claude /login」表示
   ```
-
-  **重要**:
-  - バックグラウンドジョブ（Start-Job等）は使用禁止（データが古くなる原因）
-  - 毎回同期的にAPIを叩き、最新データを表示すること
-  - プログレスバーにはASCII文字（`=` と `-`）のみ使用すること（Unicode文字はWindows環境で文字化けする）
 
   ### Step 2: settings.json更新
 
   ユーザーの `~/.claude/settings.json` に `statusLine` 設定を追加（既存設定はマージ）。
 
-  #### Windows
+  **全OS共通**:
 
   ```json
   {
     "statusLine": {
       "type": "command",
-      "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:/Users/<USERNAME>/.claude/statusline.ps1"
+      "command": "~/.claude/statusline.sh"
     }
   }
   ```
-
-  #### macOS/Linux
-
-  ```json
-  {
-    "statusLine": {
-      "type": "command",
-      "command": "bash ~/.claude/statusline.sh"
-    }
-  }
-  ```
-
-  **注意**: `<USERNAME>` はユーザーの実際のユーザー名に置き換える。PowerShellの `$env:USERNAME` または bashの `whoami` で取得する。
 
   ---
 
-  ## Windows実装時の注意点
+  ## Bash実装時の注意点
 
-  | 項目 | 注意事項 |
-  |------|---------|
-  | ANSI色 | `[char]0x1b` でエスケープ文字を生成する。`\033`はリテラル出力される |
-  | JSON解析 | `ConvertFrom-Json` を使用（jqは不要、Windows環境にはjqが入っていないことが多い） |
-  | API呼び出し | `Invoke-RestMethod` を使用（curlの代替） |
-  | stdin読み取り | `[Console]::In.ReadToEnd()` を使用 |
-  | パス区切り | PowerShell内では `/` でも `\` でも動作する |
+  | 項目 | 正しい方法 | 間違い（動かない） |
+  |------|-----------|-------------------|
+  | ANSI色変数定義 | `GREEN=$'\033[38;2;151;201;195m'` | `GREEN="\033[38;2;151;201;195m"` |
+  | 色の出力 | `printf '%s' "$GREEN"` | `echo -n "$GREEN"` |
+  | 色付き文字列の組み立て | 変数を直接結合: `"${GREEN}text${RESET}"` | printfの`%s`引数に渡す |
+  | printfでの色出力 | `printf '%s' "${color}text${RESET}"` | `printf "${color}%s" "text"` ※format内は動くが混在すると不整合 |
+  | jq (Windows) | `~/bin/` にダウンロード + PATH追加 | PowerShellの `ConvertFrom-Json` を使う |
+  | トークン取得 | `~/.claude/.credentials.json` から jq で読む | Windows Credential Manager から読む |
 
-  ## macOS/Linux実装時の注意点
+  **【最重要】`$'\033[...'` と `"\033[..."` の違い:**
 
-  | 項目 | 注意事項 |
-  |------|---------|
-  | ANSI色 | `$'\e[38;2;R;G;Bm'` 構文で変数定義する（`"\033[..."` はprintfでは動くがechoでは不可） |
-  | jq | 必須。未インストールの場合はユーザーに `brew install jq` / `apt install jq` を案内 |
-  | キーチェーン | macOSの場合 `security find-generic-password -s "Claude Code-credentials" -w` でトークン取得 |
+  - `$'\033[38;2;151;201;195m'` → シェルが代入時にエスケープを解釈し、**実際のESC文字**が変数に入る
+  - `"\033[38;2;151;201;195m"` → `\033` が**リテラル文字列**として変数に入る → ターミナルに `\033[38;2;...` と生表示される
 
   ---
 
   ## 実行手順
 
   1. まず `~/.claude/settings.json` を読み取り、既存設定を確認する
-  2. OSを判定する（Windows / macOS / Linux）
-  3. 対応するスクリプトを作成する
-  4. `settings.json` に `statusLine` 設定を追加（既存設定とマージ）
-  5. ユーザーにClaude Codeの再起動を案内する
+  2. jqがインストールされているか確認する（無ければ `~/bin/` にダウンロード）
+  3. `~/.claude/statusline.sh` を作成する（上記仕様に従い、`$'...'` 構文でANSI色を定義）
+  4. `chmod +x ~/.claude/statusline.sh` で実行権限を付与する
+  5. `settings.json` に `statusLine` 設定を追加（既存設定とマージ）
+  6. モックデータでテストする: `echo '{"model":{"display_name":"Opus"},"context_window":{"used_percentage":25},"cwd":"/tmp"}' | ~/.claude/statusline.sh`
+  7. ユーザーにClaude Codeの再起動を案内する
