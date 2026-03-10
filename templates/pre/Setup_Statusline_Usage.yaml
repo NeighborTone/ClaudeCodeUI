@@ -106,6 +106,62 @@ content: |
 
   macOSではキーチェーンにも保存される場合がある（`security find-generic-password -s "Claude Code-credentials" -w`）が、`.credentials.json` ファイルが存在すればそちらを優先する。
 
+  #### OAuthトークン自動リフレッシュ
+
+  アクセストークンは数時間で期限切れになる。期限切れの度に `/login` を手動実行するのは不便なため、スクリプト内で自動リフレッシュを行う。
+
+  **認証情報ファイルの `expiresAt` フィールド**:
+
+  - Unix epoch ミリ秒（例: `1773178632843`）
+  - 期限切れ判定: `現在時刻(ms) + 300000(5分バッファ) >= expiresAt` なら期限切れ
+
+  **リフレッシュAPIエンドポイント**:
+
+  ```
+  POST https://platform.claude.com/v1/oauth/token
+  Content-Type: application/json
+  ```
+
+  **リクエストボディ**:
+
+  ```json
+  {
+    "grant_type": "refresh_token",
+    "refresh_token": "<credentials.jsonのrefreshToken>",
+    "client_id": "9d1c250a-e61b-44d9-88ed-5944d1962f5e",
+    "scope": "user:profile user:inference user:sessions:claude_code user:mcp_servers"
+  }
+  ```
+
+  **環境変数オーバーライド**:
+
+  | 環境変数 | 説明 | デフォルト値 |
+  |----------|------|-------------|
+  | `CLAUDE_CODE_OAUTH_CLIENT_ID` | クライアントID | `9d1c250a-e61b-44d9-88ed-5944d1962f5e` |
+  | `CLAUDE_CODE_CUSTOM_OAUTH_URL` | ベースURL | `https://platform.claude.com` |
+
+  **レスポンス**:
+
+  ```json
+  {
+    "access_token": "sk-ant-oat01-...",
+    "refresh_token": "sk-ant-...",
+    "expires_in": 28800,
+    "scope": "user:profile user:inference user:sessions:claude_code user:mcp_servers"
+  }
+  ```
+
+  - `refresh_token` が未返却の場合は既存のリフレッシュトークンを維持
+  - `expires_in` は秒単位。新しい `expiresAt` = `現在時刻(ms) + expires_in * 1000`
+
+  **リフレッシュ後の処理**:
+
+  1. `~/.claude/.credentials.json` を更新（`accessToken`, `refreshToken`, `expiresAt`）
+  2. 更新にはtmpファイル + mvを使用（アトミック書き込み）
+  3. リフレッシュ失敗時は既存トークンでフォールバック（エラーにはしない）
+
+  **【重要】リフレッシュに失敗しても表示は止めない。** 既存トークンでAPI呼び出しを試行し、それも失敗した場合のみ「token unavailable」を表示する。
+
   #### Usage API呼び出し
 
   ```
@@ -162,11 +218,17 @@ content: |
 
   ```
   処理フロー:
-  1. キャッシュファイルが存在し、60秒以内 → キャッシュを返す
-  2. キャッシュが古い or 存在しない → API呼び出し（タイムアウト5秒）
+  1. トークン取得:
+     a. credentials.json の expiresAt を確認
+     b. 期限切れ（5分バッファ含む）→ refreshToken でトークンリフレッシュ
+        - 成功 → credentials.json を更新し、新トークンを使用
+        - 失敗 → 既存トークンでフォールバック
+     c. 有効期限内 → そのまま accessToken を使用
+  2. キャッシュファイルが存在し、60秒以内 → キャッシュを返す
+  3. キャッシュが古い or 存在しない → Usage API呼び出し（タイムアウト5秒）
      - 成功 → キャッシュに保存して返す
      - 失敗 → 空を返す（token unavailable表示）
-  3. トークン取得失敗 → 「token unavailable - run: claude /login」表示
+  4. トークン取得失敗（refreshも失敗）→ 「token unavailable - run: claude /login」表示
   ```
 
   ### Step 2: settings.json更新
